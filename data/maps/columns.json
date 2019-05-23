@@ -1,0 +1,55 @@
+{
+ "blocks": [
+  {
+   "name": "wall",
+   "all-solid": true,
+   "north": "brick-red",
+   "south": "brick-red",
+   "east": "brick-red",
+   "west": "brick-red"
+  },
+  {
+   "name": "floor",
+   "top": "tiles-bw",
+   "bottom": "tiles-bw"
+  },
+  {
+   "name": "pillar",
+   "all-solid": true,
+   "north": "pillar-gray",
+   "south": "pillar-gray",
+   "east": "pillar-gray",
+   "west": "pillar-gray"
+  }
+ ],
+ "layout": [
+  [0, 0, 0, 0, 0, 0, 0],
+  [0, 1, 1, 1, 1, 1, 0],
+  [0, 1, 2, 1, 2, 1, 0],
+  [0, 1, 1, 1, 1, 1, 0],
+  [0, 1, 2, 1, 2, 1, 0],
+  [0, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0]
+ ],
+ "player": {
+  "pos": [3, 3]
+ },
+ "npcs": [
+  {
+   "kind": "bat",
+   "pos": [1, 1]
+  },
+  {
+   "kind": "bat",
+   "pos": [5, 1]
+  },
+  {
+   "kind": "bat",
+   "pos": [5, 5]
+  },
+  {
+   "kind": "bat",
+   "pos": [1, 5]
+  }
+ ]
+}

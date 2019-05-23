@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Print to standard output a preprocessed version of d3d.c. This version does
+# not #include any other local files, making it easy to move around wherever you
+# want. The --exclude-d3d.h option means that "d3d.h" is still #include'd.
+
+exclude_hdr=no
+while [ $# -ne 0 ]; do
+	if [ " $1" = " --exclude-d3d.h" ]; then
+		exclude_hdr=yes
+	else
+		echo "Usage: $0 [--exclude-d3d.h]"
+		exit 1
+	fi
+	shift 1
+done
+awk -v exclude_hdr=$exclude_hdr -e '
+BEGIN {
+	print "/* NOTE: auto-generated amalgamation */\n";
+}
+
+/^#include "d3d.*\.h"$/ {
+	file = substr($0, 11, length($0) - 11);
+	if (file != "d3d.h" || exclude_hdr != "yes") {
+		while ((getline <file) > 0) {
+			if ($0 != "#include \"d3d.h\"")
+				{print}
+		}
+		next;
+	}
+}
+
+{print}
+' d3d.c

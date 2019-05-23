@@ -1,0 +1,31 @@
+ ____                                     _____ ____  
+|  _ \ _   _ _ __   __ _  ___  ___  _ __ |___ /|  _ \ 
+| | | | | | | '_ \ / _` |/ _ \/ _ \| '_ \  |_ \| | | |
+| |_| | |_| | | | | (_| |  __/ (_) | | | |___) | |_| |
+|____/ \__,_|_| |_|\__, |\___|\___/|_| |_|____/|____/ 
+===================|___/==============================
+
+OVERVIEW
+--------
+This is a 3D ray casting graphics library meant to draw dungeons and other
+square maze-like structures. It is intended for use with libcurses-based
+graphics, but it can be easily integrated with another drawing system.
+
+DOCUMENTATION
+-------------
+Documentation is in d3d.h. The demo is under the 'demo' directory.
+
+USAGE
+-----
+To use this in another project, just copy in some files. d3d.c expects d3d.h and
+d3d-internal-structures.h to be in the same directory as it is. If this is not
+what you want, you can use the make-standalone executable, which requires awk to
+run. This bundles the headers in with d3d.c. If you just want to bundle
+d3d-internal-structures, use the --exclude-d3d.h option of the executable. The
+preprocessed code is printed to the standard output.
+
+DEPENDENCIES
+------------
+This library depends only on the standard library and the standard math library
+(compile/link it with -lm.) The demo depends on libcurses for actually drawing
+the pixels.
