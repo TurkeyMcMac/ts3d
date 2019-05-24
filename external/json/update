@@ -1,0 +1,17 @@
+#!/bin/sh
+
+base_url=https://raw.githubusercontent.com/TurkeyMcMac/json/master
+
+fetch() {
+	curl -s "${base_url}/$1" > "./$1" || exit 1
+}
+
+fetch README.md &
+fetch LICENSE &
+fetch json.c &
+fetch json.h &
+wait
+
+cd ../../src
+cp -fs ../external/json/json.c .
+cp -fs ../external/json/json.h .

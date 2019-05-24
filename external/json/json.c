@@ -664,12 +664,7 @@ static int parse_string(json_reader *reader, struct json_string *str)
 	if (!str->bytes) return -1;
 	str->len = 0;
 	while ((ch = next_char(reader)) != '"') {
-		if (ch < 0) {
-			if (reader->flags & SOURCE_DEPLETED)
-				goto error_unclosed_quote;
-			else if (refill(reader))
-				goto error;
-		}
+		if (ch < 0) goto error_unclosed_quote;
 		if (ch == '\\') {
 			if (escape_char(reader, str, &cap))
 				goto error;

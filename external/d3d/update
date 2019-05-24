@@ -1,0 +1,19 @@
+#!/bin/sh
+
+base_url=https://raw.githubusercontent.com/TurkeyMcMac/d3d/master
+
+fetch() {
+	curl -s "${base_url}/$1" > "./$1" || exit 1
+}
+
+fetch README &
+fetch LICENSE &
+fetch d3d.c &
+fetch d3d-internal-structures.h &
+fetch d3d.h &
+fetch make-standalone &
+wait
+
+./make-standalone --exclude-d3d.h > ../../src/d3d.c
+cd ../../src
+cp -fs ../external/d3d/d3d.h .
