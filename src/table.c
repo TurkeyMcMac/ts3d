@@ -1,6 +1,8 @@
 #include "table.h"
 #include "grow.h"
+#include "string.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 struct item {
@@ -21,7 +23,7 @@ int table_init(table *tbl, size_t size)
 
 int table_add(table *tbl, const char *key, void *val)
 {
-	struct item *slot = GROW(&tbl->items, &tbl->len, &tbl->cap, ITEM_SIZE);
+	struct item *slot = GROWE(&tbl->items, &tbl->len, &tbl->cap, ITEM_SIZE);
 	if (!slot) return -1;
 	slot->key = key;
 	slot->val = val;
@@ -62,4 +64,39 @@ void **table_get(table *tbl, const char *key)
 void table_free(table *tbl)
 {
 	free(tbl->items);
+}
+
+char *table_to_string(const table *tbl, char *(*item)(void *))
+{
+	size_t str_cap = 64;
+	struct string str;
+	str.text = malloc(str_cap);
+	if (!str.text) goto error_malloc;
+	str.len = 1;
+	memcpy(str.text, "{", str.len);
+	for (size_t i = 0; i < tbl->len; ++i) {
+		char *val = item(tbl->items[i].val);
+		if (!val) goto error_item;
+		size_t key_len = strlen(tbl->items[i].key);
+		size_t val_len = strlen(val);
+		size_t len = key_len + val_len + 5;
+		char *place = string_grow(&str, &str_cap, len);
+		if (!place) {
+			free(val);
+			goto error_string_grow;
+		}
+		snprintf(place, len + 1, "\n\t%s: %s,", tbl->items[i].key, val);
+		free(val);
+	}
+	char *end = string_grow(&str, &str_cap, 2);
+	if (!end) goto error_string_grow_end;
+	memcpy(end, "\n}", 2);
+	return str.text;
+
+error_string_grow:
+error_item:
+error_string_grow_end:
+	free(str.text);
+error_malloc:
+	return NULL;
 }
