@@ -1,0 +1,200 @@
+#include "npc.h"
+#include "grow.h"
+#include "json.h"
+#include "string.h"
+#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static table json_table;
+static int init_json_table(void)
+{
+	static bool json_table_created = false;
+	if (json_table_created) return 0;
+	if (table_init(&json_table, 8)) return -1;
+#define ENTRY(name) if (table_add(&json_table, #name, \
+		(void *)offsetof(struct npc_type, name))) goto error_table_add;
+	ENTRY(name);
+	ENTRY(width);
+	ENTRY(height);
+	ENTRY(transparent);
+	ENTRY(frames);
+#undef ENTRY
+	table_freeze(&json_table);
+	json_table_created = true;
+	return 0;
+
+error_table_add:
+	table_free(&json_table);
+	return -1;
+}
+
+static char *nulterm(struct json_string *jstr)
+{
+	char *cstr = realloc(jstr->bytes, jstr->len + 1);
+	if (!cstr) return NULL;
+	cstr[jstr->len] = '\0';
+	return cstr;
+}
+
+static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
+{
+	size_t npc_cap = 0;
+	npc->n_frames = 0;
+	char *key;
+	for (;;) {
+		key = NULL;
+		struct json_item item;
+		if (json_read_item(rdr, &item) < 0) goto error;
+		if (item.type == JSON_END_LIST) break;
+		if (item.type != JSON_STRING) goto error;
+		key = nulterm(&item.val.str);
+		if (!key) goto error;
+		void **txtr = table_get(txtrs, key);
+		if (!txtr) {
+			npc->flags |= NPC_INVALID_TEXTURE;
+			goto error;
+		}
+		const d3d_texture **place = GROWE(&npc->frames, &npc->n_frames,
+			&npc_cap, sizeof(*npc->frames));
+		if (!place) goto error;
+		*place = *txtr;
+	}
+error:
+	free(key);
+}
+
+int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
+{
+	char buf[BUFSIZ];
+	FILE *file = fopen(path, "r");
+	if (!file) goto error_fopen;
+	json_reader rdr;
+	if (json_alloc(&rdr, NULL, 8, malloc, free, realloc))
+		goto error_json_alloc;
+	json_source_file(&rdr, buf, sizeof(buf), file);
+	npc->name = "";
+	npc->width = 1.0;
+	npc->height = 1.0;
+	npc->transparent = ' ';
+	npc->n_frames = 0;
+	npc->frames = NULL;
+	if (init_json_table()) goto error_init_json_table;
+	struct json_item item;
+	char *key = NULL;
+	if (json_read_item(&rdr, &item) >= 0) {
+		if (item.type != JSON_MAP) goto invalid_json;
+	} else {
+		goto error_json_read_item;
+	}
+	for (;;) {
+		key = NULL;
+		errno = 0;
+		if (json_read_item(&rdr, &item) >= 0) {
+			if (item.type == JSON_EMPTY) break;
+			if (!item.key.bytes) goto invalid_json;
+			key = nulterm(&item.key);
+			if (!key) goto error_nulterm;
+			intptr_t *field = (void *)table_get(&json_table, key);
+			if (!field) continue;
+			switch (*field) {
+			case offsetof(struct npc_type, name):
+				if (item.type != JSON_STRING) goto invalid_json;
+				npc->name = nulterm(&item.val.str);
+				if (!npc->name) goto error_nulterm;
+				break;
+			case offsetof(struct npc_type, width):
+				if (item.type != JSON_NUMBER) goto invalid_json;
+				npc->width = item.val.num;
+				break;
+			case offsetof(struct npc_type, height):
+				if (item.type != JSON_NUMBER) goto invalid_json;
+				npc->height = item.val.num;
+				break;
+			case offsetof(struct npc_type, transparent):
+				if (item.type == JSON_NULL) continue;
+				if (item.type != JSON_STRING) goto invalid_json;
+				if (item.val.str.len < 1) continue;
+				npc->transparent = *item.val.str.bytes;
+				break;
+			case offsetof(struct npc_type, frames):
+				if (item.type != JSON_LIST) goto invalid_json;
+				errno = 0;
+				if (parse_frames(npc, &rdr, txtrs)) {
+					if (errno) goto error_parse_frames;
+					goto invalid_json;
+				}
+				break;
+			default:
+				break;
+			}
+		} else if (errno) {
+			goto error_json_read_item;
+		} else {
+			goto invalid_json;
+		}
+	}
+	return 0;
+
+error_nulterm:
+error_json_read_item:
+error_parse_frames:
+	free(key);
+error_init_json_table:
+	free(npc->frames);
+	json_free(&rdr);
+error_json_alloc:
+error_fopen:
+	return -1;
+
+invalid_json:
+	free(key);
+	json_free(&rdr);
+	npc->flags |= NPC_INVALID;
+	return 0;
+}
+
+char *npc_type_to_string(const struct npc_type *npc)
+{
+	char fmt_buf[128];
+	size_t cap = 64;
+	struct string str;
+	if (string_init(&str, cap)) goto error_string_init;
+	if (string_pushz(&str, &cap, "npc_type { name = \"")
+	 || string_pushz(&str, &cap, npc->name)) goto error_push;
+	snprintf(fmt_buf, sizeof(fmt_buf), "\", width = %f, height = %f",
+		npc->width, npc->height);
+	if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+	if (npc->transparent >= 0) {
+		snprintf(fmt_buf, sizeof(fmt_buf), ", transparent = '%c'",
+			npc->transparent);
+		if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+	}
+	if (string_pushz(&str, &cap, ", frames = ")) goto error_push;
+	if (npc->n_frames > 0) {
+		const char *before = "[ ";
+		for (size_t i = 0; i < npc->n_frames; ++i) {
+			const d3d_texture *txtr = npc->frames[i];
+			if (string_pushn(&str, &cap, before, 2))
+				goto error_push;
+			snprintf(fmt_buf, sizeof(fmt_buf),
+				"texture { width = %lu, height = %lu }",
+				d3d_texture_width(txtr),
+				d3d_texture_height(txtr));
+			if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+			before = ", ";
+		}
+		if (string_pushn(&str, &cap, " ]", 2)) goto error_push;
+	} else {
+		if (string_pushn(&str, &cap, "[]", 2)) goto error_push;
+	}
+	if (string_pushn(&str, &cap, " }", 2)) goto error_push;
+	string_shrink_to_fit(&str);
+	return str.text;
+
+error_push:
+	free(str.text);
+error_string_init:
+	return NULL;
+}

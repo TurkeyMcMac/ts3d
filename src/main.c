@@ -1,5 +1,6 @@
 #include "load-textures.h"
 #include "d3d.h"
+#include "npc.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,12 +18,24 @@ static char *texture_to_string(void *data)
 
 int main(int argc, char *argv[])
 {
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s textures npc_type\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	const char *txtrs_path = argv[1];
+	const char *npc_path = argv[2];
 	table txtrs;
-	const char *path = argv[1];
-	if (load_textures(path, &txtrs)) {
+	struct npc_type npc;
+	if (load_textures(txtrs_path, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	printf("Textures from %s:\n%s\n", path,
+	printf("Textures from %s:\n%s\n", txtrs_path,
 		table_to_string(&txtrs, texture_to_string));
+	if (load_npc_type(npc_path, &npc, &txtrs)) {
+		fprintf(stderr, "Error: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	printf("NPC type from %s:\n%s\n", txtrs_path,
+		npc_type_to_string(&npc));
 }
