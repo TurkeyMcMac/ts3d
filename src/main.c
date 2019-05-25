@@ -19,23 +19,22 @@ static char *texture_to_string(void *data)
 int main(int argc, char *argv[])
 {
 	if (argc < 3) {
-		fprintf(stderr, "Usage: %s textures npc_type\n", argv[0]);
+		fprintf(stderr, "Usage: %s textures npcs\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 	const char *txtrs_path = argv[1];
-	const char *npc_path = argv[2];
-	table txtrs;
-	struct npc_type npc;
+	const char *npcs_path = argv[2];
+	table txtrs, npcs;
 	if (load_textures(txtrs_path, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	printf("Textures from %s:\n%s\n", txtrs_path,
 		table_to_string(&txtrs, texture_to_string));
-	if (load_npc_type(npc_path, &npc, &txtrs)) {
+	if (load_npc_types(npcs_path, &npcs, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	printf("NPC type from %s:\n%s\n", txtrs_path,
-		npc_type_to_string(&npc));
+	printf("NPC types from %s:\n%s\n", npcs_path,
+		table_to_string(&npcs, (char *(*)(void *))npc_type_to_string));
 }

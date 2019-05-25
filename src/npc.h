@@ -19,6 +19,8 @@ struct npc_type {
 
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs);
 
+int load_npc_types(const char *dirpath, table *npcs, table *txtrs);
+
 char *npc_type_to_string(const struct npc_type *npc);
 
 #endif /* NPC_H_ */

@@ -2,6 +2,7 @@
 #include "grow.h"
 #include "json.h"
 #include "string.h"
+#include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -153,6 +154,55 @@ invalid_json:
 	json_free(&rdr);
 	npc->flags |= NPC_INVALID;
 	return 0;
+}
+
+int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
+{
+	int errnum;
+	DIR *dir = opendir(dirpath);
+	if (!dir) goto error_opendir;
+	struct dirent *ent;
+	size_t path_len = 0;
+	size_t path_cap = 32;
+	char *path = malloc(path_cap);
+	if (!path) goto error_malloc;
+	char *type_name = NULL;
+	table_init(npcs, 16);
+	errno = 0;
+	while ((ent = readdir(dir))) {
+		if (*ent->d_name == '.') continue;
+		if (sscanf(ent->d_name, "%m[^.].json", &type_name) != 1) continue;
+		while ((path_len = snprintf(path, path_cap, "%s/%s", dirpath,
+				ent->d_name) + 1) > path_cap) {
+			path_cap = path_len;
+			path = realloc(path, path_cap);
+			if (!path) goto error_realloc;
+		}
+		struct npc_type *npc = malloc(sizeof(*npc));
+		if (!npc) goto error_alloc_npc;
+		if (load_npc_type(path, npc, txtrs)) goto error_load_npc_type;
+		if (table_add(npcs, type_name, npc)) goto error_table_add;
+	}
+	if (errno) goto error_readdir;
+	free(path);
+	table_freeze(npcs);
+	return 0;
+
+error_table_add:
+error_load_npc_type:
+error_alloc_npc:
+error_realloc:
+error_readdir:
+	free(type_name);
+	// TODO: free allocated keys and stuff
+	table_free(txtrs);
+	free(path);
+error_malloc:
+	errnum = errno;
+	closedir(dir);
+	errno = errnum;
+error_opendir:
+	return -1;
 }
 
 char *npc_type_to_string(const struct npc_type *npc)
