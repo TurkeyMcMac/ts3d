@@ -75,6 +75,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	if (json_alloc(&rdr, NULL, 8, malloc, free, realloc))
 		goto error_json_alloc;
 	json_source_file(&rdr, buf, sizeof(buf), file);
+	npc->flags = 0;
 	npc->name = "";
 	npc->width = 1.0;
 	npc->height = 1.0;
