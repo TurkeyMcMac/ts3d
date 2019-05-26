@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static table json_table;
 static int init_json_table(void)
@@ -170,13 +171,21 @@ int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
 	errno = 0;
 	while ((ent = readdir(dir))) {
 		if (*ent->d_name == '.') continue;
-		if (sscanf(ent->d_name, "%m[^.].json", &type_name) != 1) continue;
+		// XXX Not quite correct, but good enough if the name doesn't
+		// have ".json" in the middle:
+		char *suffix = strstr(ent->d_name, ".json");
+		if (!suffix) continue;
 		while ((path_len = snprintf(path, path_cap, "%s/%s", dirpath,
 				ent->d_name) + 1) > path_cap) {
 			path_cap = path_len;
 			path = realloc(path, path_cap);
 			if (!path) goto error_realloc;
 		}
+		size_t base_len = suffix - ent->d_name;
+		type_name = malloc(base_len+1);
+		if (!type_name) goto error_alloc_type_name;
+		memcpy(type_name, ent->d_name, base_len);
+		type_name[base_len] = '\0';
 		struct npc_type *npc = malloc(sizeof(*npc));
 		if (!npc) goto error_alloc_npc;
 		if (load_npc_type(path, npc, txtrs)) goto error_load_npc_type;
@@ -190,9 +199,10 @@ int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
 error_table_add:
 error_load_npc_type:
 error_alloc_npc:
+	free(type_name);
+error_alloc_type_name:
 error_realloc:
 error_readdir:
-	free(type_name);
 	// TODO: free allocated keys and stuff
 	table_free(txtrs);
 	free(path);
