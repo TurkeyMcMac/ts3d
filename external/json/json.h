@@ -41,7 +41,9 @@ typedef struct {
 } json_reader;
 
 /* A parsed JSON string value encoded as UTF-8. Beware that JSON strings may
- * include NUL, so treating this as a C string is technically incorrect. */
+ * include NUL, so treating this as a C string is technically incorrect. It is
+ * NUL terminated, though, for your convenience. This terminator is NOT included
+ * in the length. */
 struct json_string {
 	/* The UTF-8 data for this string. This was allocated by the function
 	 * given to the parser. */

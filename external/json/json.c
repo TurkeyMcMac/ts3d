@@ -657,7 +657,6 @@ error:
 static int parse_string(json_reader *reader, struct json_string *str)
 {
 	int ch;
-	size_t shrink_to;
 	char *oldbytes;
 	size_t cap = 16;
 	NEXT_CHAR(reader, ch, return -1);
@@ -677,11 +676,11 @@ static int parse_string(json_reader *reader, struct json_string *str)
 				goto error;
 		}
 	}
-	/* resize() might return NULL on success if shrunk to size zero: */
-	shrink_to = str->len > 0 ? str->len : 1;
+	if (push_byte(reader, &str->bytes, &str->len, &cap, '\0')) goto error;
 	oldbytes = str->bytes;
-	str->bytes = reader->resize(str->bytes, shrink_to);
+	str->bytes = reader->resize(str->bytes, str->len);
 	if (!str->bytes) str->bytes = oldbytes;
+	--str->len; /* Because of the NUL terminator */
 	return 0;
 
 error_expected_string:
