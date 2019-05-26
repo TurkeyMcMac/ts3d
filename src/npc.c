@@ -62,6 +62,7 @@ error:
 
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 {
+	int errnum;
 	char buf[BUFSIZ];
 	FILE *file = fopen(path, "r");
 	if (!file) goto error_fopen;
@@ -129,6 +130,8 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 			goto invalid_json;
 		}
 	}
+	json_free(&rdr);
+	fclose(file);
 	return 0;
 
 error_json_read_item:
@@ -138,12 +141,16 @@ error_init_json_table:
 	free(npc->frames);
 	json_free(&rdr);
 error_json_alloc:
+	errnum = errno;
+	fclose(file);
+	errno = errnum;
 error_fopen:
 	return -1;
 
 invalid_json:
 	free(key);
 	json_free(&rdr);
+	fclose(file);
 	npc->flags |= NPC_INVALID;
 	return 0;
 }
