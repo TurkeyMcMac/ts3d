@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+#
+# Prints out a texture file with the same colors it would have in-game.
+
+sub colorize_pix {
+	my ($pix) = @_;
+	my $code = ord($pix) - ord(' ') - 1;
+	if ($code >= 0 && $code < 64) {
+		my $fg = $code >> 3;
+		my $bg = $code & 0b111;
+		my $bright = $bg ? '1;' : '';
+		$pix = "\e[${bright}3${fg};4${bg}m#\e[0m";
+	}
+	return $pix;
+}
+
+open(my $file, "<", @ARGV[0])
+	or die "Can't open file @ARGV[0]";
+while (defined(my $pix = getc($file))) {
+	print &colorize_pix($pix);
+}
