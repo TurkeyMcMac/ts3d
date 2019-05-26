@@ -53,8 +53,11 @@ static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
 		if (!place) goto error;
 		*place = *txtr;
 	}
+	return 0;
+
 error:
 	free(key);
+	return -1;
 }
 
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
