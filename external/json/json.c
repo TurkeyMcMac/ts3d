@@ -379,21 +379,23 @@ static int parse_number(json_reader *reader, struct json_item *result)
 	}
 	if (ch == '.') {
 		double fraction = 0.0;
+		long n_digits = 0;
 		status = JSON_ERROR_NUMBER_FORMAT;
 		NEXT_CHAR(reader, ch, goto error);
 		if (is_digit(ch)) {
 			status = 0;
 			do {
+				n_digits++;
+				fraction *= 10;
 				fraction += to_digit(ch);
-				fraction /= 10;
 				NEXT_CHAR(reader, ch,
-					num += fraction;
+					num += fraction / pow(10, n_digits);
 					goto finish);
 			} while (is_digit(ch));
 		} else {
 			goto error;
 		}
-		num += fraction;
+		num += fraction / pow(10, n_digits);
 	}
 	if (ch == 'e' || ch == 'E') {
 		long expsign = 1;
