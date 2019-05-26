@@ -31,14 +31,6 @@ error_table_add:
 	return -1;
 }
 
-static char *nulterm(struct json_string *jstr)
-{
-	char *cstr = realloc(jstr->bytes, jstr->len + 1);
-	if (!cstr) return NULL;
-	cstr[jstr->len] = '\0';
-	return cstr;
-}
-
 static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
 {
 	size_t npc_cap = 0;
@@ -50,8 +42,7 @@ static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
 		if (json_read_item(rdr, &item) < 0) goto error;
 		if (item.type == JSON_END_LIST) break;
 		if (item.type != JSON_STRING) goto error;
-		key = nulterm(&item.val.str);
-		if (!key) goto error;
+		key = item.val.str.bytes;
 		void **txtr = table_get(txtrs, key);
 		if (!txtr) {
 			npc->flags |= NPC_INVALID_TEXTURE;
@@ -96,15 +87,13 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		if (json_read_item(&rdr, &item) >= 0) {
 			if (item.type == JSON_EMPTY) break;
 			if (!item.key.bytes) goto invalid_json;
-			key = nulterm(&item.key);
-			if (!key) goto error_nulterm;
+			key = item.key.bytes;
 			intptr_t *field = (void *)table_get(&json_table, key);
 			if (!field) continue;
 			switch (*field) {
 			case offsetof(struct npc_type, name):
 				if (item.type != JSON_STRING) goto invalid_json;
-				npc->name = nulterm(&item.val.str);
-				if (!npc->name) goto error_nulterm;
+				npc->name = item.val.str.bytes;
 				break;
 			case offsetof(struct npc_type, width):
 				if (item.type != JSON_NUMBER) goto invalid_json;
@@ -139,7 +128,6 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	}
 	return 0;
 
-error_nulterm:
 error_json_read_item:
 error_parse_frames:
 	free(key);
