@@ -15,16 +15,15 @@ int dir_iter(const char *path, dir_iter_f iter_fn, void *ctx)
 		// Ignore dot files:
 		if (*ent->d_name == '.') continue;
 		ret = iter_fn(ent, ctx);
-		if (ret != 0) goto early_return;
+		if (ret != 0) {
+			errnum = errno;
+			closedir(dir);
+			errno = errnum;
+			return abs(ret);
+		}
 	}
 	if (errno) goto error_readdir;
 	return 0;
-
-early_return:
-	errnum = errno;
-	closedir(dir);
-	errno = errnum;
-	return abs(ret);
 
 error_readdir:
 	errnum = errno;
