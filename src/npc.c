@@ -1,8 +1,8 @@
 #include "npc.h"
+#include "dir-iter.h"
 #include "grow.h"
 #include "json.h"
 #include "string.h"
-#include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -156,62 +156,63 @@ invalid_json:
 	return 0;
 }
 
-int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
+struct npc_type_iter_arg {
+	table *npcs;
+	table *txtrs;
+	const char *dirpath;
+};
+
+static int npc_type_iter(struct dirent *ent, void *ctx)
 {
-	int errnum;
-	DIR *dir = opendir(dirpath);
-	if (!dir) goto error_opendir;
-	struct dirent *ent;
-	size_t path_len = 0;
-	size_t path_cap = 32;
-	char *path = malloc(path_cap);
-	if (!path) goto error_malloc;
-	char *type_name = NULL;
-	table_init(npcs, 16);
-	errno = 0;
-	while ((ent = readdir(dir))) {
-		if (*ent->d_name == '.') continue;
-		// XXX Not quite correct, but good enough if the name doesn't
-		// have ".json" in the middle:
-		char *suffix = strstr(ent->d_name, ".json");
-		if (!suffix) continue;
-		while ((path_len = snprintf(path, path_cap, "%s/%s", dirpath,
-				ent->d_name) + 1) > path_cap) {
-			path_cap = path_len;
-			path = realloc(path, path_cap);
-			if (!path) goto error_realloc;
-		}
-		size_t base_len = suffix - ent->d_name;
-		type_name = malloc(base_len+1);
-		if (!type_name) goto error_alloc_type_name;
-		memcpy(type_name, ent->d_name, base_len);
-		type_name[base_len] = '\0';
-		struct npc_type *npc = malloc(sizeof(*npc));
-		if (!npc) goto error_alloc_npc;
-		if (load_npc_type(path, npc, txtrs)) goto error_load_npc_type;
-		if (table_add(npcs, type_name, npc)) goto error_table_add;
-	}
-	if (errno) goto error_readdir;
-	free(path);
-	table_freeze(npcs);
+	struct npc_type_iter_arg *arg = ctx;
+	table *npcs = arg->npcs;
+	table *txtrs = arg->txtrs;
+	size_t cap = 0;
+	struct string path = {0};
+	char *suffix = strstr(ent->d_name, ".json");
+	if (!suffix) return 0;
+	if (string_pushz(&path, &cap, arg->dirpath)
+	 || string_pushc(&path, &cap, '/')
+	 || string_pushz(&path, &cap, ent->d_name)
+	 || string_pushc(&path, &cap, '\0'))
+		goto error_push;
+	size_t base_len = suffix - ent->d_name;
+	char *type_name = malloc(base_len+1);
+	if (!type_name) goto error_alloc_type_name;
+	memcpy(type_name, ent->d_name, base_len);
+	type_name[base_len] = '\0';
+	struct npc_type *npc = malloc(sizeof(*npc));
+	if (!npc) goto error_alloc_npc;
+	if (load_npc_type(path.text, npc, txtrs)) goto error_load_npc_type;
+	if (table_add(npcs, type_name, npc)) goto error_table_add;
 	return 0;
 
 error_table_add:
+	npc_type_free(npc);
 error_load_npc_type:
+	free(npc);
 error_alloc_npc:
 	free(type_name);
 error_alloc_type_name:
-error_realloc:
-error_readdir:
-	// TODO: free allocated keys and stuff
-	table_free(txtrs);
-	free(path);
-error_malloc:
-	errnum = errno;
-	closedir(dir);
-	errno = errnum;
-error_opendir:
+	free(path.text);
+error_push:
 	return -1;
+}
+
+int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
+{
+	struct npc_type_iter_arg arg = {
+		.npcs = npcs,
+		.txtrs = txtrs,
+		.dirpath = dirpath
+	};
+	if (table_init(npcs, 32)) return -1;
+	if (dir_iter(dirpath, npc_type_iter, &arg)) {
+		table_free(npcs);
+		return -1;
+	}
+	table_freeze(npcs);
+	return 0;
 }
 
 char *npc_type_to_string(const struct npc_type *npc)
@@ -256,4 +257,10 @@ error_push:
 	free(str.text);
 error_string_init:
 	return NULL;
+}
+
+void npc_type_free(struct npc_type *npc)
+{
+	free(npc->name);
+	free(npc->frames);
 }
