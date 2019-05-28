@@ -1,6 +1,7 @@
 #include "load-textures.h"
 #include "d3d.h"
 #include "npc.h"
+#include "translate-json-key.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@ int main(int argc, char *argv[])
 	const char *txtrs_path = argv[1];
 	const char *npcs_path = argv[2];
 	table txtrs, npcs;
+	create_json_key_tab();
 	if (load_textures(txtrs_path, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -37,4 +39,6 @@ int main(int argc, char *argv[])
 	}
 	printf("NPC types from %s:\n%s\n", npcs_path,
 		table_to_string(&npcs, (char *(*)(void *))npc_type_to_string));
+
+	free_json_key_tab();
 }

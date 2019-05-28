@@ -3,34 +3,12 @@
 #include "grow.h"
 #include "json.h"
 #include "string.h"
+#include "translate-json-key.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static table json_table;
-static int init_json_table(void)
-{
-	static bool json_table_created = false;
-	if (json_table_created) return 0;
-	if (table_init(&json_table, 8)) return -1;
-#define ENTRY(name) if (table_add(&json_table, #name, \
-		(void *)offsetof(struct npc_type, name))) goto error_table_add;
-	ENTRY(name);
-	ENTRY(width);
-	ENTRY(height);
-	ENTRY(transparent);
-	ENTRY(frames);
-#undef ENTRY
-	table_freeze(&json_table);
-	json_table_created = true;
-	return 0;
-
-error_table_add:
-	table_free(&json_table);
-	return -1;
-}
 
 static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
 {
@@ -78,7 +56,6 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	npc->transparent = ' ';
 	npc->n_frames = 0;
 	npc->frames = NULL;
-	if (init_json_table()) goto error_init_json_table;
 	struct json_item item;
 	char *key = NULL;
 	if (json_read_item(&rdr, &item) >= 0) {
@@ -91,30 +68,28 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		errno = 0;
 		if (json_read_item(&rdr, &item) >= 0) {
 			if (item.type == JSON_EMPTY) break;
-			if (!item.key.bytes) goto invalid_json;
-			key = item.key.bytes;
-			intptr_t *field = (void *)table_get(&json_table, key);
-			if (!field) continue;
-			switch (*field) {
-			case offsetof(struct npc_type, name):
+			switch (translate_json_key(item.key.bytes)) {
+			case JKEY_NULL:
+				goto invalid_json;
+			case JKEY_name:
 				if (item.type != JSON_STRING) goto invalid_json;
 				npc->name = item.val.str.bytes;
 				break;
-			case offsetof(struct npc_type, width):
+			case JKEY_width:
 				if (item.type != JSON_NUMBER) goto invalid_json;
 				npc->width = item.val.num;
 				break;
-			case offsetof(struct npc_type, height):
+			case JKEY_height:
 				if (item.type != JSON_NUMBER) goto invalid_json;
 				npc->height = item.val.num;
 				break;
-			case offsetof(struct npc_type, transparent):
+			case JKEY_transparent:
 				if (item.type == JSON_NULL) continue;
 				if (item.type != JSON_STRING) goto invalid_json;
 				if (item.val.str.len < 1) continue;
 				npc->transparent = *item.val.str.bytes;
 				break;
-			case offsetof(struct npc_type, frames):
+			case JKEY_frames:
 				if (item.type != JSON_LIST) goto invalid_json;
 				errno = 0;
 				if (parse_frames(npc, &rdr, txtrs)) {
@@ -138,7 +113,6 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 error_json_read_item:
 error_parse_frames:
 	free(key);
-error_init_json_table:
 	free(npc->frames);
 	json_free(&rdr);
 error_json_alloc:
