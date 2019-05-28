@@ -127,6 +127,11 @@ void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz)
 	*bufsiz = reader->bufsiz;
 }
 
+void **json_get_ctx(json_reader *reader)
+{
+	return &reader->ctx;
+}
+
 void json_free(json_reader *reader)
 {
 	reader->dealloc(reader->stack);

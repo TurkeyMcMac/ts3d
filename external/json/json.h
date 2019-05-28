@@ -267,6 +267,9 @@ int json_read_item(json_reader *reader, struct json_item *result);
  */
 void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz);
 
+/* Get a pointer to the parser's context. This can be modified. */
+void **json_get_ctx(json_reader *reader);
+
 /* Deallocate all memory associated with the given parser. */
 void json_free(json_reader *reader);
 
