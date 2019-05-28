@@ -2,7 +2,7 @@
  "blocks": [
   {
    "name": "wall",
-   "all-solid": true,
+   "all_solid": true,
    "north": "brick-red",
    "south": "brick-red",
    "east": "brick-red",
@@ -15,7 +15,7 @@
   },
   {
    "name": "pillar",
-   "all-solid": true,
+   "all_solid": true,
    "north": "pillar-gray",
    "south": "pillar-gray",
    "east": "pillar-gray",

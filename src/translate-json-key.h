@@ -4,14 +4,14 @@
 enum json_key_code {
 	JKEY_NULL = -1,
 	JKEY_NOT_FOUND = 0
-#define JKEY(name, _) , JKEY_##name
+#define JKEY(name) , JKEY_##name
 #include "json-keys.h"
 #undef JKEY
 };
 
 enum {
 	JKEY_COUNT =
-#define JKEY(_, __) +1
+#define JKEY(_) +1
 #include "json-keys.h"
 #undef JKEY
 };
