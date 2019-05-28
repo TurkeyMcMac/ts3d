@@ -13,5 +13,5 @@ fetch json.h &
 wait
 
 cd ../../src
-cp -fs ../external/json/json.c .
-cp -fs ../external/json/json.h .
+ln -fs ../external/json/json.c
+ln -fs ../external/json/json.h

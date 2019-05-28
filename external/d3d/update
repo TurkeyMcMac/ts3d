@@ -16,4 +16,4 @@ wait
 
 ./make-standalone --exclude-d3d.h > ../../src/d3d.c
 cd ../../src
-cp -fs ../external/d3d/d3d.h .
+ln -fs ../external/d3d/d3d.h
