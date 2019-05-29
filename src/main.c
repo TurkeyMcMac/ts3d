@@ -1,7 +1,7 @@
 #include "load-texture.h"
 #include "d3d.h"
+#include "json-util.h"
 #include "npc.h"
-#include "translate-json-key.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

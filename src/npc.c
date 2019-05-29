@@ -4,7 +4,6 @@
 #include "json.h"
 #include "json-util.h"
 #include "string.h"
-#include "translate-json-key.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
