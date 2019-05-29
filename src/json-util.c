@@ -1,6 +1,9 @@
 #include "json-util.h"
+#include "table.h"
 #include "xalloc.h"
 #include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -111,10 +114,40 @@ void print_json_error(const json_reader *rdr, const struct json_item *item)
 		break;
 	case JSON_ERROR_ERRNO:
 		msg = strerror(errno);
+		break;
 	default:
 		msg = "Unknown error";
 		break;
 	}
 	fprintf(stderr, "JSON parse error in '%s', line %d: %s\n",
 		ctx->path, line, msg);
+}
+
+static bool json_key_tab_created = false;
+static table json_key_tab;
+void create_json_key_tab(void)
+{
+	if (json_key_tab_created) return;
+	table_init(&json_key_tab, JKEY_COUNT);
+#define JKEY(name) \
+	table_add(&json_key_tab, #name, (void *)(intptr_t)JKEY_##name);
+#include "json-keys.h"
+#undef JKEY
+	table_freeze(&json_key_tab);
+	json_key_tab_created = true;
+}
+
+enum json_key_code translate_json_key(const char *key)
+{
+	if (!key) return JKEY_NULL;
+	intptr_t *codep = (void *)table_get(&json_key_tab, key);
+	if (!codep) return JKEY_NOT_FOUND;
+	return *codep;
+}
+
+void free_json_key_tab(void)
+{
+	if (!json_key_tab_created) return;
+	table_free(&json_key_tab);
+	json_key_tab_created = false;
 }
