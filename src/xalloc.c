@@ -5,7 +5,7 @@
 void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
-	if (!ptr) {
+	if (!ptr && size != 0) {
 		char buf[128];
 		write(STDERR_FILENO, buf, snprintf(buf, sizeof(buf),
 			"malloc(%lu) failed. Aborting.\n", size));
@@ -17,7 +17,7 @@ void *xmalloc(size_t size)
 void *xcalloc(size_t count, size_t size)
 {
 	void *ptr = calloc(count, size);
-	if (!ptr) {
+	if (!ptr && count * size != 0) {
 		char buf[128];
 		write(STDERR_FILENO, buf, snprintf(buf, sizeof(buf),
 			"calloc(%lu, %lu) failed. Aborting.\n", count, size));
@@ -29,7 +29,7 @@ void *xcalloc(size_t count, size_t size)
 void *xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
-	if (!ptr) {
+	if (!ptr && size != 0) {
 		char buf[128];
 		write(STDERR_FILENO, buf, snprintf(buf, sizeof(buf),
 			"realloc(%p, %lu) failed. Aborting.\n", ptr, size));
