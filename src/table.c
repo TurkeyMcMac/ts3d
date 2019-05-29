@@ -43,12 +43,11 @@ void table_freeze(table *tbl)
 
 void **table_get(table *tbl, const char *key)
 {
-	size_t start, end;
-	if (tbl->len == 0) return NULL;
+	long start, end;
 	start = 0;
 	end = tbl->len - 1;
 	while (start <= end) {
-		size_t mid = (start + end) / 2;
+		long mid = (start + end) / 2;
 		int cmp = strcmp(key, tbl->items[mid].key);
 		if (cmp > 0) {
 			start = mid + 1;
