@@ -113,6 +113,7 @@ void print_json_error(const json_reader *rdr, const struct json_item *item)
 		break;
 	case JSON_ERROR_ERRNO:
 		msg = strerror(errno);
+		break;
 	default:
 		msg = "Unknown error";
 		break;
