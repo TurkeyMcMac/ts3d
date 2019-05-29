@@ -1,4 +1,5 @@
 #include "json-util.h"
+#include "grow.h"
 #include "table.h"
 #include "xalloc.h"
 #include <errno.h>
@@ -185,7 +186,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		nd->kind = JN_ERROR;
 		return;
 	}
-	*keyp = item.key.text;
+	*keyp = item.key.bytes;
 	switch (item.type) {
 	case JSON_EMPTY:
 		nd->kind = JN_EMPTY;
@@ -236,7 +237,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		break;
 	case JSON_STRING:
 		nd->kind = JN_STRING;
-		nd->d.str = item.val.str.text;
+		nd->d.str = item.val.str.bytes;
 		break;
 	case JSON_NUMBER:
 		nd->kind = JN_NUMBER;
@@ -248,14 +249,14 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		break;
 	case JSON_END_MAP:
 	case JSON_END_LIST:
-		nd->kind = JN_ENDE_;
+		nd->kind = JN_END_;
 		break;
 	default:
 		break;
 	}
 }
 
-void parse_json_tree(const char *path, struct json_node *root)
+int parse_json_tree(const char *path, struct json_node *root)
 {
 	json_reader rdr;
 	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
@@ -270,6 +271,7 @@ void parse_json_tree(const char *path, struct json_node *root)
 	ctx->line = 1;
 	char *key;
 	parse_node(&rdr, root, &key);
+	return 0;
 }
 
 
