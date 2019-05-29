@@ -2,7 +2,7 @@ exe = ts3d
 sources = $(wildcard src/*.c)
 headers = $(wildcard src/*.h)
 
-cflags = -std=c99 -Wall -Wextra -DJSON_WITH_STDIO ${CFLAGS}
+cflags = -std=c99 -Wall -Wextra ${CFLAGS}
 linkage = -lm
 
 $(exe): $(sources) $(headers)

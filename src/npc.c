@@ -2,6 +2,7 @@
 #include "dir-iter.h"
 #include "grow.h"
 #include "json.h"
+#include "json-util.h"
 #include "string.h"
 #include "translate-json-key.h"
 #include <errno.h>
@@ -41,14 +42,8 @@ error:
 
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 {
-	int errnum;
-	char buf[BUFSIZ];
-	FILE *file = fopen(path, "r");
-	if (!file) goto error_fopen;
 	json_reader rdr;
-	if (json_alloc(&rdr, NULL, 8, malloc, free, realloc))
-		goto error_json_alloc;
-	json_source_file(&rdr, buf, sizeof(buf), file);
+	if (init_json_reader(path, &rdr)) goto error_init_json_reader;
 	npc->flags = 0;
 	npc->name = "";
 	npc->width = 1.0;
@@ -68,32 +63,39 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		errno = 0;
 		if (json_read_item(&rdr, &item) >= 0) {
 			if (item.type == JSON_EMPTY) break;
-			switch (translate_json_key(item.key.bytes)) {
+			key = item.key.bytes;
+			switch (translate_json_key(key)) {
 			case JKEY_NULL:
-				goto invalid_json;
+				goto invalid_json_fmt;
 			case JKEY_name:
-				if (item.type != JSON_STRING) goto invalid_json;
+				if (item.type != JSON_STRING)
+					goto invalid_json_fmt;
 				npc->name = item.val.str.bytes;
 				break;
 			case JKEY_width:
-				if (item.type != JSON_NUMBER) goto invalid_json;
+				if (item.type != JSON_NUMBER)
+					goto invalid_json_fmt;
 				npc->width = item.val.num;
 				break;
 			case JKEY_height:
-				if (item.type != JSON_NUMBER) goto invalid_json;
+				if (item.type != JSON_NUMBER)
+					goto invalid_json_fmt;
 				npc->height = item.val.num;
 				break;
 			case JKEY_transparent:
 				if (item.type == JSON_NULL) continue;
-				if (item.type != JSON_STRING) goto invalid_json;
+				if (item.type != JSON_STRING)
+					goto invalid_json_fmt;
 				if (item.val.str.len < 1) continue;
 				npc->transparent = *item.val.str.bytes;
 				break;
 			case JKEY_frames:
-				if (item.type != JSON_LIST) goto invalid_json;
+				if (item.type != JSON_LIST)
+					goto invalid_json_fmt;
 				errno = 0;
 				if (parse_frames(npc, &rdr, txtrs)) {
 					if (errno) goto error_parse_frames;
+					// TODO: invalid_json_fmt
 					goto invalid_json;
 				}
 				break;
@@ -106,26 +108,22 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 			goto invalid_json;
 		}
 	}
-	json_free(&rdr);
-	fclose(file);
+	free_json_reader(&rdr);
 	return 0;
 
 error_json_read_item:
 error_parse_frames:
 	free(key);
 	free(npc->frames);
-	json_free(&rdr);
-error_json_alloc:
-	errnum = errno;
-	fclose(file);
-	errno = errnum;
-error_fopen:
+	free_json_reader(&rdr);
+error_init_json_reader:
 	return -1;
 
 invalid_json:
+	print_json_error(&rdr, &item);
+invalid_json_fmt:
 	free(key);
-	json_free(&rdr);
-	fclose(file);
+	free_json_reader(&rdr);
 	npc->flags |= NPC_INVALID;
 	return 0;
 }
