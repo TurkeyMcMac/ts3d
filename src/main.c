@@ -2,6 +2,7 @@
 #include "d3d.h"
 #include "npc.h"
 #include "translate-json-key.h"
+#include "xalloc.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,7 @@
 static char *texture_to_string(void *data)
 {
 	d3d_texture *txtr = data;
-	char *str = malloc(64);
-	if (!str) return NULL;
+	char *str = xmalloc(64);
 	snprintf(str, 64, "texture { width = %lu, height = %lu }",
 		d3d_texture_width(txtr), d3d_texture_height(txtr));
 	return str;
@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
 	const char *txtrs_path = argv[1];
 	const char *npcs_path = argv[2];
 	table txtrs, npcs;
+	d3d_malloc = xmalloc;
+	d3d_realloc = xrealloc;
 	create_json_key_tab();
 	if (load_textures(txtrs_path, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));

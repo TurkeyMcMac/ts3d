@@ -5,6 +5,7 @@
 #include "json-util.h"
 #include "string.h"
 #include "translate-json-key.h"
+#include "xalloc.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -30,7 +31,6 @@ static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
 		}
 		const d3d_texture **place = GROWE(&npc->frames, &npc->n_frames,
 			&npc_cap, sizeof(*npc->frames));
-		if (!place) goto error;
 		*place = *txtr;
 	}
 	return 0;
@@ -143,18 +143,15 @@ static int npc_type_iter(struct dirent *ent, void *ctx)
 	struct string path = {0};
 	char *suffix = strstr(ent->d_name, ".json");
 	if (!suffix) return 0;
-	if (string_pushz(&path, &cap, arg->dirpath)
-	 || string_pushc(&path, &cap, '/')
-	 || string_pushz(&path, &cap, ent->d_name)
-	 || string_pushc(&path, &cap, '\0'))
-		goto error_push;
+	string_pushz(&path, &cap, arg->dirpath);
+	string_pushc(&path, &cap, '/');
+	string_pushz(&path, &cap, ent->d_name);
+	string_pushc(&path, &cap, '\0');
 	size_t base_len = suffix - ent->d_name;
-	char *type_name = malloc(base_len+1);
-	if (!type_name) goto error_alloc_type_name;
+	char *type_name = xmalloc(base_len+1);
 	memcpy(type_name, ent->d_name, base_len);
 	type_name[base_len] = '\0';
-	struct npc_type *npc = malloc(sizeof(*npc));
-	if (!npc) goto error_alloc_npc;
+	struct npc_type *npc = xmalloc(sizeof(*npc));
 	if (load_npc_type(path.text, npc, txtrs)) goto error_load_npc_type;
 	if (table_add(npcs, type_name, npc)) goto error_table_add;
 	return 0;
@@ -163,11 +160,8 @@ error_table_add:
 	npc_type_free(npc);
 error_load_npc_type:
 	free(npc);
-error_alloc_npc:
 	free(type_name);
-error_alloc_type_name:
 	free(path.text);
-error_push:
 	return -1;
 }
 
@@ -178,7 +172,7 @@ int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
 		.txtrs = txtrs,
 		.dirpath = dirpath
 	};
-	if (table_init(npcs, 32)) return -1;
+	table_init(npcs, 32);
 	if (dir_iter(dirpath, npc_type_iter, &arg)) {
 		table_free(npcs);
 		return -1;
@@ -192,43 +186,37 @@ char *npc_type_to_string(const struct npc_type *npc)
 	char fmt_buf[128];
 	size_t cap = 64;
 	struct string str;
-	if (string_init(&str, cap)) goto error_string_init;
-	if (string_pushz(&str, &cap, "npc_type { name = \"")
-	 || string_pushz(&str, &cap, npc->name)) goto error_push;
+	string_init(&str, cap);
+	string_pushz(&str, &cap, "npc_type { name = \"");
+	string_pushz(&str, &cap, npc->name);
 	snprintf(fmt_buf, sizeof(fmt_buf), "\", width = %f, height = %f",
 		npc->width, npc->height);
-	if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+	string_pushz(&str, &cap, fmt_buf);
 	if (npc->transparent >= 0) {
 		snprintf(fmt_buf, sizeof(fmt_buf), ", transparent = '%c'",
 			npc->transparent);
-		if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+		string_pushz(&str, &cap, fmt_buf);
 	}
-	if (string_pushz(&str, &cap, ", frames = ")) goto error_push;
+	string_pushz(&str, &cap, ", frames = ");
 	if (npc->n_frames > 0) {
 		const char *before = "[ ";
 		for (size_t i = 0; i < npc->n_frames; ++i) {
 			const d3d_texture *txtr = npc->frames[i];
-			if (string_pushn(&str, &cap, before, 2))
-				goto error_push;
+			string_pushn(&str, &cap, before, 2);
 			snprintf(fmt_buf, sizeof(fmt_buf),
 				"texture { width = %lu, height = %lu }",
 				d3d_texture_width(txtr),
 				d3d_texture_height(txtr));
-			if (string_pushz(&str, &cap, fmt_buf)) goto error_push;
+			string_pushz(&str, &cap, fmt_buf);
 			before = ", ";
 		}
-		if (string_pushn(&str, &cap, " ]", 2)) goto error_push;
+		string_pushn(&str, &cap, " ]", 2);
 	} else {
-		if (string_pushn(&str, &cap, "[]", 2)) goto error_push;
+		string_pushn(&str, &cap, "[]", 2);
 	}
-	if (string_pushn(&str, &cap, " }", 2)) goto error_push;
+	string_pushn(&str, &cap, " }", 2);
 	string_shrink_to_fit(&str);
 	return str.text;
-
-error_push:
-	free(str.text);
-error_string_init:
-	return NULL;
 }
 
 void npc_type_free(struct npc_type *npc)

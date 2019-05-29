@@ -47,22 +47,17 @@ static int texture_iter(struct dirent *ent, void *ctx)
 	table *txtrs = arg->txtrs;
 	size_t cap = 0;
 	struct string path = {0};
-	if (string_pushz(&path, &cap, arg->dirpath)
-	 || string_pushc(&path, &cap, '/')
-	 || string_pushz(&path, &cap, ent->d_name)
-	 || string_pushc(&path, &cap, '\0'))
-		goto error;
+	string_pushz(&path, &cap, arg->dirpath);
+	string_pushc(&path, &cap, '/');
+	string_pushz(&path, &cap, ent->d_name);
+	string_pushc(&path, &cap, '\0');
 	d3d_texture *txtr = load_texture(path.text);
-	if (!txtr) goto error;
-	if (table_add(txtrs, ent->d_name, txtr)) {
-		free(txtr);
-		goto error;
+	if (!txtr) {
+		free(path.text);
+		return -1;
 	}
+	table_add(txtrs, ent->d_name, txtr);
 	return 0;
-
-error:
-	free(path.text);
-	return -1;
 }
 
 int load_textures(const char *dirpath, table *txtrs)
@@ -71,7 +66,7 @@ int load_textures(const char *dirpath, table *txtrs)
 		.txtrs = txtrs,
 		.dirpath = dirpath
 	};
-	if (table_init(txtrs, 32)) return -1;
+	table_init(txtrs, 32);
 	if (dir_iter(dirpath, texture_iter, &arg)) {
 		table_free(txtrs);
 		return -1;

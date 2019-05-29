@@ -8,7 +8,7 @@ static table json_key_tab;
 int create_json_key_tab(void)
 {
 	if (json_key_tab_created) return 0;
-	if (table_init(&json_key_tab, JKEY_COUNT)) return -1;
+	table_init(&json_key_tab, JKEY_COUNT);
 #define JKEY(name) \
 	if (table_add(&json_key_tab, #name, (void *)(intptr_t)JKEY_##name)) \
 		goto error_table_add;

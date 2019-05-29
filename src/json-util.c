@@ -1,7 +1,7 @@
 #include "json-util.h"
+#include "xalloc.h"
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 struct json_reader_ctx {
@@ -31,11 +31,10 @@ static int refill(char **buf, size_t *size, void *ctx_v)
 int init_json_reader(const char *path, json_reader *rdr)
 {
 	int errnum;
-	struct json_reader_ctx *ctx = malloc(sizeof(*ctx));
-	if (!ctx) goto error_malloc;
+	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
 	ctx->file = fopen(path, "r");
 	if (!ctx->file) goto error_fopen;
-	if (json_alloc(rdr, NULL, 8, malloc, free, realloc))
+	if (json_alloc(rdr, NULL, 8, xmalloc, free, xrealloc))
 		goto error_json_alloc;
 	json_source(rdr, ctx->buf, sizeof(ctx->buf), ctx, refill);
 	ctx->path = path;
@@ -48,7 +47,6 @@ error_json_alloc:
 	errno = errnum;
 error_fopen:
 	free(ctx);
-error_malloc:
 	return -1;
 }
 

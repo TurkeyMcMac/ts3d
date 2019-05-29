@@ -10,7 +10,7 @@ typedef struct {
 	struct item *items;
 } table;
 
-int table_init(table *tbl, size_t size);
+void table_init(table *tbl, size_t size);
 
 int table_add(table *tbl, const char *key, void *val);
 
