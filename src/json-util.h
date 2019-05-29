@@ -2,32 +2,37 @@
 #define JSON_UTIL_H_
 
 #include "json.h"
+#include "table.h"
+#include <stdbool.h>
+#include <stddef.h>
 
-int init_json_reader(const char *path, json_reader *rdr);
-
-void free_json_reader(json_reader *rdr);
-
-void print_json_error(const json_reader *rdr, const struct json_item *item);
-
-enum json_key_code {
-	JKEY_NULL = -1,
-	JKEY_NOT_FOUND = 0
-#define JKEY(name) , JKEY_##name
-#include "json-keys.h"
-#undef JKEY
+struct json_node {
+	enum json_node_kind {
+		JN_EMPTY,
+		JN_NULL,
+		JN_MAP,
+		JN_LIST,
+		JN_STRING,
+		JN_NUMBER,
+		JN_BOOLEAN,
+		JN_ERROR,
+		JN_END_
+	} kind;
+	union json_node_data {
+		table map;
+		struct json_node_data_list {
+			size_t n_vals;
+			struct json_node *vals;
+		} list;
+		char *str;
+		double num;
+		bool boolean;
+	} d;
 };
 
-enum {
-	JKEY_COUNT =
-#define JKEY(_) +1
-#include "json-keys.h"
-#undef JKEY
-};
+union json_node_data *json_map_get(struct json_node *map, const char *key,
+	enum json_node_kind kind);
 
-void create_json_key_tab(void);
-
-enum json_key_code translate_json_key(const char *key);
-
-void free_json_key_tab(void);
+int parse_json_tree(const char *path, struct json_node *root);
 
 #endif /* JSON_UTIL_H_ */

@@ -11,119 +11,44 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int parse_frames(struct npc_type *npc, json_reader *rdr, table *txtrs)
-{
-	size_t npc_cap = 0;
-	npc->n_frames = 0;
-	char *key;
-	for (;;) {
-		key = NULL;
-		struct json_item item;
-		if (json_read_item(rdr, &item) < 0) goto error;
-		if (item.type == JSON_END_LIST) break;
-		if (item.type != JSON_STRING) goto error;
-		key = item.val.str.bytes;
-		void **txtr = table_get(txtrs, key);
-		if (!txtr) {
-			npc->flags |= NPC_INVALID_TEXTURE;
-			goto error;
-		}
-		const d3d_texture **place = GROWE(&npc->frames, &npc->n_frames,
-			&npc_cap, sizeof(*npc->frames));
-		*place = *txtr;
-	}
-	return 0;
-
-error:
-	free(key);
-	return -1;
-}
-
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 {
-	json_reader rdr;
-	if (init_json_reader(path, &rdr)) goto error_init_json_reader;
+	struct json_node jtree;
+	npc->flags = NPC_INVALID;
+	if (parse_json_tree(path, &jtree)) return -1;
+	if (jtree.kind != JN_MAP) return 0;
+	union json_node_data *got;
 	npc->flags = 0;
 	npc->name = "";
+	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
+		npc->name = got->str;
+		got->str = NULL;
+	}
 	npc->width = 1.0;
+	if ((got = json_map_get(&jtree, "width", JN_NUMBER)))
+		npc->width = got->num;
 	npc->height = 1.0;
+	if ((got = json_map_get(&jtree, "height", JN_NUMBER)))
+		npc->height = got->num;
 	npc->transparent = ' ';
+	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
+			&& *got->str)
+		npc->height = *got->str;
 	npc->n_frames = 0;
 	npc->frames = NULL;
-	struct json_item item;
-	char *key = NULL;
-	if (json_read_item(&rdr, &item) >= 0) {
-		if (item.type != JSON_MAP) goto invalid_json;
-	} else {
-		goto error_json_read_item;
-	}
-	for (;;) {
-		key = NULL;
-		errno = 0;
-		if (json_read_item(&rdr, &item) >= 0) {
-			if (item.type == JSON_EMPTY) break;
-			key = item.key.bytes;
-			switch (translate_json_key(key)) {
-			case JKEY_NULL:
-				goto invalid_json_fmt;
-			case JKEY_name:
-				if (item.type != JSON_STRING)
-					goto invalid_json_fmt;
-				npc->name = item.val.str.bytes;
-				break;
-			case JKEY_width:
-				if (item.type != JSON_NUMBER)
-					goto invalid_json_fmt;
-				npc->width = item.val.num;
-				break;
-			case JKEY_height:
-				if (item.type != JSON_NUMBER)
-					goto invalid_json_fmt;
-				npc->height = item.val.num;
-				break;
-			case JKEY_transparent:
-				if (item.type == JSON_NULL) continue;
-				if (item.type != JSON_STRING)
-					goto invalid_json_fmt;
-				if (item.val.str.len < 1) continue;
-				npc->transparent = *item.val.str.bytes;
-				break;
-			case JKEY_frames:
-				if (item.type != JSON_LIST)
-					goto invalid_json_fmt;
-				errno = 0;
-				if (parse_frames(npc, &rdr, txtrs)) {
-					if (errno) goto error_parse_frames;
-					// TODO: invalid_json_fmt
-					goto invalid_json;
-				}
-				break;
-			default:
-				break;
-			}
-		} else if (errno) {
-			goto error_json_read_item;
-		} else {
-			goto invalid_json;
+	if ((got = json_map_get(&jtree, "frames", JN_LIST))) {
+		npc->n_frames = got->list.n_vals;
+		npc->frames = xmalloc(npc->n_frames * sizeof(*npc->frames));
+		for (size_t i = 0; i < npc->n_frames; ++i) {
+			struct json_node *li = &got->list.vals[i];
+			if (li->kind != JN_STRING) continue;
+			char *txtr_name = li->d.str;
+			li->d.str = NULL;
+			void **got = table_get(txtrs, txtr_name);
+			if (!got) got = table_get(txtrs, "empty");
+			npc->frames[i] = *got;
 		}
 	}
-	free_json_reader(&rdr);
-	return 0;
-
-error_json_read_item:
-error_parse_frames:
-	free(key);
-	free(npc->frames);
-	free_json_reader(&rdr);
-error_init_json_reader:
-	return -1;
-
-invalid_json:
-	print_json_error(&rdr, &item);
-invalid_json_fmt:
-	free(key);
-	free_json_reader(&rdr);
-	npc->flags |= NPC_INVALID;
 	return 0;
 }
 
@@ -135,6 +60,7 @@ struct npc_type_iter_arg {
 
 static int npc_type_iter(struct dirent *ent, void *ctx)
 {
+	int retval = -1;
 	struct npc_type_iter_arg *arg = ctx;
 	table *npcs = arg->npcs;
 	table *txtrs = arg->txtrs;
@@ -152,16 +78,21 @@ static int npc_type_iter(struct dirent *ent, void *ctx)
 	type_name[base_len] = '\0';
 	struct npc_type *npc = xmalloc(sizeof(*npc));
 	if (load_npc_type(path.text, npc, txtrs)) goto error_load_npc_type;
+	if (npc->flags & NPC_INVALID) {
+		retval = 0;
+		goto invalid_npc;
+	}
 	if (table_add(npcs, type_name, npc)) goto error_table_add;
 	return 0;
 
+invalid_npc:
 error_table_add:
 	npc_type_free(npc);
 error_load_npc_type:
 	free(npc);
 	free(type_name);
 	free(path.text);
-	return -1;
+	return retval;
 }
 
 int load_npc_types(const char *dirpath, table *npcs, table *txtrs)

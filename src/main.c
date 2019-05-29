@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
 	table txtrs, npcs;
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
-	create_json_key_tab();
 	if (load_textures(txtrs_path, &txtrs)) {
 		fprintf(stderr, "Error: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -41,6 +40,4 @@ int main(int argc, char *argv[])
 	}
 	printf("NPC types from %s:\n%s\n", npcs_path,
 		table_to_string(&npcs, (char *(*)(void *))npc_type_to_string));
-
-	free_json_key_tab();
 }

@@ -32,39 +32,8 @@ static int refill(char **buf, size_t *size, void *ctx_v)
 
 }
 
-int init_json_reader(const char *path, json_reader *rdr)
-{
-	int errnum;
-	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
-	ctx->file = fopen(path, "r");
-	if (!ctx->file) goto error_fopen;
-	if (json_alloc(rdr, NULL, 8, xmalloc, free, xrealloc))
-		goto error_json_alloc;
-	json_source(rdr, ctx->buf, sizeof(ctx->buf), ctx, refill);
-	ctx->path = path;
-	ctx->line = 1;
-	return 0;
-
-error_json_alloc:
-	errnum = errno;
-	fclose(ctx->file);
-	errno = errnum;
-error_fopen:
-	free(ctx);
-	return -1;
-}
-
-void free_json_reader(json_reader *rdr)
-{
-	struct json_reader_ctx *ctx = *json_get_ctx(rdr);
-	int errnum = errno;
-	fclose(ctx->file);
-	errno = errnum;
-	free(ctx);
-	json_free(rdr);
-}
-
-void print_json_error(const json_reader *rdr, const struct json_item *item)
+static void print_json_error(const json_reader *rdr,
+	const struct json_item *item)
 {
 	const char *msg;
 	struct json_reader_ctx *ctx = *json_get_ctx((json_reader *)rdr);
@@ -124,58 +93,16 @@ void print_json_error(const json_reader *rdr, const struct json_item *item)
 		ctx->path, line, msg);
 }
 
-static bool json_key_tab_created = false;
-static table json_key_tab;
-void create_json_key_tab(void)
+union json_node_data *json_map_get(struct json_node *map, const char *key,
+	enum json_node_kind kind)
 {
-	if (json_key_tab_created) return;
-	table_init(&json_key_tab, JKEY_COUNT);
-#define JKEY(name) \
-	table_add(&json_key_tab, #name, (void *)(intptr_t)JKEY_##name);
-#include "json-keys.h"
-#undef JKEY
-	table_freeze(&json_key_tab);
-	json_key_tab_created = true;
+	if (map->kind != JN_MAP) return NULL;
+	void **got = table_get(&map->d.map, key);
+	if (!got) return NULL;
+	struct json_node *nd = *got;
+	if (nd->kind != kind) return NULL;
+	return &nd->d;
 }
-
-enum json_key_code translate_json_key(const char *key)
-{
-	if (!key) return JKEY_NULL;
-	intptr_t *codep = (void *)table_get(&json_key_tab, key);
-	if (!codep) return JKEY_NOT_FOUND;
-	return *codep;
-}
-
-void free_json_key_tab(void)
-{
-	if (!json_key_tab_created) return;
-	table_free(&json_key_tab);
-	json_key_tab_created = false;
-}
-
-struct json_node {
-	enum json_node_kind {
-		JN_EMPTY,
-		JN_NULL,
-		JN_MAP,
-		JN_LIST,
-		JN_STRING,
-		JN_NUMBER,
-		JN_BOOLEAN,
-		JN_ERROR,
-		JN_END_
-	} kind;
-	union json_node_data {
-		table map;
-		struct json_node_data_list {
-			size_t n_vals;
-			struct json_node *vals;
-		} list;
-		char *str;
-		double num;
-		bool boolean;
-	} d;
-};
 
 static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 {
@@ -226,6 +153,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 				sizeof(*nd->d.list.vals));
 			parse_node(rdr, entry, &key);
 			if (entry->kind == JN_END_) {
+				--nd->d.list.n_vals;
 				break;
 			} else if (entry->kind == JN_ERROR) {
 				// TODO: free children
