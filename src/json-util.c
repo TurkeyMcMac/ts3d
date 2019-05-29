@@ -151,3 +151,125 @@ void free_json_key_tab(void)
 	table_free(&json_key_tab);
 	json_key_tab_created = false;
 }
+
+struct json_node {
+	enum json_node_kind {
+		JN_EMPTY,
+		JN_NULL,
+		JN_MAP,
+		JN_LIST,
+		JN_STRING,
+		JN_NUMBER,
+		JN_BOOLEAN,
+		JN_ERROR,
+		JN_END_
+	} kind;
+	union json_node_data {
+		table map;
+		struct json_node_data_list {
+			size_t n_vals;
+			struct json_node *vals;
+		} list;
+		char *str;
+		double num;
+		bool boolean;
+	} d;
+};
+
+static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
+{
+	size_t cap;
+	struct json_item item;
+	if (json_read_item(rdr, &item) < 0) {
+		print_json_error(rdr, &item);
+		nd->kind = JN_ERROR;
+		return;
+	}
+	*keyp = item.key.text;
+	switch (item.type) {
+	case JSON_EMPTY:
+		nd->kind = JN_EMPTY;
+		break;
+	case JSON_NULL:
+		nd->kind = JN_NULL;
+		break;
+	case JSON_MAP:
+		nd->kind = JN_MAP;
+		table_init(&nd->d.map, 8);
+		for (;;) {
+			char *key;
+			struct json_node *entry = xmalloc(sizeof(*entry));
+			parse_node(rdr, entry, &key);
+			if (entry->kind == JN_END_) {
+				break;
+			} else if (entry->kind == JN_ERROR) {
+				// TODO: free children
+				table_free(&nd->d.map);
+				nd->kind = JN_ERROR;
+				return;
+			}
+			// TODO: check duplicates
+			table_add(&nd->d.map, key, entry);
+		}
+		table_freeze(&nd->d.map);
+		break;
+	case JSON_LIST:
+		nd->kind = JN_LIST;
+		cap = 8;
+		nd->d.list.n_vals = 0;
+		nd->d.list.vals = xmalloc(cap * sizeof(*nd->d.list.vals));
+		for (;;) {
+			char *key;
+			struct json_node *entry = GROWE(&nd->d.list.vals,
+				&nd->d.list.n_vals, &cap,
+				sizeof(*nd->d.list.vals));
+			parse_node(rdr, entry, &key);
+			if (entry->kind == JN_END_) {
+				break;
+			} else if (entry->kind == JN_ERROR) {
+				// TODO: free children
+				free(nd->d.list.vals);
+				nd->kind = JN_ERROR;
+				return;
+			}
+		}
+		break;
+	case JSON_STRING:
+		nd->kind = JN_STRING;
+		nd->d.str = item.val.str.text;
+		break;
+	case JSON_NUMBER:
+		nd->kind = JN_NUMBER;
+		nd->d.num = item.val.num;
+		break;
+	case JSON_BOOLEAN:
+		nd->kind = JN_BOOLEAN;
+		nd->d.boolean = item.val.boolean;
+		break;
+	case JSON_END_MAP:
+	case JSON_END_LIST:
+		nd->kind = JN_ENDE_;
+		break;
+	default:
+		break;
+	}
+}
+
+void parse_json_tree(const char *path, struct json_node *root)
+{
+	json_reader rdr;
+	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
+	ctx->file = fopen(path, "r");
+	if (!ctx->file) {
+		free(ctx);
+		return -1;
+	}
+	json_alloc(&rdr, NULL, 8, xmalloc, free, xrealloc);
+	json_source(&rdr, ctx->buf, sizeof(ctx->buf), ctx, refill);
+	ctx->path = path;
+	ctx->line = 1;
+	char *key;
+	parse_node(&rdr, root, &key);
+}
+
+
