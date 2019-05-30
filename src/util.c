@@ -15,7 +15,7 @@ int sbprintf(char * restrict str, size_t size, const char * restrict fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 	int writ = vsnprintf(str, size, fmt, va);
-	if ((size_t)writ >= size && writ >= 0) writ = size - 1;
+	if ((size_t)writ >= size && writ > 0) writ = size - 1;
 	va_end(va);
 	return writ;
 }
