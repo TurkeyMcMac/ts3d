@@ -1,5 +1,6 @@
 #include "util.h"
 #include "xalloc.h"
+#include <string.h>
 
 char *str_dup(const char *str)
 {
