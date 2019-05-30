@@ -64,7 +64,7 @@ static int texture_iter(struct dirent *ent, void *ctx)
 static int free_txtrs_item(const char *key, void **val)
 {
 	free((char *)key);
-	free(*val);
+	d3d_free_texture(*val);
 	return 0;
 }
 
