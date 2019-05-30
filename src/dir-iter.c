@@ -21,6 +21,7 @@ int dir_iter(const char *path, dir_iter_f iter_fn, void *ctx)
 			errno = errnum;
 			return abs(ret);
 		}
+		errno = 0;
 	}
 	if (errno) goto error_readdir;
 	return 0;
