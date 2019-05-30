@@ -126,13 +126,12 @@ char *npc_type_to_string(const struct npc_type *npc)
 	string_init(&str, cap);
 	string_pushz(&str, &cap, "npc_type { name = \"");
 	string_pushz(&str, &cap, npc->name);
-	snprintf(fmt_buf, sizeof(fmt_buf), "\", width = %f, height = %f",
-		npc->width, npc->height);
-	string_pushz(&str, &cap, fmt_buf);
+	string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf, sizeof(fmt_buf),
+		"\", width = %f, height = %f", npc->width, npc->height));
 	if (npc->transparent >= 0) {
-		snprintf(fmt_buf, sizeof(fmt_buf), ", transparent = '%c'",
-			npc->transparent);
-		string_pushz(&str, &cap, fmt_buf);
+		string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
+			sizeof(fmt_buf),
+			", transparent = '%c'", npc->transparent));
 	}
 	string_pushz(&str, &cap, ", frames = ");
 	if (npc->n_frames > 0) {
@@ -140,11 +139,11 @@ char *npc_type_to_string(const struct npc_type *npc)
 		for (size_t i = 0; i < npc->n_frames; ++i) {
 			const d3d_texture *txtr = npc->frames[i];
 			string_pushn(&str, &cap, before, 2);
-			snprintf(fmt_buf, sizeof(fmt_buf),
+			string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
+				sizeof(fmt_buf),
 				"texture { width = %lu, height = %lu }",
 				d3d_texture_width(txtr),
-				d3d_texture_height(txtr));
-			string_pushz(&str, &cap, fmt_buf);
+				d3d_texture_height(txtr)));
 			before = ", ";
 		}
 		string_pushn(&str, &cap, " ]", 2);
