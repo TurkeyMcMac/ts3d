@@ -3,7 +3,17 @@
 #include "dir-iter.h"
 #include "string.h"
 #include "util.h"
+#include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+static d3d_texture *new_empty_texture(void)
+{
+	d3d_texture *empty = d3d_new_texture(1, 1);
+	*d3d_texture_get(empty, 0, 0) = ' ';
+	return empty;
+}
 
 d3d_texture *load_texture(const char *path)
 {
@@ -18,7 +28,6 @@ d3d_texture *load_texture(const char *path)
 	}
 	if (width > 0 && height > 0) {
 		txtr = d3d_new_texture(width, height);
-		if (!txtr) return NULL;
 		for (size_t y = 0; y < height; ++y) {
 			struct string *line = &lines[y];
 			size_t x;
@@ -30,9 +39,7 @@ d3d_texture *load_texture(const char *path)
 			}
 		}
 	} else {
-		txtr = d3d_new_texture(1, 1);
-		if (!txtr) return NULL;
-		*d3d_texture_get(txtr, 0, 0) = ' ';
+		txtr = new_empty_texture();
 	}
 	return txtr;
 }
@@ -54,9 +61,12 @@ static int texture_iter(struct dirent *ent, void *ctx)
 	string_pushc(&path, &cap, '\0');
 	d3d_texture *txtr = load_texture(path.text);
 	if (!txtr) {
-		free(path.text);
-		return -1;
+		fprintf(stderr, "Error reading texture '%s': %s. "
+				"Defaulting to empty texture.\n",
+				path.text, strerror(errno));
+		txtr = new_empty_texture();
 	}
+	free(path.text);
 	table_add(txtrs, str_dup(ent->d_name), txtr);
 	return 0;
 }

@@ -28,10 +28,7 @@ int main(int argc, char *argv[])
 	table txtrs, npcs;
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
-	if (load_textures(txtrs_path, &txtrs)) {
-		fprintf(stderr, "Error: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	load_textures(txtrs_path, &txtrs);
 	printf("Textures from %s:\n%s\n", txtrs_path,
 		table_to_string(&txtrs, texture_to_string));
 	if (load_npc_types(npcs_path, &npcs, &txtrs)) {
