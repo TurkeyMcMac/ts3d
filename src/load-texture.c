@@ -2,6 +2,7 @@
 #include "read-lines.h"
 #include "dir-iter.h"
 #include "string.h"
+#include "util.h"
 #include <stdlib.h>
 
 d3d_texture *load_texture(const char *path)
@@ -56,7 +57,14 @@ static int texture_iter(struct dirent *ent, void *ctx)
 		free(path.text);
 		return -1;
 	}
-	table_add(txtrs, ent->d_name, txtr);
+	table_add(txtrs, str_dup(ent->d_name), txtr);
+	return 0;
+}
+
+static int free_txtrs_item(const char *key, void **val)
+{
+	free((char *)key);
+	free(*val);
 	return 0;
 }
 
@@ -68,6 +76,7 @@ int load_textures(const char *dirpath, table *txtrs)
 	};
 	table_init(txtrs, 32);
 	if (dir_iter(dirpath, texture_iter, &arg)) {
+		table_each(txtrs, free_txtrs_item);
 		table_free(txtrs);
 		return -1;
 	}

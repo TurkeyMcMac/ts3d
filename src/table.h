@@ -18,6 +18,8 @@ void table_freeze(table *tbl);
 
 void **table_get(table *tbl, const char *key);
 
+int table_each(table *tbl, int (*item)(const char *, void **));
+
 void table_free(table *tbl);
 
 char *table_to_string(const table *tbl, char *(*item)(void *));

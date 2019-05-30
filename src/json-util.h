@@ -35,4 +35,6 @@ union json_node_data *json_map_get(struct json_node *map, const char *key,
 
 int parse_json_tree(const char *path, struct json_node *root);
 
+void free_json_tree(struct json_node *root);
+
 #endif /* JSON_UTIL_H_ */

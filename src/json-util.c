@@ -104,6 +104,14 @@ union json_node_data *json_map_get(struct json_node *map, const char *key,
 	return &nd->d;
 }
 
+static int free_json_pair(const char *key, void **val)
+{
+	free((char *)key);
+	free_json_tree(*val);
+	free(*val);
+	return 0;
+}
+
 static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 {
 	size_t cap;
@@ -131,7 +139,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 			if (entry->kind == JN_END_) {
 				break;
 			} else if (entry->kind == JN_ERROR) {
-				// TODO: free children
+				table_each(&nd->d.map, free_json_pair);
 				table_free(&nd->d.map);
 				nd->kind = JN_ERROR;
 				return;
@@ -156,6 +164,9 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 				break;
 			} else if (entry->kind == JN_ERROR) {
 				// TODO: free children
+				for (size_t i = 0; i < nd->d.list.n_vals; ++i) {
+					free_json_tree(&nd->d.list.vals[i]);
+				}
 				free(nd->d.list.vals);
 				nd->kind = JN_ERROR;
 				return;
@@ -201,4 +212,23 @@ int parse_json_tree(const char *path, struct json_node *root)
 	return 0;
 }
 
+void free_json_tree(struct json_node *nd)
+{
+	switch (nd->kind) {
+	case JN_MAP:
+		table_each(&nd->d.map, free_json_pair);
+		table_free(&nd->d.map);
+		break;
+	case JN_LIST:
+		for (size_t i = 0; i < nd->d.list.n_vals; ++i) {
+			free_json_tree(&nd->d.list.vals[i]);
+		}
+		free(nd->d.list.vals);
+		break;
+	case JN_STRING:
+		free(nd->d.str);
+	default:
+		break;
+	}
+}
 

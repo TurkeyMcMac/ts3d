@@ -57,6 +57,15 @@ void **table_get(table *tbl, const char *key)
 	return NULL;
 }
 
+int table_each(table *tbl, int (*item)(const char *, void **))
+{
+	for (size_t i = 0; i < tbl->len; ++i) {
+		int retval = item(tbl->items[i].key, &tbl->items[i].val);
+		if (retval) return retval;
+	}
+	return 0;
+}
+
 void table_free(table *tbl)
 {
 	free(tbl->items);

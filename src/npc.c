@@ -4,6 +4,7 @@
 #include "json.h"
 #include "json-util.h"
 #include "string.h"
+#include "util.h"
 #include "xalloc.h"
 #include <errno.h>
 #include <stdbool.h>
@@ -49,6 +50,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 			npc->frames[i] = *got;
 		}
 	}
+	free_json_tree(&jtree);
 	return 0;
 }
 
@@ -72,17 +74,14 @@ static int npc_type_iter(struct dirent *ent, void *ctx)
 	string_pushc(&path, &cap, '/');
 	string_pushz(&path, &cap, ent->d_name);
 	string_pushc(&path, &cap, '\0');
-	size_t base_len = suffix - ent->d_name;
-	char *type_name = xmalloc(base_len+1);
-	memcpy(type_name, ent->d_name, base_len);
-	type_name[base_len] = '\0';
+	*suffix = '\0';
 	struct npc_type *npc = xmalloc(sizeof(*npc));
 	if (load_npc_type(path.text, npc, txtrs)) goto error_load_npc_type;
 	if (npc->flags & NPC_INVALID) {
 		retval = 0;
 		goto invalid_npc;
 	}
-	if (table_add(npcs, type_name, npc)) goto error_table_add;
+	if (table_add(npcs, str_dup(ent->d_name), npc)) goto error_table_add;
 	return 0;
 
 invalid_npc:
@@ -90,9 +89,16 @@ error_table_add:
 	npc_type_free(npc);
 error_load_npc_type:
 	free(npc);
-	free(type_name);
 	free(path.text);
 	return retval;
+}
+
+static int free_npc_type_entry(const char *key, void **val)
+{
+	free((char *)key);
+	npc_type_free(*val);
+	free(*val);
+	return 0;
 }
 
 int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
@@ -104,6 +110,7 @@ int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
 	};
 	table_init(npcs, 32);
 	if (dir_iter(dirpath, npc_type_iter, &arg)) {
+		table_each(npcs, free_npc_type_entry);
 		table_free(npcs);
 		return -1;
 	}
