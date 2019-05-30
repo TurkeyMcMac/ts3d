@@ -139,6 +139,9 @@ d3d_pixel *d3d_get_texture_pixels(d3d_texture *txtr);
  * are out of range. */
 d3d_pixel *d3d_texture_get(d3d_texture *txtr, size_t x, size_t y);
 
+/* Permanently destroy a texture. */
+void d3d_free_texture(d3d_texture *txtr);
+
 /* Create a new board with a width and height. All its blocks are initially
  * empty, transparent on all sides. */
 d3d_board *d3d_new_board(size_t width, size_t height);
@@ -153,6 +156,9 @@ size_t d3d_board_height(const d3d_board *board);
  * returned. Otherwise, a pointer to a block POINTER is returned. This pointed-
  * to pointer can be modified with a new block pointer. */
 const d3d_block_s **d3d_board_get(d3d_board *board, size_t x, size_t y);
+
+/* Permanently destroy a board. */
+void d3d_free_board(d3d_board *board);
 
 /* FRAMES
  * ------

@@ -135,6 +135,7 @@ d3d_camera *d3d_new_camera(
 
 void d3d_free_camera(d3d_camera *cam)
 {
+	if (!cam) return;
 	d3d_free(cam->order);
 	// 'tans' and 'dists' are freed here too:
 	d3d_free(cam);
@@ -507,6 +508,11 @@ d3d_pixel *d3d_texture_get(d3d_texture *txtr, size_t x, size_t y)
 	return GET(txtr, pixels, x, y);
 }
 
+void d3d_free_texture(d3d_texture *txtr)
+{
+	free(txtr);
+}
+
 size_t d3d_board_width(const d3d_board *board)
 {
 	return board->width;
@@ -520,4 +526,9 @@ size_t d3d_board_height(const d3d_board *board)
 const d3d_block_s **d3d_board_get(d3d_board *board, size_t x, size_t y)
 {
 	return GET(board, blocks, x, y);
+}
+
+void d3d_free_board(d3d_board *board)
+{
+	free(board);
 }
