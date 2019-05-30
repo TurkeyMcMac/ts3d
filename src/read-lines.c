@@ -21,8 +21,7 @@ struct string *read_lines(const char *path, size_t *nlines)
 	char *head = buf + nread;
 	do {
 		size_t line_cap = 16;
-		struct string *line =
-			GROWE(&lines, nlines, &lines_cap, sizeof(*lines));
+		struct string *line = GROWE(lines, *nlines, lines_cap);
 		line->len = 0;
 		line->text = xmalloc(line_cap);
 		for (bool last_one = false; !last_one;) {

@@ -21,7 +21,7 @@ void table_init(table *tbl, size_t size)
 
 int table_add(table *tbl, const char *key, void *val)
 {
-	struct item *slot = GROWE(&tbl->items, &tbl->len, &tbl->cap, ITEM_SIZE);
+	struct item *slot = GROWE(tbl->items, tbl->len, tbl->cap);
 	slot->key = key;
 	slot->val = val;
 	return 0;

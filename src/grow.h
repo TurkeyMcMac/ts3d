@@ -5,7 +5,8 @@
 
 void *growe(void **bufp, size_t *lenp, size_t *capp, size_t esize);
 
-#define GROWE(bufp, lenp, capp, esize) growe((void **)(bufp), lenp, capp, esize)
+#define GROWE(buf, len, cap) \
+	growe((void **)&(buf), &(len), &(cap), sizeof *(buf))
 
 char *growc(char **bufp, size_t *lenp, size_t *capp, size_t num);
 

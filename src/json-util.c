@@ -148,9 +148,8 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		nd->d.list.vals = xmalloc(cap * sizeof(*nd->d.list.vals));
 		for (;;) {
 			char *key;
-			struct json_node *entry = GROWE(&nd->d.list.vals,
-				&nd->d.list.n_vals, &cap,
-				sizeof(*nd->d.list.vals));
+			struct json_node *entry = GROWE(nd->d.list.vals,
+				nd->d.list.n_vals, cap);
 			parse_node(rdr, entry, &key);
 			if (entry->kind == JN_END_) {
 				--nd->d.list.n_vals;
