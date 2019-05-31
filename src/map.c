@@ -12,29 +12,34 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if 0
-struct map_npc_start {
-	d3d_vec_s pos;
-	const struct npc_type *type;
-};
-
-struct map {
-	char *name;
-	d3d_board *board;
-	uint8_t *walls;
-	size_t n_blocks;
-	d3d_block_s *blocks;
-	d3d_vec_s player_pos;
-	double player_facing;
-	struct map_npc_start *npcs;
-};
-#endif
-
-static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd)
+static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
+	table *txtrs)
 {
-	// TODO: stub
+	union json_node_data *got;
 	*wall = 0;
 	memset(block, 0, sizeof(*block));
+	if (nd->kind != JN_MAP) return;
+	bool all_solid = false;
+	if ((got = json_map_get(nd, "all_solid", JN_BOOLEAN))) {
+		if (got->boolean) {
+			*wall = 0xFF;
+			all_solid = true;
+		}
+	}
+#define FACE(dir, name) \
+	if ((got = json_map_get(nd, name, JN_STRING))) { \
+		const d3d_texture **txtrp = (void *)table_get(txtrs, got->str);\
+		if (txtrp) block->faces[dir] = *txtrp; \
+	} \
+	if (!all_solid && (got = json_map_get(nd, name"_solid", JN_BOOLEAN))) \
+		if (got->boolean) *wall |= 1 << dir;
+	FACE(D3D_DNORTH, "north");
+	FACE(D3D_DSOUTH, "south");
+	FACE(D3D_DEAST, "east");
+	FACE(D3D_DWEST, "west");
+	FACE(D3D_DUP, "top");
+	FACE(D3D_DDOWN, "bottom");
+#undef FACE
 }
 
 bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
@@ -66,7 +71,7 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 		map->blocks = xmalloc(n_blocks * sizeof(*map->blocks));
 		for (size_t i = 0; i < n_blocks; ++i) {
 			parse_block(&map->blocks[i], &walls[i],
-				&got->list.vals[i]);
+				&got->list.vals[i], txtrs);
 		}
 	}
 	struct json_node_data_list *layout = NULL;
