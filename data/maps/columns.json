@@ -10,8 +10,8 @@
   },
   {
    "name": "floor",
-   "top": "tiles-bw",
-   "bottom": "tiles-bw"
+   "top": "tiles-blue-cyan",
+   "bottom": "tiles-blue-cyan"
   },
   {
    "name": "pillar",
