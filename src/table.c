@@ -88,7 +88,7 @@ char *table_to_string(const table *tbl, char *(*item)(void *))
 			"\n\t%s: %s,", tbl->items[i].key, val);
 		free(val);
 	}
-	memcpy(string_grow(&str, &str_cap, 2), "\n}", 2);
+	memcpy(string_grow(&str, &str_cap, 3), "\n}", 3);
 	return str.text;
 
 error_item:
