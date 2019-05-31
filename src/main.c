@@ -1,6 +1,7 @@
 #include "load-texture.h"
 #include "d3d.h"
 #include "json-util.h"
+#include "map.h"
 #include "npc.h"
 #include "xalloc.h"
 #include <errno.h>
@@ -19,13 +20,14 @@ static char *texture_to_string(void *data)
 
 int main(int argc, char *argv[])
 {
-	if (argc < 3) {
-		fprintf(stderr, "Usage: %s textures npcs\n", argv[0]);
+	if (argc < 4) {
+		fprintf(stderr, "Usage: %s maps npcs textures\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	const char *txtrs_path = argv[1];
+	const char *txtrs_path = argv[3];
 	const char *npcs_path = argv[2];
-	table txtrs, npcs;
+	const char *maps_path = argv[1];
+	table txtrs, npcs, maps;
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
 	load_textures(txtrs_path, &txtrs);
@@ -37,4 +39,10 @@ int main(int argc, char *argv[])
 	}
 	printf("NPC types from %s:\n%s\n", npcs_path,
 		table_to_string(&npcs, (char *(*)(void *))npc_type_to_string));
+	if (load_maps(maps_path, &maps, &npcs, &txtrs)) {
+		fprintf(stderr, "Error: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	printf("maps from %s:\n%s\n", maps_path,
+		table_to_string(&maps, (char *(*)(void *))map_to_string));
 }
