@@ -151,7 +151,7 @@ char *npc_type_to_string(const struct npc_type *npc)
 	} else {
 		string_pushn(&str, &cap, "[]", 2);
 	}
-	string_pushn(&str, &cap, " }", 2);
+	string_pushn(&str, &cap, " }", 3);
 	string_shrink_to_fit(&str);
 	return str.text;
 }
