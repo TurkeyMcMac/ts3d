@@ -17,7 +17,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	struct json_node jtree;
 	npc->flags = NPC_INVALID;
 	if (parse_json_tree(path, &jtree)) return -1;
-	if (jtree.kind != JN_MAP) return 0;
+	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	npc->flags = 0;
 	npc->name = "";
@@ -50,6 +50,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 			npc->frames[i] = *got;
 		}
 	}
+end:
 	free_json_tree(&jtree);
 	return 0;
 }
