@@ -3,6 +3,7 @@
 #include "grow.h"
 #include "json.h"
 #include "json-util.h"
+#include "load-texture.h"
 #include "string.h"
 #include "util.h"
 #include "xalloc.h"
@@ -46,7 +47,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 			char *txtr_name = li->d.str;
 			li->d.str = NULL;
 			void **got = table_get(txtrs, txtr_name);
-			if (!got) got = table_get(txtrs, "empty");
+			if (!got) got = table_get(txtrs, EMPTY_TXTR_KEY);
 			npc->frames[i] = *got;
 		}
 	}

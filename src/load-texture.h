@@ -4,6 +4,8 @@
 #include "d3d.h"
 #include "table.h"
 
+#define EMPTY_TXTR_KEY ""
+
 d3d_texture *load_texture(const char *path);
 
 int load_textures(const char *dirpath, table *txtrs);

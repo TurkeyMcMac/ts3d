@@ -85,6 +85,7 @@ int load_textures(const char *dirpath, table *txtrs)
 		.dirpath = dirpath
 	};
 	table_init(txtrs, 32);
+	table_add(txtrs, EMPTY_TXTR_KEY, new_empty_texture());
 	if (dir_iter(dirpath, texture_iter, &arg)) {
 		table_each(txtrs, free_txtrs_item);
 		table_free(txtrs);
