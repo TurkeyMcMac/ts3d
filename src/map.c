@@ -81,20 +81,19 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	if (layout) {
 		height = layout->n_vals;
 		for (size_t y = 0; y < height; ++y) {
-			struct json_node_data_list *row = NULL;
-			if ((got = json_map_get(&jtree, "layout", JN_LIST)))
-				row = &got->list;
-			if (row && row->n_vals > width) width = row->n_vals;
+			if (layout->vals[y].kind != JN_LIST) continue;
+			struct json_node_data_list *row =
+				&layout->vals[y].d.list;
+			if (row->n_vals > width) width = row->n_vals;
 		}
 	}
-	if (width > 0 && height > 0) {
+	if (layout && width > 0 && height > 0) {
 		map->board = d3d_new_board(width, height);
 		map->walls = xcalloc(height, width);
 		for (size_t y = 0; y < height; ++y) {
-			struct json_node_data_list *row = NULL;
-			if ((got = json_map_get(&jtree, "layout", JN_LIST)))
-				row = &got->list;
-			if (!row) continue;
+			if (layout->vals[y].kind != JN_LIST) continue;
+			struct json_node_data_list *row =
+				&layout->vals[y].d.list;
 			for (size_t x = 0; x < row->n_vals; ++x) {
 				if (row->vals[x].kind != JN_NUMBER) continue;
 				size_t idx = row->vals[x].d.num;

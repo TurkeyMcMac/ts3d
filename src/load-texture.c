@@ -1,6 +1,7 @@
 #include "load-texture.h"
 #include "read-lines.h"
 #include "dir-iter.h"
+#include "pixel.h"
 #include "string.h"
 #include "util.h"
 #include <errno.h>
@@ -11,7 +12,7 @@
 static d3d_texture *new_empty_texture(void)
 {
 	d3d_texture *empty = d3d_new_texture(1, 1);
-	*d3d_texture_get(empty, 0, 0) = ' ';
+	*d3d_texture_get(empty, 0, 0) = EMPTY_PIXEL;
 	return empty;
 }
 
@@ -32,10 +33,11 @@ d3d_texture *load_texture(const char *path)
 			struct string *line = &lines[y];
 			size_t x;
 			for (x = 0; x < line->len; ++x) {
-				*d3d_texture_get(txtr, x, y) = line->text[x];
+				*d3d_texture_get(txtr, x, y) =
+					pixel_from_char(line->text[x]);
 			}
 			for (; x < width; ++x) {
-				*d3d_texture_get(txtr, x, y) = ' ';
+				*d3d_texture_get(txtr, x, y) = EMPTY_PIXEL;
 			}
 		}
 	} else {
