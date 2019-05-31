@@ -3,7 +3,7 @@
 
 #include "d3d.h"
 
-#define EMPTY_PIXEL ((d3d_pixel)' ')
+#define EMPTY_PIXEL ((d3d_pixel)0)
 
 #define pixel_fg(pix) ((unsigned)(pix) >> 3)
 #define pixel_bg(pix) ((pix) & 7)
