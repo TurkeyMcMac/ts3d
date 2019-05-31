@@ -3,7 +3,7 @@ sources = $(wildcard src/*.c)
 headers = $(wildcard src/*.h)
 
 cflags = -std=c99 -Wall -Wextra ${CFLAGS}
-linkage = -lm
+linkage = -lm -lncurses
 
 $(exe): $(sources) $(headers)
 	$(CC) $(cflags) -o $@ $(sources) $(linkage)

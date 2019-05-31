@@ -3,23 +3,20 @@
 #include "json-util.h"
 #include "map.h"
 #include "npc.h"
+#include "pixel.h"
 #include "xalloc.h"
+#include <curses.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static char *texture_to_string(void *data)
-{
-	d3d_texture *txtr = data;
-	char *str = xmalloc(64);
-	snprintf(str, 64, "texture { width = %lu, height = %lu }",
-		d3d_texture_width(txtr), d3d_texture_height(txtr));
-	return str;
-}
+#define PIXEL_ASPECT 0.625
+#define FOV_X 2.0
 
 int main(int argc, char *argv[])
 {
+	initscr();
 	if (argc < 4) {
 		fprintf(stderr, "Usage: %s maps npcs textures\n", argv[0]);
 		exit(EXIT_FAILURE);
@@ -31,18 +28,30 @@ int main(int argc, char *argv[])
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
 	load_textures(txtrs_path, &txtrs);
-	printf("Textures from %s:\n%s\n", txtrs_path,
-		table_to_string(&txtrs, texture_to_string));
-	if (load_npc_types(npcs_path, &npcs, &txtrs)) {
-		fprintf(stderr, "Error: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
+	load_npc_types(npcs_path, &npcs, &txtrs);
+	load_maps(maps_path, &maps, &npcs, &txtrs);
+	d3d_board *board = ((struct map *)*table_get(&maps, "columns"))->board;
+	d3d_camera *cam = d3d_new_camera(FOV_X,
+		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
+	*d3d_camera_empty_pixel(cam) = EMPTY_PIXEL;
+	d3d_camera_position(cam)->x = 2.4;
+	d3d_camera_position(cam)->y = 3.4;
+	d3d_draw_walls(cam, board);
+	start_color();
+	for (int fg = 0; fg < 8; ++fg) {
+		for (int bg = 0; bg < 8; ++bg) {
+			init_pair((fg << 3 | bg) + 1, fg, bg);
+		}
 	}
-	printf("NPC types from %s:\n%s\n", npcs_path,
-		table_to_string(&npcs, (char *(*)(void *))npc_type_to_string));
-	if (load_maps(maps_path, &maps, &npcs, &txtrs)) {
-		fprintf(stderr, "Error: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
+	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
+		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
+			d3d_pixel pix = *d3d_camera_get(cam, x, y);
+			int cell = COLOR_PAIR(pix + 1) | '#';
+			if (pixel_is_bold(pix)) cell |= A_BOLD;
+			mvaddch(y, x, cell);
+		}
 	}
-	printf("maps from %s:\n%s\n", maps_path,
-		table_to_string(&maps, (char *(*)(void *))map_to_string));
+	refresh();
+	getch();
+	endwin();
 }
