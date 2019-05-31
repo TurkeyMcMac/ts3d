@@ -115,6 +115,7 @@ d3d_camera *d3d_new_camera(
 	// same allocation:
 	cam->tans = (void *)((char *)cam + size - dists_size - tans_size);
 	cam->dists = (void *)((char *)cam + size - dists_size);
+	cam->facing = 0.0;
 	cam->fov.x = fovx;
 	cam->fov.y = fovy;
 	cam->width = width;
