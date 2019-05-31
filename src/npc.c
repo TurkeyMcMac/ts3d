@@ -17,14 +17,18 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 {
 	struct json_node jtree;
 	npc->flags = NPC_INVALID;
+	npc->name = NULL;
+	npc->frames = NULL;
+	npc->n_frames = 0;
 	if (parse_json_tree(path, &jtree)) return -1;
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	npc->flags = 0;
-	npc->name = "";
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		npc->name = got->str;
 		got->str = NULL;
+	} else {
+		npc->name = str_dup("");
 	}
 	npc->width = 1.0;
 	if ((got = json_map_get(&jtree, "width", JN_NUMBER)))
@@ -36,8 +40,6 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)
 		npc->height = *got->str;
-	npc->n_frames = 0;
-	npc->frames = NULL;
 	if ((got = json_map_get(&jtree, "frames", JN_LIST))) {
 		npc->n_frames = got->list.n_vals;
 		npc->frames = xmalloc(npc->n_frames * sizeof(*npc->frames));

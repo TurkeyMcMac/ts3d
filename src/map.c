@@ -43,18 +43,23 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 {
 	struct json_node jtree;
 	map->flags = MAP_INVALID;
+	map->name = NULL;
+	map->board = NULL;
+	map->walls = NULL;
+	map->blocks = NULL;
+	map->npcs = NULL;
 	if (parse_json_tree(path, &jtree)) return -1;
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	map->flags = 0;
-	map->name = "";
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		map->name = got->str;
 		got->str = NULL;
+	} else {
+		map->name = str_dup("");
 	}
 	uint8_t *walls = NULL;
 	size_t n_blocks = 0;
-	map->blocks = NULL;
 	if ((got = json_map_get(&jtree, "blocks", JN_LIST))) {
 		n_blocks = got->list.n_vals;
 		walls = xmalloc(n_blocks);
