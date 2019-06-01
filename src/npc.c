@@ -145,7 +145,7 @@ char *npc_type_to_string(const struct npc_type *npc)
 			string_pushn(&str, &cap, before, 2);
 			string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
 				sizeof(fmt_buf),
-				"texture { width = %lu, height = %lu }",
+				"texture { width = %zu, height = %zu }",
 				d3d_texture_width(txtr),
 				d3d_texture_height(txtr)));
 			before = ", ";
