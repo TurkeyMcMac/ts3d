@@ -2,6 +2,7 @@
 #include "grow.h"
 #include "string.h"
 #include "xalloc.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,42 +20,47 @@ void table_init(table *tbl, size_t size)
 	tbl->items = xmalloc(size * ITEM_SIZE);
 }
 
-int table_add(table *tbl, const char *key, void *val)
+static bool find(table *tbl, struct item **found, const char *key)
 {
-	struct item *slot = GROWE(tbl->items, tbl->len, tbl->cap);
-	slot->key = key;
-	slot->val = val;
-	return 0;
-}
-
-static int item_compar(const void *item1, const void *item2)
-{
-	return strcmp(*(char * const *)item1, *(char * const *)item2);
-}
-
-void table_freeze(table *tbl)
-{
-	tbl->items = xrealloc(tbl->items, tbl->len * ITEM_SIZE);
-	qsort(tbl->items, tbl->len, ITEM_SIZE, item_compar);
-}
-
-void **table_get(table *tbl, const char *key)
-{
-	long start, end;
-	start = 0;
-	end = tbl->len - 1;
+	long start = 0, end = tbl->len - 1;
 	while (start <= end) {
 		long mid = (start + end) / 2;
-		int cmp = strcmp(key, tbl->items[mid].key);
+		int cmp = (strcmp)(key, tbl->items[mid].key);
 		if (cmp > 0) {
 			start = mid + 1;
 		} else if (cmp < 0) {
 			end = mid - 1;
 		} else {
-			return &tbl->items[mid].val;
+			*found = &tbl->items[mid];
+			return true;
 		}
 	}
-	return NULL;
+	*found = &tbl->items[start];
+	return false;
+}
+
+int table_add(table *tbl, const char *key, void *val)
+{
+	struct item *slot;
+	GROWE(tbl->items, tbl->len, tbl->cap);
+	--tbl->len;
+	if (find(tbl, &slot, key)) return -1;
+	memmove(slot + 1, slot, (tbl->len - (slot - tbl->items)) * ITEM_SIZE);
+	slot->key = key;
+	slot->val = val;
+	++tbl->len;
+	return 0;
+}
+
+void table_freeze(table *tbl)
+{
+	tbl->items = xrealloc(tbl->items, tbl->len * ITEM_SIZE);
+}
+
+void **table_get(table *tbl, const char *key)
+{
+	struct item *got;
+	return find(tbl, &got, key) ? &got->val : NULL;
 }
 
 int table_each(table *tbl, int (*item)(const char *, void **))
