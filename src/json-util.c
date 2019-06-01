@@ -166,7 +166,6 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 				--nd->d.list.n_vals;
 				break;
 			} else if (entry->kind == JN_ERROR) {
-				// TODO: free children
 				for (size_t i = 0; i < nd->d.list.n_vals; ++i) {
 					free_json_tree(&nd->d.list.vals[i]);
 				}
