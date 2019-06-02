@@ -107,7 +107,9 @@ size_t d3d_camera_height(const d3d_camera *cam);
  * camera when a cast ray hits nothing (it gets off the edge of the board.) */
 d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam);
 
-/* Return a pointer to the camera's position. */
+/* Return a pointer to the camera's position. It is UNDEFINED BEHAVIOR for this
+ * to be outside the limits of the board that is passed when d3d_draw_walls or
+ * d3d_draw_column is called. */
 d3d_vec_s *d3d_camera_position(d3d_camera *cam);
 
 /* Return a pointer to the camera's direction (in radians). This can be changed

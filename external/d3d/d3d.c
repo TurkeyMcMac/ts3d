@@ -120,7 +120,15 @@ d3d_camera *d3d_new_camera(
 	cam->fov.y = fovy;
 	cam->width = width;
 	cam->height = height;
-	cam->empty_pixel = 0;
+	cam->empty_texture.width = 1;
+	cam->empty_texture.height = 1;
+	cam->empty_texture.pixels[0] = 0;
+	cam->blank_block.faces[D3D_DNORTH] =
+	cam->blank_block.faces[D3D_DSOUTH] =
+	cam->blank_block.faces[D3D_DEAST] =
+	cam->blank_block.faces[D3D_DWEST] =
+	cam->blank_block.faces[D3D_DUP] =
+	cam->blank_block.faces[D3D_DDOWN] = (d3d_texture *)&cam->empty_texture;
 	cam->order = NULL;
 	cam->order_buf_cap = 0;
 #if OPTIMIZE_SAME_SPRITES
@@ -246,13 +254,7 @@ void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
 		cam->facing + cam->fov.x * (0.5 - (double)x / cam->width);
 	d3d_vec_s dpos = {cos(angle) * 0.001, sin(angle) * 0.001};
 	block = hit_wall(board, &pos, &dpos, &face);
-	if (!block) {
-		// The ray hit no block, so fill this column with emptiness:
-		for (size_t y = 0; y < cam->height; ++y) {
-			*GET(cam, pixels, x, y) = cam->empty_pixel;
-		}
-		return;
-	}
+	if (!block) block = &cam->blank_block;
 	disp.x = pos.x - cam->pos.x;
 	disp.y = pos.y - cam->pos.y;
 	dist = sqrt(disp.x * disp.x + disp.y * disp.y);
@@ -316,7 +318,7 @@ void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
 		continue;
 
 	no_texture:
-		*GET(cam, pixels, x, t) = cam->empty_pixel;
+		*GET(cam, pixels, x, t) = *d3d_camera_empty_pixel(cam);
 	}
 }
 
@@ -471,7 +473,7 @@ size_t d3d_camera_height(const d3d_camera *cam)
 
 d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam)
 {
-	return &cam->empty_pixel;
+	return &cam->empty_texture.pixels[0];
 }
 
 d3d_vec_s *d3d_camera_position(d3d_camera *cam)
