@@ -4,6 +4,7 @@
 #include "map.h"
 #include "npc.h"
 #include "pixel.h"
+#include "util.h"
 #include "xalloc.h"
 #include <curses.h>
 #include <errno.h>
@@ -15,6 +16,8 @@
 #ifndef M_PI
 #	define M_PI 3.14159265358979323846
 #endif
+
+#define CAM_RADIUS 0.1
 
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
@@ -49,7 +52,8 @@ int main(int argc, char *argv[])
 	load_textures(txtrs_path, &txtrs);
 	load_npc_types(npcs_path, &npcs, &txtrs);
 	load_maps(maps_path, &maps, &npcs, &txtrs);
-	d3d_board *board = ((struct map *)*table_get(&maps, "columns"))->board;
+	struct map *map = *table_get(&maps, "columns");
+	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
@@ -93,7 +97,22 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		d3d_vec_s *cam_pos = d3d_camera_position(cam);
+		d3d_vec_s old_pos = *cam_pos;
 		cam_pos->x += cos(move_angle) * 0.04;
 		cam_pos->y += sin(move_angle) * 0.04;
+		size_t x = floor(cam_pos->x), y = floor(cam_pos->y);
+		int wall = map_get_wall(map, x, y);
+		if (wall >= 0) {
+			double tilex = fmod(cam_pos->x, 1);
+			double tiley = fmod(cam_pos->y, 1);
+			if ((bitat(wall, D3D_DNORTH) && tiley < CAM_RADIUS)
+			 || (bitat(wall, D3D_DSOUTH) && tiley > 1 - CAM_RADIUS))
+				cam_pos->y = old_pos.y;
+			if ((bitat(wall, D3D_DWEST) && tilex < CAM_RADIUS)
+			 || (bitat(wall, D3D_DEAST) && tilex > 1 - CAM_RADIUS))
+				cam_pos->x = old_pos.x;
+		} else {
+			*cam_pos = old_pos;
+		}
 	}
 }

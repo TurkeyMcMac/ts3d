@@ -42,6 +42,32 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 #undef FACE
 }
 
+int map_get_wall(const struct map *map, size_t x, size_t y)
+{
+	if (!d3d_board_get(map->board, x, y)) return -1;
+	uint8_t here = map->walls[y * d3d_board_width(map->board) + x];
+#define IN_DIRECTION(dir) do { \
+	uint8_t bit = 1 << dir; \
+	if (here & bit) break; \
+	size_t there_x = x, there_y = y; \
+	move_direction(dir, &there_x, &there_y); \
+	if (d3d_board_get(map->board, there_x, there_y)) { \
+		uint8_t there = \
+			map->walls[there_y * d3d_board_width(map->board) \
+			+ there_x]; \
+		if (there & (1 << flip_direction(dir))) here |= bit; \
+	} else { \
+		here |= bit; \
+	} \
+} while (0)
+	IN_DIRECTION(D3D_DNORTH);
+	IN_DIRECTION(D3D_DSOUTH);
+	IN_DIRECTION(D3D_DWEST);
+	IN_DIRECTION(D3D_DEAST);
+#undef IN_DIRECTION
+	return here;
+}
+
 bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
 
 int load_map(const char *path, struct map *map, table *npcs, table *txtrs)

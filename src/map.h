@@ -24,6 +24,8 @@ struct map {
 
 #define MAP_INVALID 0x01
 
+int map_get_wall(const struct map *map, size_t x, size_t y);
+
 bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
 
 int load_map(const char *path, struct map *map, table *npcs, table *txtrs);
