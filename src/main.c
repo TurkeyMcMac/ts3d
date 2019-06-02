@@ -10,13 +10,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+
+#ifndef M_PI
+#	define M_PI 3.14159265358979323846
+#endif
 
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
 
+void display_frame(d3d_camera *cam)
+{
+	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
+		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
+			d3d_pixel pix = *d3d_camera_get(cam, x, y);
+			int cell = COLOR_PAIR(pix + 1) | '#';
+			if (pixel_is_bold(pix)) cell |= A_BOLD;
+			mvaddch(y, x, cell);
+		}
+	}
+	refresh();
+}
+
+void end_win(void) { endwin(); }
+
 int main(int argc, char *argv[])
 {
-	initscr();
 	if (argc < 4) {
 		fprintf(stderr, "Usage: %s maps npcs textures\n", argv[0]);
 		exit(EXIT_FAILURE);
@@ -31,27 +50,50 @@ int main(int argc, char *argv[])
 	load_npc_types(npcs_path, &npcs, &txtrs);
 	load_maps(maps_path, &maps, &npcs, &txtrs);
 	d3d_board *board = ((struct map *)*table_get(&maps, "columns"))->board;
+	initscr();
+	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
 	*d3d_camera_empty_pixel(cam) = EMPTY_PIXEL;
-	d3d_camera_position(cam)->x = 2.4;
+	d3d_camera_position(cam)->x = 4.4;
 	d3d_camera_position(cam)->y = 3.4;
-	d3d_draw_walls(cam, board);
+	*d3d_camera_facing(cam) = 3.4;
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
 			init_pair((fg << 3 | bg) + 1, fg, bg);
 		}
 	}
-	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
-		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
-			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			int cell = COLOR_PAIR(pix + 1) | '#';
-			if (pixel_is_bold(pix)) cell |= A_BOLD;
-			mvaddch(y, x, cell);
+	for (;;) {
+		d3d_draw_walls(cam, board);
+		display_frame(cam);
+		// The straight-forward player movement angle:
+		double move_angle = *d3d_camera_facing(cam);
+		switch (getch()) {
+		case 'w': // Forward
+			break;
+		case 'a': // Left
+			move_angle += M_PI / 2;
+			break;
+		case 's': // Backward
+			move_angle += M_PI;
+			break;
+		case 'd': // Right
+			move_angle -= M_PI / 2;
+			break;
+		case 'q': // Turn left
+			*d3d_camera_facing(cam) += 0.04;
+			continue;
+		case 'e': // Turn right
+			*d3d_camera_facing(cam) -= 0.04;
+			continue;
+		case 'x': // Quit the game
+			exit(0);
+		default: // Other keys are ignored
+			continue;
 		}
+		d3d_vec_s *cam_pos = d3d_camera_position(cam);
+		cam_pos->x += cos(move_angle) * 0.04;
+		cam_pos->y += sin(move_angle) * 0.04;
 	}
-	refresh();
-	getch();
-	endwin();
 }
