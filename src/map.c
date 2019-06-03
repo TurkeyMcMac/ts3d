@@ -55,7 +55,7 @@ int map_get_wall(const struct map *map, size_t x, size_t y)
 		uint8_t there = \
 			map->walls[there_y * d3d_board_width(map->board) \
 			+ there_x]; \
-		if (there & (1 << flip_direction(dir))) here |= bit; \
+		if (bitat(there, flip_direction(dir))) here |= bit; \
 	} else { \
 		here |= bit; \
 	} \
