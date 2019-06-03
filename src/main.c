@@ -105,12 +105,14 @@ int main(int argc, char *argv[])
 		if (wall >= 0) {
 			double tilex = fmod(cam_pos->x, 1);
 			double tiley = fmod(cam_pos->y, 1);
-			if ((bitat(wall, D3D_DNORTH) && tiley < CAM_RADIUS)
-			 || (bitat(wall, D3D_DSOUTH) && tiley > 1 - CAM_RADIUS))
-				cam_pos->y = old_pos.y;
-			if ((bitat(wall, D3D_DWEST) && tilex < CAM_RADIUS)
-			 || (bitat(wall, D3D_DEAST) && tilex > 1 - CAM_RADIUS))
-				cam_pos->x = old_pos.x;
+			if (bitat(wall, D3D_DNORTH) && tiley < CAM_RADIUS)
+				cam_pos->y = y + CAM_RADIUS;
+			if (bitat(wall, D3D_DSOUTH) && tiley > 1 - CAM_RADIUS)
+				cam_pos->y = y + 1 - CAM_RADIUS;
+			if (bitat(wall, D3D_DWEST) && tilex < CAM_RADIUS)
+				cam_pos->x = x + CAM_RADIUS;
+			if (bitat(wall, D3D_DEAST) && tilex > 1 - CAM_RADIUS)
+				cam_pos->x = x + 1 - CAM_RADIUS;
 		} else {
 			*cam_pos = old_pos;
 		}
