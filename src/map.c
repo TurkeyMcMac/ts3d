@@ -58,12 +58,6 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 #undef FACE
 }
 
-static bool wall_along(d3d_direction dir,
-	uint8_t here, uint8_t left, uint8_t right)
-{
-	return bitat(here, dir) || bitat(left, dir) || bitat(right, dir);
-}
-
 void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 {
 	long x = floor(pos->x), y = floor(pos->y);

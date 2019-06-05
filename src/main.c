@@ -97,7 +97,6 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		d3d_vec_s *cam_pos = d3d_camera_position(cam);
-		d3d_vec_s old_pos = *cam_pos;
 		cam_pos->x += cos(move_angle) * 0.04;
 		cam_pos->y += sin(move_angle) * 0.04;
 		map_check_walls(map, cam_pos, CAM_RADIUS);
