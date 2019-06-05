@@ -98,8 +98,6 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	} else if (east > x) {
 		correct_e = bitat(blocked, D3D_DEAST);
 	}
-	fprintf(stderr, "n %d s %d e %d w %d -> ",
-		correct_n, correct_s, correct_e, correct_w);
 	if (correct_n) {
 		if (correct_e) {
 			(correct_n = bitat(here, D3D_DNORTH)) &&
@@ -117,8 +115,6 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 			(correct_w = bitat(here, D3D_DWEST));
 		}
 	}
-	fprintf(stderr, "n %d s %d e %d w %d\n",
-		correct_n, correct_s, correct_e, correct_w);
 	if (correct_n) {
 		pos->y = y + radius;
 	} else if (correct_s) {
