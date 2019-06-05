@@ -100,21 +100,6 @@ int main(int argc, char *argv[])
 		d3d_vec_s old_pos = *cam_pos;
 		cam_pos->x += cos(move_angle) * 0.04;
 		cam_pos->y += sin(move_angle) * 0.04;
-		size_t x = floor(cam_pos->x), y = floor(cam_pos->y);
-		int wall = map_get_wall(map, x, y);
-		if (wall >= 0) {
-			double tilex = fmod(cam_pos->x, 1);
-			double tiley = fmod(cam_pos->y, 1);
-			if (bitat(wall, D3D_DNORTH) && tiley < CAM_RADIUS)
-				cam_pos->y = y + CAM_RADIUS;
-			if (bitat(wall, D3D_DSOUTH) && tiley > 1 - CAM_RADIUS)
-				cam_pos->y = y + 1 - CAM_RADIUS;
-			if (bitat(wall, D3D_DWEST) && tilex < CAM_RADIUS)
-				cam_pos->x = x + CAM_RADIUS;
-			if (bitat(wall, D3D_DEAST) && tilex > 1 - CAM_RADIUS)
-				cam_pos->x = x + 1 - CAM_RADIUS;
-		} else {
-			*cam_pos = old_pos;
-		}
+		map_check_walls(map, cam_pos, CAM_RADIUS);
 	}
 }

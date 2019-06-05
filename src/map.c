@@ -12,6 +12,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+static uint8_t *get_wall(struct map *map, size_t x, size_t y)
+{
+	return &map->walls[y * d3d_board_width(map->board) + x];
+}
+
+static uint8_t get_wall_ck(const struct map *map, long lx, long ly)
+{
+	size_t x = (size_t)lx, y = (size_t)ly;
+	if (x < d3d_board_width(map->board) && y < d3d_board_height(map->board))
+	{
+		return *get_wall((struct map *)map, x, y);
+	} else {
+		return 0;
+	}
+}
+
 static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 	table *txtrs)
 {
@@ -42,9 +58,81 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 #undef FACE
 }
 
-int map_get_wall(const struct map *map, size_t x, size_t y)
+static bool wall_along(d3d_direction dir,
+	uint8_t here, uint8_t left, uint8_t right)
 {
-	if (!d3d_board_get(map->board, x, y)) return -1;
+	return bitat(here, dir) || bitat(left, dir) || bitat(right, dir);
+}
+
+void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
+{
+	long x = floor(pos->x), y = floor(pos->y);
+	long west, north, east, south;
+	west = floor(pos->x - radius);
+	north = floor(pos->y - radius);
+	east = floor(pos->x + radius);
+	south = floor(pos->y + radius);
+	uint8_t ns_mask = 1 << D3D_DNORTH | 1 << D3D_DSOUTH;
+	uint8_t ew_mask = 1 << D3D_DEAST | 1 << D3D_DWEST;
+	uint8_t here = get_wall_ck(map, x, y);
+	uint8_t blocked = here;
+	if (north < y) {
+		blocked |= get_wall_ck(map, x, north) & ew_mask;
+	} else if (south > y) {
+		blocked |= get_wall_ck(map, x, south) & ew_mask;
+	}
+	if (west < x) {
+		blocked |= get_wall_ck(map, west, y) & ns_mask;
+	} else if (east > x) {
+		blocked |= get_wall_ck(map, east, y) & ns_mask;
+	}
+	bool correct_n = false, correct_s = false,
+	     correct_w = false, correct_e = false;
+	if (north < y) {
+		correct_n = bitat(blocked, D3D_DNORTH);
+	} else if (south > y) {
+		correct_s = bitat(blocked, D3D_DSOUTH);
+	}
+	if (west < x) {
+		correct_w = bitat(blocked, D3D_DWEST);
+	} else if (east > x) {
+		correct_e = bitat(blocked, D3D_DEAST);
+	}
+	fprintf(stderr, "n %d s %d e %d w %d -> ",
+		correct_n, correct_s, correct_e, correct_w);
+	if (correct_n) {
+		if (correct_e) {
+			(correct_n = bitat(here, D3D_DNORTH)) &&
+			(correct_e = bitat(here, D3D_DEAST));
+		} else if (correct_w) {
+			(correct_n = bitat(here, D3D_DNORTH)) &&
+			(correct_w = bitat(here, D3D_DWEST));
+		}
+	} else if (correct_s) {
+		if (correct_e) {
+			(correct_s = bitat(here, D3D_DSOUTH)) &&
+			(correct_e = bitat(here, D3D_DEAST));
+		} else if (correct_w) {
+			(correct_s = bitat(here, D3D_DSOUTH)) &&
+			(correct_w = bitat(here, D3D_DWEST));
+		}
+	}
+	fprintf(stderr, "n %d s %d e %d w %d\n",
+		correct_n, correct_s, correct_e, correct_w);
+	if (correct_n) {
+		pos->y = y + radius;
+	} else if (correct_s) {
+		pos->y = y + 1 - radius;
+	}
+	if (correct_w) {
+		pos->x = x + radius;
+	} else if (correct_e) {
+		pos->x = x + 1 - radius;
+	}
+}
+
+static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
+{
 	uint8_t here = map->walls[y * d3d_board_width(map->board) + x];
 #define IN_DIRECTION(dir) do { \
 	uint8_t bit = 1 << dir; \
@@ -126,7 +214,13 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 				if (idx >= n_blocks) continue;
 				*d3d_board_get(map->board, x, y) =
 					&map->blocks[idx];
-				map->walls[y * width + x] = walls[idx];
+				*get_wall(map, x, y) = walls[idx];
+			}
+		}
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t x = 0; x < width; ++x) {
+				*get_wall(map, x, y) =
+					normalize_wall(map, x, y);
 			}
 		}
 	} else {
