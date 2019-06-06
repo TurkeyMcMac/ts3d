@@ -4,22 +4,31 @@
 #include "d3d.h"
 #include <stddef.h>
 
+// Version of GNU __attribute__ which expands to nothing if attributes aren't
+// supported. Only single parentheses are used.
 #ifdef __GNUC__
 #	define ATTRIBUTE(...) __attribute__((__VA_ARGS__))
 #else
 #	define ATTRIBUTE(...)
 #endif
 
+// Duplicate a NUL-terminated string, including the terminator, returning an
+// allocated copy.
 char *str_dup(const char *str);
 
 // Version of snprintf which returns size-1 if it exceeds the buffer length:
 int sbprintf(char * restrict str, size_t size, const char * restrict fmt, ...)
 	ATTRIBUTE(format(printf, 3, 4));
 
+// Turn a cardinal direction 180 degrees, or swap between up and down.
 d3d_direction flip_direction(d3d_direction dir);
 
+// Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
+// is +x. Underflow in x or y is NOT accounted for.
 void move_direction(d3d_direction dir, size_t *x, size_t *y);
 
+// Get the bit in bits at the index idx, starting from the least significant.
+// Zero or one is returned.
 #define bitat(bits, idx) ((bits) >> (idx) & 1)
 
 #endif /* UTIL_H_ */

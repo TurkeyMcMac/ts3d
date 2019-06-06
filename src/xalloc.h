@@ -1,6 +1,8 @@
 #ifndef XALLOC_H_
 #define XALLOC_H_
 
+// Memory allocation alternatives that abort on failure, never returning NULL.
+
 #include <stdlib.h>
 
 void *xmalloc(size_t);
