@@ -43,20 +43,24 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 			all_solid = true;
 		}
 	}
-#define FACE(dir, name) \
-	if ((got = json_map_get(nd, name, JN_STRING))) { \
-		const d3d_texture **txtrp = (void *)table_get(txtrs, got->str);\
-		if (txtrp) block->faces[dir] = *txtrp; \
-	} \
-	if (!all_solid && (got = json_map_get(nd, name"_solid", JN_BOOLEAN))) \
-		if (got->boolean) *wall |= 1 << dir;
-	FACE(D3D_DNORTH, "north");
-	FACE(D3D_DSOUTH, "south");
-	FACE(D3D_DEAST, "east");
-	FACE(D3D_DWEST, "west");
-	FACE(D3D_DUP, "top");
-	FACE(D3D_DDOWN, "bottom");
-#undef FACE
+	struct { const char *txtr, *wall; d3d_direction dir; } faces[] = {
+		{"north" , "north_solid", D3D_DNORTH},
+		{"south" , "south_solid", D3D_DSOUTH},
+		{"east"  , "east_solid" , D3D_DEAST },
+		{"west"  , "west_solid" , D3D_DWEST },
+		{"top"   , "" /* N/A */ , D3D_DUP   },
+		{"bottom", "" /* N/A */ , D3D_DDOWN }
+	};
+	for (size_t i = 0; i < ARRSIZE(faces); ++i) {
+		if ((got = json_map_get(nd, faces[i].txtr, JN_STRING))) {
+			const d3d_texture **txtrp =
+				(void *)table_get(txtrs, got->str);
+			if (txtrp) block->faces[faces[i].dir] = *txtrp;
+		}
+		if (!all_solid
+		 && (got = json_map_get(nd, faces[i].wall, JN_BOOLEAN)))
+			if (got->boolean) *wall |= 1 << faces[i].dir;
+	}
 }
 
 void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
@@ -125,25 +129,22 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
 {
 	uint8_t here = map->walls[y * d3d_board_width(map->board) + x];
-#define IN_DIRECTION(dir) do { \
-	uint8_t bit = 1 << dir; \
-	if (here & bit) break; \
-	size_t there_x = x, there_y = y; \
-	move_direction(dir, &there_x, &there_y); \
-	if (d3d_board_get(map->board, there_x, there_y)) { \
-		uint8_t there = \
-			map->walls[there_y * d3d_board_width(map->board) \
-			+ there_x]; \
-		if (bitat(there, flip_direction(dir))) here |= bit; \
-	} else { \
-		here |= bit; \
-	} \
-} while (0)
-	IN_DIRECTION(D3D_DNORTH);
-	IN_DIRECTION(D3D_DSOUTH);
-	IN_DIRECTION(D3D_DWEST);
-	IN_DIRECTION(D3D_DEAST);
-#undef IN_DIRECTION
+	d3d_direction dirs[] = {D3D_DNORTH, D3D_DSOUTH, D3D_DWEST, D3D_DEAST};
+	for (size_t i = 0; i < ARRSIZE(dirs); ++i) {
+		d3d_direction dir = dirs[i];
+		uint8_t bit = 1 << dir;
+		if (here & bit) break;
+		size_t there_x = x, there_y = y;
+		move_direction(dir, &there_x, &there_y);
+		if (d3d_board_get(map->board, there_x, there_y)) {
+			uint8_t there =
+				map->walls[there_y * d3d_board_width(map->board)
+				+ there_x];
+			if (bitat(there, flip_direction(dir))) here |= bit;
+		} else {
+			here |= bit;
+		}
+	}
 	return here;
 }
 
