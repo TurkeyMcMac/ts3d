@@ -31,4 +31,7 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 // Zero or one is returned.
 #define bitat(bits, idx) ((bits) >> (idx) & 1)
 
+// Number of elements in an array whose size and type is known at compile time.
+#define ARRSIZE(array) (sizeof(array) / sizeof *(array))
+
 #endif /* UTIL_H_ */
