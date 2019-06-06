@@ -99,19 +99,19 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	}
 	if (correct_n) {
 		if (correct_e) {
-			(correct_n = bitat(here, D3D_DNORTH)) &&
-			(correct_e = bitat(here, D3D_DEAST));
+			(void)(	(correct_n = bitat(here, D3D_DNORTH))
+			&&	(correct_e = bitat(here, D3D_DEAST)));
 		} else if (correct_w) {
-			(correct_n = bitat(here, D3D_DNORTH)) &&
-			(correct_w = bitat(here, D3D_DWEST));
+			(void)(	(correct_n = bitat(here, D3D_DNORTH))
+			&&	(correct_w = bitat(here, D3D_DWEST)));
 		}
 	} else if (correct_s) {
 		if (correct_e) {
-			(correct_s = bitat(here, D3D_DSOUTH)) &&
-			(correct_e = bitat(here, D3D_DEAST));
+			(void)(	(correct_s = bitat(here, D3D_DSOUTH))
+			&&	(correct_e = bitat(here, D3D_DEAST)));
 		} else if (correct_w) {
-			(correct_s = bitat(here, D3D_DSOUTH)) &&
-			(correct_w = bitat(here, D3D_DWEST));
+			(void)(	(correct_s = bitat(here, D3D_DSOUTH))
+			&&	(correct_w = bitat(here, D3D_DWEST)));
 		}
 	}
 	if (correct_n) {
