@@ -13,6 +13,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+// DIRECTION NOTE
+// --------------
+// When loading the board, north and south are reversed. References are made to
+// this comment where the reversal is relevant. The reason for the reversal is
+// that south is the +y direction in d3d. Angles also therefore increase not
+// counterclockwise, but clockwise. By reversing the directions while loading,
+// the layout of the board in-game is not a mirrored version of the layout in
+// the map file.
+
 static uint8_t *get_wall(struct map *map, size_t x, size_t y)
 {
 	return &map->walls[y * d3d_board_width(map->board) + x];
@@ -44,8 +53,8 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 		}
 	}
 	struct { const char *txtr, *wall; d3d_direction dir; } faces[] = {
-		{"north" , "north_solid", D3D_DNORTH},
-		{"south" , "south_solid", D3D_DSOUTH},
+		{"north" , "north_solid", D3D_DSOUTH}, // See DIRECTION NOTE
+		{"south" , "south_solid", D3D_DNORTH}, // Ditto
 		{"east"  , "east_solid" , D3D_DEAST },
 		{"west"  , "west_solid" , D3D_DWEST },
 		{"top"   , "" /* N/A */ , D3D_DUP   },
@@ -196,10 +205,11 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	if (layout && width > 0 && height > 0) {
 		map->board = d3d_new_board(width, height);
 		map->walls = xcalloc(height, width);
-		for (size_t y = 0; y < height; ++y) {
+		// See DIRECTION NOTE regarding y:
+		for (size_t r = 0, y = height - 1; r < height; ++r, --y) {
 			if (layout->vals[y].kind != JN_LIST) continue;
 			struct json_node_data_list *row =
-				&layout->vals[y].d.list;
+				&layout->vals[r].d.list;
 			for (size_t x = 0; x < row->n_vals; ++x) {
 				if (row->vals[x].kind != JN_NUMBER) continue;
 				size_t idx = row->vals[x].d.num;
