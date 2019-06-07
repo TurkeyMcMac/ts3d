@@ -17,9 +17,9 @@ struct map {
 	char *name;
 	// The board of visual blocks from the blocks array.
 	d3d_board *board;
-	// The grid of the same width and height as the board, documenting the walls.
-	// If the bit (1 << direction) is set in a tile, there is a wall in that
-	// direction.
+	// The grid of the same width and height as the board, documenting the
+	// walls. If the bit (1 << direction) is set in a tile, there is a wall
+	// in that direction.
 	uint8_t *walls;
 	// The blocks used in the board. These refer to textures in the table
 	// passed to load_map(s).
