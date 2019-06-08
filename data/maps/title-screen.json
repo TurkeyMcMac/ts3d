@@ -1,0 +1,44 @@
+{
+ "layout": [
+  [5,5,1,5,5],
+  [5,0,0,0,5],
+  [4,0,0,0,2],
+  [5,0,0,0,5],
+  [5,5,3,5,5]
+ ],
+ "blocks": [
+  {
+   "name": "floor",
+   "top": "tiles-bw",
+   "bottom": "tiles-bw"
+  },
+  {
+   "name": "T",
+   "all_solid": true,
+   "south": "ts3d-T"
+  },
+  {
+   "name": "S",
+   "all_solid": true,
+   "west": "ts3d-S"
+  },
+  {
+   "name": "3",
+   "all_solid": true,
+   "north": "ts3d-3"
+  },
+  {
+   "name": "D",
+   "all_solid": true,
+   "east": "ts3d-D"
+  },
+  {
+   "name": "wall",
+   "all_solid": true,
+   "north": "stripes-vertical-bw",
+   "south": "stripes-vertical-bw",
+   "east": "stripes-vertical-bw",
+   "west": "stripes-vertical-bw"
+  }
+ ]
+}

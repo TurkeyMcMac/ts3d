@@ -52,53 +52,31 @@ int main(int argc, char *argv[])
 	load_textures(txtrs_path, &txtrs);
 	load_npc_types(npcs_path, &npcs, &txtrs);
 	load_maps(maps_path, &maps, &npcs, &txtrs);
-	struct map *map = *table_get(&maps, "columns");
+	struct map *map = *table_get(&maps, "title-screen");
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
 	*d3d_camera_empty_pixel(cam) = EMPTY_PIXEL;
-	d3d_camera_position(cam)->x = 4.4;
-	d3d_camera_position(cam)->y = 3.4;
-	*d3d_camera_facing(cam) = 3.4;
+	d3d_camera_position(cam)->x = 2.5;
+	d3d_camera_position(cam)->y = 2.5;
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
 			init_pair((fg << 3 | bg) + 1, fg, bg);
 		}
 	}
-	for (;;) {
+	d3d_vec_s *pos = d3d_camera_position(cam);
+	double *facing = d3d_camera_facing(cam);
+	*facing = M_PI / 2;
+	timeout(10);
+	while (getch() != 'x') {
+		// This produces a cool effect:
+		pos->x = 0.3 * cos(2 * M_PI * cos(-*facing)) + 2.5;
+		pos->y = 0.3 * sin(2 * M_PI * sin(-*facing)) + 2.5;
 		d3d_draw_walls(cam, board);
 		display_frame(cam);
-		// The straight-forward player movement angle:
-		double move_angle = *d3d_camera_facing(cam);
-		switch (getch()) {
-		case 'w': // Forward
-			break;
-		case 'a': // Left
-			move_angle += M_PI / 2;
-			break;
-		case 's': // Backward
-			move_angle += M_PI;
-			break;
-		case 'd': // Right
-			move_angle -= M_PI / 2;
-			break;
-		case 'q': // Turn left
-			*d3d_camera_facing(cam) += 0.04;
-			continue;
-		case 'e': // Turn right
-			*d3d_camera_facing(cam) -= 0.04;
-			continue;
-		case 'x': // Quit the game
-			exit(0);
-		default: // Other keys are ignored
-			continue;
-		}
-		d3d_vec_s *cam_pos = d3d_camera_position(cam);
-		cam_pos->x += cos(move_angle) * 0.04;
-		cam_pos->y += sin(move_angle) * 0.04;
-		map_check_walls(map, cam_pos, CAM_RADIUS);
+		*facing -= 0.004;
 	}
 }
