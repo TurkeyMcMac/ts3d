@@ -34,4 +34,10 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 // Number of elements in an array whose size and type is known at compile time.
 #define ARRSIZE(array) (sizeof(array) / sizeof *(array))
 
+// Clamp num within the range [min, max]. Return the clamped value. Arguments
+// will be evaluated multiple times.
+// Precondition: min <= max
+#define CLAMP(num, min, max) \
+	((num) < (min) ? (min) : ((num) > (max) ? (max) : (num)))
+
 #endif /* UTIL_H_ */
