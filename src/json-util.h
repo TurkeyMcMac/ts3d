@@ -1,6 +1,7 @@
 #ifndef JSON_UTIL_H_
 #define JSON_UTIL_H_
 
+#include "d3d.h"
 #include "json.h"
 #include "table.h"
 #include <stdbool.h>
@@ -55,5 +56,9 @@ int parse_json_tree(const char *path, struct json_node *root);
 
 // Completely free a JSON tree, including all the strings and stuff.
 void free_json_tree(struct json_node *root);
+
+// Parse a vector in the [x, y] form. Zero is returned unless the format is
+// invalid, in which case -1 is returned and unparseable coordinates are zero.
+int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list);
 
 #endif /* JSON_UTIL_H_ */

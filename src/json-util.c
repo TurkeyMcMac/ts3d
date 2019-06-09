@@ -234,3 +234,20 @@ void free_json_tree(struct json_node *nd)
 	}
 }
 
+int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
+{
+	int retval = 0;
+	vec->x = vec->y = 0;
+	if (list->n_vals < 1) return -1;
+	if (list->vals[0].kind == JN_NUMBER) {
+		vec->x = list->vals[0].d.num;
+	} else {
+		retval |= -1;
+	}
+	if (list->n_vals >= 2 && list->vals[1].kind == JN_NUMBER) {
+		vec->y = list->vals[1].d.num;
+	} else {
+		retval |= -1;
+	}
+	return retval;
+}
