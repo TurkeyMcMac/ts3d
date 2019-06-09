@@ -135,6 +135,23 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	}
 }
 
+static int parse_npc_start(struct map_npc_start *start, table *npcs,
+	struct json_node *root)
+{
+	union json_node_data *got;
+	if ((got = json_map_get(root, "kind", JN_STRING))) {
+		struct npc_type **kind = (void *)table_get(npcs, got->str);
+		if (!kind) return -1;
+		start->type = *kind;
+	} else {
+		return -1;
+	}
+	start->pos.x = start->pos.y = 0;
+	if ((got = json_map_get(root, "pos", JN_LIST)))
+		parse_json_vec(&start->pos, &got->list);
+	return 0;
+}
+
 static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
 {
 	uint8_t here = map->walls[y * d3d_board_width(map->board) + x];
@@ -226,10 +243,36 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 			}
 		}
 	} else {
-		map->board = d3d_new_board(1, 1);
+		width = height = 1;
+		map->board = d3d_new_board(width, height);
 		map->walls = xcalloc(1, 1);
 	}
 	free(walls);
+	map->player_pos.x = map->player_pos.y = 0;
+	if ((got = json_map_get(&jtree, "player_pos", JN_LIST)))
+		parse_json_vec(&map->player_pos, &got->list);
+	map->player_pos.x = CLAMP(map->player_pos.x, 0, height - 0.01);
+	// See DIRECTION NOTE:
+	map->player_pos.y = height - CLAMP(map->player_pos.y, 0.01, height);
+	map->player_facing = 0;
+	if ((got = json_map_get(&jtree, "player_facing", JN_NUMBER)))
+		map->player_facing = got->num;
+	if ((got = json_map_get(&jtree, "npcs", JN_LIST))) {
+		size_t j = 0;
+		map->npcs = xmalloc(got->list.n_vals * sizeof(*map->npcs));
+		for (size_t i = 0; i < got->list.n_vals; ++i) {
+			struct map_npc_start *start = &map->npcs[j];
+			if (!parse_npc_start(start, npcs, &got->list.vals[i])) {
+				start->pos.x = CLAMP(map->player_pos.x, 0,
+					height - 0.01);
+				// See DIRECTION NOTE:
+				start->pos.y = height - CLAMP(map->player_pos.y,
+					0.01, height);
+				++j;
+			}
+		}
+		map->n_npcs = j;
+	}
 end:
 	free_json_tree(&jtree);
 	return 0;

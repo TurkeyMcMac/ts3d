@@ -24,11 +24,14 @@ struct map {
 	// The blocks used in the board. These refer to textures in the table
 	// passed to load_map(s).
 	d3d_block_s *blocks;
-	// Not yet used.
+	// The starting position of the player on the board (in blocks).
 	d3d_vec_s player_pos;
-	// Not yet used.
+	// The starting direction of the player on the board (in radians).
 	double player_facing;
-	// Not yet used.
+	// The starting number of NPCs.
+	size_t n_npcs;
+	// The list of NPC types and corresponding starting positions. This
+	// refers to data in the npcs table passed to load_map(s).
 	struct map_npc_start *npcs;
 	// See MAP_INVALID, etc. below.
 	int flags;
