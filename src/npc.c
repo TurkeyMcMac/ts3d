@@ -3,6 +3,7 @@
 #include "grow.h"
 #include "json.h"
 #include "json-util.h"
+#include "pixel.h"
 #include "load-texture.h"
 #include "string.h"
 #include "util.h"
@@ -36,7 +37,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 	npc->height = 1.0;
 	if ((got = json_map_get(&jtree, "height", JN_NUMBER)))
 		npc->height = got->num;
-	npc->transparent = ' ';
+	npc->transparent = EMPTY_PIXEL;
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)
 		npc->height = *got->str;
