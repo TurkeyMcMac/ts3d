@@ -39,20 +39,22 @@ void end_win(void) { endwin(); }
 
 int main(int argc, char *argv[])
 {
-	if (argc < 4) {
-		fprintf(stderr, "Usage: %s maps npcs textures\n", argv[0]);
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s map\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	const char *txtrs_path = argv[3];
-	const char *npcs_path = argv[2];
-	const char *maps_path = argv[1];
 	table txtrs, npcs, maps;
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
-	load_textures(txtrs_path, &txtrs);
-	load_npc_types(npcs_path, &npcs, &txtrs);
-	load_maps(maps_path, &maps, &npcs, &txtrs);
-	struct map *map = *table_get(&maps, "columns");
+	load_textures("data/textures", &txtrs);
+	load_npc_types("data/npcs", &npcs, &txtrs);
+	load_maps("data/maps", &maps, &npcs, &txtrs);
+	struct map **mapp = (void *)table_get(&maps, argv[1]);
+	if (!mapp) {
+		fprintf(stderr, "%s: map '%s' not found\n", argv[0], argv[1]);
+		exit(EXIT_FAILURE);
+	}
+	struct map *map = *mapp;
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
 	for (size_t i = 0; i < map->n_npcs; ++i) {
 		d3d_sprite_s *sp = &sprites[i];
