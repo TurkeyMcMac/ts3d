@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
 	timeout(4);
 	while (getch() != 'x') {
 		// This produces a cool effect:
-		pos->x = 0.3 * cos(2 * M_PI * cos(-*facing)) + 3.5;
-		pos->y = 0.3 * sin(2 * M_PI * sin(-*facing)) + 3.5;
+		pos->x = .3 * cos(2 * M_PI * cos(-*facing)) + map->player_pos.x;
+		pos->y = .3 * sin(2 * M_PI * sin(-*facing)) + map->player_pos.y;
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		display_frame(cam);

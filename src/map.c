@@ -251,7 +251,7 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	map->player_pos.x = map->player_pos.y = 0;
 	if ((got = json_map_get(&jtree, "player_pos", JN_LIST)))
 		parse_json_vec(&map->player_pos, &got->list);
-	map->player_pos.x = CLAMP(map->player_pos.x, 0, height - 0.01);
+	map->player_pos.x = CLAMP(map->player_pos.x, 0, width - 0.01);
 	// See DIRECTION NOTE:
 	map->player_pos.y = height - CLAMP(map->player_pos.y, 0.01, height);
 	map->player_facing = 0;

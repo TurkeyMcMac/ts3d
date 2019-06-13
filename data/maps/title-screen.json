@@ -40,5 +40,6 @@
    "east": "stripes-vertical-bw",
    "west": "stripes-vertical-bw"
   }
- ]
+ ],
+ "player_pos": [2.5, 2.5]
 }
