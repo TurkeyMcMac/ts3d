@@ -92,6 +92,10 @@ int main(int argc, char *argv[])
 		pos->y = .3 * sin(2 * M_PI * sin(-*facing)) + map->player_pos.y;
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
+		for (size_t i = 0; i < map->n_npcs; ++i) {
+			sprites[i].txtr = map->npcs[i].type->frames[map->npcs[i].frame++];
+			map->npcs[i].frame %= map->npcs[i].type->n_frames;
+		}
 		display_frame(cam);
 		*facing -= 0.004;
 		tick(&timer);

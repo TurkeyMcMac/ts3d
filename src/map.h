@@ -10,6 +10,7 @@
 struct map_npc_start {
 	d3d_vec_s pos;
 	const struct npc_type *type;
+	size_t frame;
 };
 
 struct map {

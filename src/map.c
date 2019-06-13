@@ -139,6 +139,7 @@ static int parse_npc_start(struct map_npc_start *start, table *npcs,
 	struct json_node *root)
 {
 	union json_node_data *got;
+	start->frame = 0;
 	if ((got = json_map_get(root, "kind", JN_STRING))) {
 		struct npc_type **kind = (void *)table_get(npcs, got->str);
 		if (!kind) return -1;
