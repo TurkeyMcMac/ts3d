@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
-	*d3d_camera_empty_pixel(cam) = EMPTY_PIXEL;
 	d3d_camera_position(cam)->x = 2.5;
 	d3d_camera_position(cam)->y = 2.5;
 	start_color();
