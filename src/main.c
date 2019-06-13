@@ -1,9 +1,11 @@
+#define _POSIX_C_SOURCE 200112L
 #include "load-texture.h"
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
 #include "npc.h"
 #include "pixel.h"
+#include "ticker.h"
 #include "util.h"
 #include "xalloc.h"
 #include <curses.h>
@@ -78,10 +80,12 @@ int main(int argc, char *argv[])
 			init_pair((fg << 3 | bg) + 1, fg, bg);
 		}
 	}
+	struct ticker timer;
+	ticker_init(&timer, 15);
 	d3d_vec_s *pos = d3d_camera_position(cam);
 	double *facing = d3d_camera_facing(cam);
 	*facing = M_PI / 2;
-	timeout(4);
+	timeout(0);
 	while (getch() != 'x') {
 		// This produces a cool effect:
 		pos->x = .3 * cos(2 * M_PI * cos(-*facing)) + map->player_pos.x;
@@ -90,5 +94,6 @@ int main(int argc, char *argv[])
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		display_frame(cam);
 		*facing -= 0.004;
+		tick(&timer);
 	}
 }
