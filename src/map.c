@@ -262,14 +262,8 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 		map->npcs = xmalloc(got->list.n_vals * sizeof(*map->npcs));
 		for (size_t i = 0; i < got->list.n_vals; ++i) {
 			struct map_npc_start *start = &map->npcs[j];
-			if (!parse_npc_start(start, npcs, &got->list.vals[i])) {
-				start->pos.x = CLAMP(map->player_pos.x, 0,
-					height - 0.01);
-				// See DIRECTION NOTE:
-				start->pos.y = height - CLAMP(map->player_pos.y,
-					0.01, height);
+			if (!parse_npc_start(start, npcs, &got->list.vals[i]))
 				++j;
-			}
 		}
 		map->n_npcs = j;
 	}
