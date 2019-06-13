@@ -257,15 +257,14 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	map->player_facing = 0;
 	if ((got = json_map_get(&jtree, "player_facing", JN_NUMBER)))
 		map->player_facing = got->num;
+	map->n_npcs = 0;
 	if ((got = json_map_get(&jtree, "npcs", JN_LIST))) {
-		size_t j = 0;
 		map->npcs = xmalloc(got->list.n_vals * sizeof(*map->npcs));
 		for (size_t i = 0; i < got->list.n_vals; ++i) {
-			struct map_npc_start *start = &map->npcs[j];
+			struct map_npc_start *start = &map->npcs[map->n_npcs];
 			if (!parse_npc_start(start, npcs, &got->list.vals[i]))
-				++j;
+				++map->n_npcs;
 		}
-		map->n_npcs = j;
 	}
 end:
 	free_json_tree(&jtree);
