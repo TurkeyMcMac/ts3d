@@ -52,7 +52,17 @@ int main(int argc, char *argv[])
 	load_textures(txtrs_path, &txtrs);
 	load_npc_types(npcs_path, &npcs, &txtrs);
 	load_maps(maps_path, &maps, &npcs, &txtrs);
-	struct map *map = *table_get(&maps, "title-screen");
+	struct map *map = *table_get(&maps, "columns");
+	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
+	for (size_t i = 0; i < map->n_npcs; ++i) {
+		d3d_sprite_s *sp = &sprites[i];
+		const struct npc_type *npc = map->npcs[i].type;
+		sp->pos = map->npcs[i].pos;
+		sp->scale.x = npc->width;
+		sp->scale.y = npc->height;
+		sp->txtr = npc->frames[0];
+		sp->transparent = npc->transparent;
+	}
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
@@ -70,12 +80,13 @@ int main(int argc, char *argv[])
 	d3d_vec_s *pos = d3d_camera_position(cam);
 	double *facing = d3d_camera_facing(cam);
 	*facing = M_PI / 2;
-	timeout(10);
+	timeout(4);
 	while (getch() != 'x') {
 		// This produces a cool effect:
-		pos->x = 0.3 * cos(2 * M_PI * cos(-*facing)) + 2.5;
-		pos->y = 0.3 * sin(2 * M_PI * sin(-*facing)) + 2.5;
+		pos->x = 0.3 * cos(2 * M_PI * cos(-*facing)) + 3.5;
+		pos->y = 0.3 * sin(2 * M_PI * sin(-*facing)) + 3.5;
 		d3d_draw_walls(cam, board);
+		d3d_draw_sprites(cam, 1, sprites);
 		display_frame(cam);
 		*facing -= 0.004;
 	}
