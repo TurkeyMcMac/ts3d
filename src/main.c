@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		pos->x = 0.3 * cos(2 * M_PI * cos(-*facing)) + 3.5;
 		pos->y = 0.3 * sin(2 * M_PI * sin(-*facing)) + 3.5;
 		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, 1, sprites);
+		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		display_frame(cam);
 		*facing -= 0.004;
 	}
