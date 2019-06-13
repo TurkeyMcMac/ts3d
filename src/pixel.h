@@ -5,7 +5,7 @@
 
 #include "d3d.h"
 
-// Completely black (for walls) or transparent (for sprites, by default) pixel.
+// Default transparent pixel when loading textures.
 #define EMPTY_PIXEL ((d3d_pixel)-1)
 
 // The foreground value of the pixel from 0-7.
