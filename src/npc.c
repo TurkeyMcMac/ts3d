@@ -73,7 +73,6 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		npc->n_frames = got->list.n_vals;
 		npc->frames = xmalloc(npc->n_frames * sizeof(*npc->frames));
 		for (size_t i = 0; i < npc->n_frames; ++i) {
-			struct json_node *li = &got->list.vals[i];
 			parse_frame(&got->list.vals[i], &npc->frames[i], txtrs);
 		}
 	}
