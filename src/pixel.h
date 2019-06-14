@@ -6,7 +6,7 @@
 #include "d3d.h"
 
 // Default transparent pixel when loading textures.
-#define EMPTY_PIXEL ((d3d_pixel)-1)
+#define EMPTY_PIXEL pixel_from_char(' ')
 
 // The foreground value of the pixel from 0-7.
 #define pixel_fg(pix) ((pix) >> 3 & 7)
