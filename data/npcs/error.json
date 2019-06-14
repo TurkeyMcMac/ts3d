@@ -1,0 +1,10 @@
+{
+ "name": "Bat",
+ "width": 0.3,
+ "height": 0.15,
+ "random_start_frame": true,
+ "frames": [
+  "bat-wings-up",
+  "bat-wings-down"
+ ]
+}
