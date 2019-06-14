@@ -4,6 +4,13 @@
 #include "d3d.h"
 #include "table.h"
 
+struct npc_frame {
+	// The texture displayed.
+	const d3d_texture *txtr;
+	// Time where frame is visible, in game ticks.
+	long duration;
+};
+
 struct npc_type {
 	// The allocated type name.
 	char *name;
@@ -16,7 +23,7 @@ struct npc_type {
 	// The number of frames.
 	size_t n_frames;
 	// The allocated list of n_frames frames.
-	const d3d_texture **frames;
+	struct npc_frame *frames;
 	// The flags. See NPC_INVALID, etc. below.
 	int flags;
 };

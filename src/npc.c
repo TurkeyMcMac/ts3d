@@ -14,6 +14,34 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void parse_frame(struct json_node *node, struct npc_frame *frame,
+	table *txtrs)
+{
+	const char *txtr_name = EMPTY_TXTR_KEY;
+	long duration = 1;
+	switch (node->kind) {
+	case JN_STRING:
+		txtr_name = node->d.str;
+		node->d.str = NULL;
+		break;
+	case JN_LIST:
+		if (node->d.list.n_vals < 1
+		 || node->d.list.vals[0].kind != JN_STRING) break;
+		txtr_name = node->d.list.vals[0].d.str;
+		node->d.list.vals[0].d.str = NULL;
+		if (node->d.list.n_vals < 2
+		 || node->d.list.vals[1].kind != JN_NUMBER) break;
+		duration = node->d.list.vals[1].d.num;
+		break;
+	default:
+		break;
+	}
+	void **txtrp = table_get(txtrs, txtr_name);
+	if (!txtrp) txtrp = table_get(txtrs, EMPTY_TXTR_KEY);
+	frame->txtr = *txtrp;
+	frame->duration = duration;
+}
+
 int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 {
 	struct json_node jtree;
@@ -46,12 +74,7 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		npc->frames = xmalloc(npc->n_frames * sizeof(*npc->frames));
 		for (size_t i = 0; i < npc->n_frames; ++i) {
 			struct json_node *li = &got->list.vals[i];
-			if (li->kind != JN_STRING) continue;
-			char *txtr_name = li->d.str;
-			li->d.str = NULL;
-			void **got = table_get(txtrs, txtr_name);
-			if (!got) got = table_get(txtrs, EMPTY_TXTR_KEY);
-			npc->frames[i] = *got;
+			parse_frame(&got->list.vals[i], &npc->frames[i], txtrs);
 		}
 	}
 end:
@@ -142,7 +165,7 @@ char *npc_type_to_string(const struct npc_type *npc)
 	if (npc->n_frames > 0) {
 		const char *before = "[ ";
 		for (size_t i = 0; i < npc->n_frames; ++i) {
-			const d3d_texture *txtr = npc->frames[i];
+			const d3d_texture *txtr = npc->frames[i].txtr;
 			string_pushn(&str, &cap, before, 2);
 			string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
 				sizeof(fmt_buf),

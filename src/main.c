@@ -58,13 +58,14 @@ int main(int argc, char *argv[])
 	}
 	struct map *map = *mapp;
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
+	long *durations = xcalloc(map->n_npcs, sizeof(*durations));
 	for (size_t i = 0; i < map->n_npcs; ++i) {
 		d3d_sprite_s *sp = &sprites[i];
 		const struct npc_type *npc = map->npcs[i].type;
 		sp->pos = map->npcs[i].pos;
 		sp->scale.x = npc->width;
 		sp->scale.y = npc->height;
-		sp->txtr = npc->frames[0];
+		sp->txtr = npc->frames[0].txtr;
 		sp->transparent = npc->transparent;
 	}
 	d3d_board *board = map->board;
@@ -88,13 +89,18 @@ int main(int argc, char *argv[])
 	timeout(0);
 	while (getch() != 'x') {
 		// This produces a cool effect:
-		pos->x = .3 * cos(2 * M_PI * cos(-*facing)) + map->player_pos.x;
-		pos->y = .3 * sin(2 * M_PI * sin(-*facing)) + map->player_pos.y;
+		pos->x = .3 * cos(M_PI * cos(*facing)) + map->player_pos.x;
+		pos->y = .3 * sin(M_PI * sin(*facing)) + map->player_pos.y;
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		for (size_t i = 0; i < map->n_npcs; ++i) {
-			sprites[i].txtr = map->npcs[i].type->frames[map->npcs[i].frame++];
-			map->npcs[i].frame %= map->npcs[i].type->n_frames;
+			if (durations[i] == 0) {
+				durations[i] = map->npcs[i].type->frames[map->npcs[i].frame].duration;
+				sprites[i].txtr = map->npcs[i].type->frames[map->npcs[i].frame++].txtr;
+				map->npcs[i].frame %= map->npcs[i].type->n_frames;
+			} else {
+				--durations[i];
+			}
 		}
 		display_frame(cam);
 		*facing -= 0.004;
