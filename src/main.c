@@ -95,9 +95,12 @@ int main(int argc, char *argv[])
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		for (size_t i = 0; i < map->n_npcs; ++i) {
 			if (durations[i] == 0) {
-				durations[i] = map->npcs[i].type->frames[map->npcs[i].frame].duration;
-				sprites[i].txtr = map->npcs[i].type->frames[map->npcs[i].frame++].txtr;
-				map->npcs[i].frame %= map->npcs[i].type->n_frames;
+				size_t *frame = &map->npcs[i].frame;
+				durations[i] = map->npcs[i].type
+					->frames[*frame].duration;
+				sprites[i].txtr = map->npcs[i].type
+					->frames[(*frame)++].txtr;
+				*frame %= map->npcs[i].type->n_frames;
 			} else {
 				--durations[i];
 			}
