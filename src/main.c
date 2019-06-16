@@ -104,6 +104,14 @@ int main(int argc, char *argv[])
 			} else {
 				--durations[i];
 			}
+			d3d_vec_s *spos = &sprites[i].pos;
+			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
+			double dist = hypot(disp.x, disp.y);
+			disp.x /= dist * -1000;
+			disp.y /= dist * -1000;
+			spos->x += disp.x;
+			spos->y += disp.y;
+			map_check_walls(map, spos, CAM_RADIUS);
 		}
 		display_frame(cam);
 		*facing -= 0.004;
