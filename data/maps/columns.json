@@ -3,10 +3,7 @@
   {
    "name": "wall",
    "all_solid": true,
-   "north": "brick-red",
-   "south": "brick-red",
-   "east": "brick-red",
-   "west": "brick-red"
+   "all": "brick-red"
   },
   {
    "name": "floor",
@@ -16,10 +13,7 @@
   {
    "name": "pillar",
    "all_solid": true,
-   "north": "pillar-gray",
-   "south": "pillar-gray",
-   "east": "pillar-gray",
-   "west": "pillar-gray"
+   "all": "pillar-gray"
   }
  ],
  "layout": [

@@ -52,6 +52,17 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 			all_solid = true;
 		}
 	}
+	if ((got = json_map_get(nd, "all", JN_STRING))) {
+		const d3d_texture **txtrp = (void *)table_get(txtrs, got->str);
+		if (txtrp) {
+			block->faces[D3D_DNORTH] =
+			block->faces[D3D_DSOUTH] =
+			block->faces[D3D_DEAST] =
+			block->faces[D3D_DWEST] =
+			block->faces[D3D_DUP] =
+			block->faces[D3D_DDOWN] = *txtrp;
+		}
+	}
 	struct { const char *txtr, *wall; d3d_direction dir; } faces[] = {
 		{"north" , "north_solid", D3D_DSOUTH}, // See DIRECTION NOTE
 		{"south" , "south_solid", D3D_DNORTH}, // Ditto
