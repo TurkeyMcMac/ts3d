@@ -23,4 +23,4 @@ run-tests: $(test-log)
 
 .PHONY: clean
 clean:
-	$(RM) $(exe) $(tests)
+	$(RM) $(exe) $(tests) $(test-log)
