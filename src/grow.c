@@ -20,3 +20,39 @@ char *growc(char **bufp, size_t *lenp, size_t *capp, size_t num)
 	}
 	return *bufp + old_len;
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+CTF_TEST(ts3d_growe_from_null,
+	size_t len = 0, cap = 0;
+	int *buf = NULL;
+	int *item0 = GROWE(buf, len, cap);
+	assert(item0 == buf);
+	assert(len == 1);
+	assert(cap >= 1);
+)
+
+CTF_TEST(ts3d_growe_realloc,
+	size_t len = 0, cap = 2;
+	int *buf = malloc(cap * sizeof(*buf));
+	int *item;
+	item = GROWE(buf, len, cap);
+	assert(item == buf + 0);
+	assert(len == 1);
+	assert(cap == 2);
+	item = GROWE(buf, len, cap);
+	assert(item == buf + 1);
+	assert(len == 2);
+	assert(cap == 2);
+	item = GROWE(buf, len, cap);
+	assert(item == buf + 2);
+	assert(len == 3);
+	assert(cap >= 3);
+)
+
+// growc tested in string.c
+
+#endif /* CTF_TESTS_ENABLED */

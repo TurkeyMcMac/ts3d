@@ -46,3 +46,24 @@ void tick(struct ticker *tkr)
 }
 
 #endif /* !__APPLE__ */
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+#	include <sys/time.h>
+
+CTF_TEST(ts3d_tick_is_right_length,
+	struct ticker tkr;
+	struct timeval before, after;
+	gettimeofday(&before, NULL);
+	ticker_init(&tkr, 500);
+	tick(&tkr);
+	gettimeofday(&after, NULL);
+	long delay = after.tv_usec - before.tv_usec
+		+ 1000000 * (after.tv_sec - before.tv_sec);
+	assert(delay > 450000);
+	assert(delay < 550000);
+)
+
+#endif /* CTF_TESTS_ENABLED */

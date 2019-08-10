@@ -37,3 +37,22 @@ void *xrealloc(void *ptr, size_t size)
 	}
 	return ptr;
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+CTF_TEST(ts3d_xmalloc_0,
+	xmalloc(0);
+)
+
+CTF_TEST(ts3d_xcalloc_0,
+	xcalloc(0, 0);
+)
+
+CTF_TEST(ts3d_xrealloc_0,
+	xrealloc(NULL, 0);
+)
+
+#endif /* CTF_TESTS_ENABLED */

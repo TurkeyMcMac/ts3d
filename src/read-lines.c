@@ -6,13 +6,11 @@
 #include <stdio.h>
 #include <string.h>
 
-struct string *read_lines(const char *path, size_t *nlines)
+static struct string *read_lines_file(FILE *file, size_t *nlines)
 {
 	int errnum;
 	size_t lines_cap;
 	struct string *lines;
-	FILE *file = fopen(path, "r");
-	if (!file) return NULL;
 	*nlines = 0;
 	lines_cap = 16;
 	lines = xmalloc(lines_cap * sizeof(*lines));
@@ -52,3 +50,50 @@ struct string *read_lines(const char *path, size_t *nlines)
 	errno = errnum;
 	return lines;
 }
+
+struct string *read_lines(const char *path, size_t *nlines)
+{
+	FILE *file = fopen(path, "r");
+	if (!file) return NULL;
+	return read_lines_file(file, nlines);
+}
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+CTF_TEST(ts3d_read_lines_final_newline,
+	char str[] = "a\nb\nc\n";
+	FILE *source = fmemopen(str, 6, "r");
+	size_t nlines;
+	struct string *lines = read_lines_file(source, &nlines);
+	assert(nlines == 3);
+	for (size_t i = 0; i < nlines; ++i) {
+		assert(lines[i].len == 1);
+		assert(*lines[i].text == str[i * 2]);
+	}
+)
+
+CTF_TEST(ts3d_read_lines_no_final_newline,
+	char str[] = "a\nb\nc";
+	FILE *source = fmemopen(str, 5, "r");
+	size_t nlines;
+	struct string *lines = read_lines_file(source, &nlines);
+	printf("line %zu\n", lines[0].len);
+	assert(nlines == 3);
+	for (size_t i = 0; i < nlines; ++i) {
+		assert(lines[i].len == 1);
+		assert(*lines[i].text == str[i * 2]);
+	}
+)
+
+CTF_TEST(ts3d_read_lines_empty,
+	char str[] = "";
+	FILE *source = fmemopen(str, 0, "r");
+	size_t nlines;
+	read_lines_file(source, &nlines);
+	assert(nlines == 0);
+)
+
+#endif /* CTF_TESTS_ENABLED */

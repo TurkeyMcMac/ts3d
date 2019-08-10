@@ -35,3 +35,10 @@ void string_pushc(struct string *str, size_t *cap, int push)
 {
 	*string_grow(str, cap, 1) = push;
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+#endif /* CTF_TESTS_ENABLED */

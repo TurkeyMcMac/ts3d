@@ -101,3 +101,84 @@ error_item:
 	free(str.text);
 	return NULL;
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+static void set_up_table(table *tab, int val0, int val1, int val2)
+{
+	table_init(tab, 3);
+	assert(!table_add(tab, "foo", (void *)(intptr_t)val0));
+	assert(!table_add(tab, "bar", (void *)(intptr_t)val1));
+	assert(!table_add(tab, "baz", (void *)(intptr_t)val2));
+	assert(table_add(tab, "foo", (void *)(intptr_t)12345));
+	table_freeze(tab);
+}
+
+CTF_TEST(ts3d_table_add,
+	table tab;
+	set_up_table(&tab, 0, 0, 0);
+	table_free(&tab);
+)
+
+CTF_TEST(ts3d_table_get,
+	table tab;
+	set_up_table(&tab, 2, 3, 5);
+	int product = 1;
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+static int set_value_for_key(const char *key, void **item_)
+{
+	intptr_t *item = (intptr_t *)item_;
+	if (!strcmp(key, "foo")) {
+		*item = 2;
+	} else if (!strcmp(key, "bar")) {
+		*item = 3;
+	} else if (!strcmp(key, "baz")) {
+		*item = 5;
+	} else {
+		assert(!"Bad key");
+	}
+	return 0;
+}
+
+CTF_TEST(ts3d_table_each_visits_all,
+	table tab;
+	set_up_table(&tab, 0, 0, 0);
+	int product = 1;
+	table_each(&tab, set_value_for_key);
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+static int set_value_for_key_return_1(const char *key, void **item)
+{
+	set_value_for_key(key, item);
+	return 1;
+}
+
+CTF_TEST(ts3d_table_each_returns_right,
+	table tab;
+	set_up_table(&tab, 0, 0, 0);
+	assert(!table_each(&tab, set_value_for_key));
+	int product = 1;
+	set_up_table(&tab, 0, 0, 0);
+	assert(table_each(&tab, set_value_for_key_return_1) == 1);
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 0);
+	table_free(&tab);
+)
+
+#endif /* CTF_TESTS_ENABLED */

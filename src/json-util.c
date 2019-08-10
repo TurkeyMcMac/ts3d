@@ -196,22 +196,28 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 	}
 }
 
-int parse_json_tree(const char *path, struct json_node *root)
+static int parse_json_tree_file(const char *path, FILE *file,
+	struct json_node *root)
 {
 	json_reader rdr;
 	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
-	ctx->file = fopen(path, "r");
-	if (!ctx->file) {
-		free(ctx);
-		return -1;
-	}
+	ctx->file = file;
 	json_alloc(&rdr, NULL, 8, xmalloc, free, xrealloc);
 	json_source(&rdr, ctx->buf, sizeof(ctx->buf), ctx, refill);
 	ctx->path = path;
 	ctx->line = 1;
 	char *key;
 	parse_node(&rdr, root, &key);
+	free(ctx);
+	fclose(file);
 	return 0;
+}
+
+int parse_json_tree(const char *path, struct json_node *root)
+{
+	FILE *file = fopen(path, "r");
+	if (!file) return -1;
+	return parse_json_tree_file(path, file, root);
 }
 
 void free_json_tree(struct json_node *nd)
@@ -251,3 +257,61 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 	}
 	return retval;
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+#	define SOURCE(text) \
+	struct json_node root; \
+	do { \
+		char str[] = (text); \
+		FILE *source = fmemopen(str, sizeof(str), "r"); \
+		parse_json_tree_file("(memory)", source, &root); \
+	} while (0)
+
+CTF_TEST(ts3d_printed_json_error,
+	SOURCE("{\"a\":1,\"b\":2");
+	assert(root.kind == JN_ERROR);
+	free_json_tree(&root);
+)
+
+CTF_TEST(ts3d_json_vec,
+	d3d_vec_s vec;
+	SOURCE("[1,2]");
+	assert(root.kind == JN_LIST);
+	assert(!parse_json_vec(&vec, &root.d.list));
+	assert(vec.x == 1);
+	assert(vec.y == 2);
+	free_json_tree(&root);
+)
+
+CTF_TEST(ts3d_json_tree_map,
+	SOURCE("{\"a\":1,\"b\":2}");
+	assert(json_map_get(&root, "a", JN_NUMBER)->num == 1);
+	assert(json_map_get(&root, "b", JN_NUMBER)->num == 2);
+	free_json_tree(&root);
+)
+
+CTF_TEST(ts3d_json_tree_list,
+	SOURCE("[1,2]");
+	assert(root.kind == JN_LIST);
+	assert(root.d.list.n_vals == 2);
+	assert(root.d.list.vals[0].d.num == 1);
+	assert(root.d.list.vals[1].d.num == 2);
+	free_json_tree(&root);
+)
+
+CTF_TEST(ts3d_json_tree_nested,
+	SOURCE("{\"a\":1,\"b\":[2,3]}");
+	assert(json_map_get(&root, "a", JN_NUMBER)->num == 1);
+	union json_node_data *list = json_map_get(&root, "b", JN_LIST);
+	assert(list);
+	assert(list->list.n_vals == 2);
+	assert(list->list.vals[0].d.num == 2);
+	assert(list->list.vals[1].d.num == 3);
+	free_json_tree(&root);
+)
+
+#endif /* CTF_TESTS_ENABLED */
