@@ -15,10 +15,11 @@ $(tests): $(sources) $(headers)
 	$(CC) $(test-flags) $(cflags) -o $@ $(sources) $(linkage)
 
 $(test-log): $(tests)
-	ceeteef -s $(tests) | tee $(test-log)
+	ceeteef -s $(tests) > $(test-log)
 
 .PHONY: run-tests
 run-tests: $(test-log)
+	cat $(test-log)
 
 .PHONY: clean
 clean:
