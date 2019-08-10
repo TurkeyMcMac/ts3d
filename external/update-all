@@ -3,6 +3,8 @@
 # Sync all the external projects with the versions hosted on Github and update
 # various source files accordingly.
 
+cd "`dirname "$0"`"
+
 for project in ./*/; do
 	echo "Updating $project"
 	cd $project
