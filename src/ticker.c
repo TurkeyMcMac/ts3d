@@ -56,8 +56,10 @@ void tick(struct ticker *tkr)
 CTF_TEST(ts3d_tick_is_right_length,
 	struct ticker tkr;
 	struct timeval before, after;
+	struct timespec sleep = { .tv_sec = 0, .tv_nsec = 51000000 };
 	gettimeofday(&before, NULL);
 	ticker_init(&tkr, 500);
+	nanosleep(&sleep, NULL);
 	tick(&tkr);
 	gettimeofday(&after, NULL);
 	long delay = after.tv_usec - before.tv_usec
