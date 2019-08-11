@@ -36,8 +36,7 @@ static struct string *read_lines_file(FILE *file, size_t *nlines)
 			memcpy(added, head, nl - head);
 			head = nl + 1;
 		}
-		if (line->len == 0) line->len = 1;
-		string_shrink_to_fit(line);
+		if (line->len != 0) string_shrink_to_fit(line);
 	} while (!errno && !(feof(file) && head >= buf + nread));
 	if (errno) {
 		for (size_t i = 0; i < *nlines; ++i) {
