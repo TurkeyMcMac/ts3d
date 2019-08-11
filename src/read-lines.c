@@ -30,14 +30,24 @@ static struct string *read_lines_file(FILE *file, size_t *nlines)
 				head = buf;
 			}
 			char *nl = memchr(head, '\n', nread + buf - head);
-			last_one = last_one || nl;
-			if (!nl) nl = buf + nread;
+			if (nl) {
+				last_one = true;
+			} else if (head == buf + nread
+			        && line->len == 0
+				&& feof(file))
+			{
+				--*nlines;
+				goto done;
+			} else {
+				nl = buf + nread;
+			}
 			char *added = string_grow(line, &line_cap, nl - head);
 			memcpy(added, head, nl - head);
 			head = nl + 1;
 		}
 		if (line->len != 0) string_shrink_to_fit(line);
 	} while (!errno && !(feof(file) && head >= buf + nread));
+done:
 	if (errno) {
 		for (size_t i = 0; i < *nlines; ++i) {
 			free(lines[i].text);
