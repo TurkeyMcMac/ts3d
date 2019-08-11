@@ -104,4 +104,13 @@ CTF_TEST(ts3d_read_lines_empty,
 	assert(nlines == 0);
 )
 
+CTF_TEST(ts3d_read_lines_just_newline,
+	char str[] = "\n";
+	FILE *source = fmemopen(str, 1, "r");
+	size_t nlines;
+	struct string *lines = read_lines_file(source, &nlines);
+	assert(nlines == 1);
+	assert(lines[0].len == 0);
+)
+
 #endif /* CTF_TESTS_ENABLED */
