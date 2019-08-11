@@ -109,7 +109,7 @@ CTF_TEST(ts3d_read_lines_no_final_newline,
 CTF_TEST(ts3d_read_lines_empty,
 	// Use a pipe since fmemopen doesn't support size zero.
 	int pipefds[2];
-	pipe(pipefds);
+	assert(!pipe(pipefds));
 	close(pipefds[1]);
 	FILE *source = fdopen(pipefds[0], "r");
 	size_t nlines;
