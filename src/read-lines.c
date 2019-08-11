@@ -64,6 +64,12 @@ struct string *read_lines(const char *path, size_t *nlines)
 #	include "libctf.h"
 #	include <assert.h>
 
+static void dump_line(const struct string *lines, size_t i)
+{
+	printf("%zu: (length %zu) %.*s\n",
+		i + 1, lines[i].len, (int)lines[i].len, lines[i].text);
+}
+
 CTF_TEST(ts3d_read_lines_final_newline,
 	char str[] = "a\nb\nc\n";
 	FILE *source = fmemopen(str, 6, "r");
@@ -71,6 +77,7 @@ CTF_TEST(ts3d_read_lines_final_newline,
 	struct string *lines = read_lines_file(source, &nlines);
 	assert(nlines == 3);
 	for (size_t i = 0; i < nlines; ++i) {
+		dump_line(lines, i);
 		assert(lines[i].len == 1);
 		assert(*lines[i].text == str[i * 2]);
 	}
@@ -81,9 +88,9 @@ CTF_TEST(ts3d_read_lines_no_final_newline,
 	FILE *source = fmemopen(str, 5, "r");
 	size_t nlines;
 	struct string *lines = read_lines_file(source, &nlines);
-	printf("line %zu\n", lines[0].len);
 	assert(nlines == 3);
 	for (size_t i = 0; i < nlines; ++i) {
+		dump_line(lines, i);
 		assert(lines[i].len == 1);
 		assert(*lines[i].text == str[i * 2]);
 	}
