@@ -200,15 +200,14 @@ static int parse_json_tree_file(const char *path, FILE *file,
 	struct json_node *root)
 {
 	json_reader rdr;
-	struct json_reader_ctx *ctx = xmalloc(sizeof(*ctx));
-	ctx->file = file;
+	struct json_reader_ctx ctx;
+	ctx.file = file;
 	json_alloc(&rdr, NULL, 8, xmalloc, free, xrealloc);
-	json_source(&rdr, ctx->buf, sizeof(ctx->buf), ctx, refill);
-	ctx->path = path;
-	ctx->line = 1;
+	json_source(&rdr, ctx.buf, sizeof(ctx.buf), &ctx, refill);
+	ctx.path = path;
+	ctx.line = 1;
 	char *key;
 	parse_node(&rdr, root, &key);
-	free(ctx);
 	fclose(file);
 	return 0;
 }
