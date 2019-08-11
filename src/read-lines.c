@@ -62,6 +62,7 @@ struct string *read_lines(const char *path, size_t *nlines)
 
 #	include "libctf.h"
 #	include <assert.h>
+#	include <unistd.h>
 
 static void dump_line(const struct string *lines, size_t i)
 {
@@ -96,8 +97,11 @@ CTF_TEST(ts3d_read_lines_no_final_newline,
 )
 
 CTF_TEST(ts3d_read_lines_empty,
-	char str[] = "";
-	FILE *source = fmemopen(str, 0, "r");
+	// Use a pipe since fmemopen doesn't support size zero.
+	int pipefds[2];
+	pipe(pipefds);
+	close(pipefds[1]);
+	FILE *source = fdopen(pipefds[0], "r");
 	size_t nlines;
 	read_lines_file(source, &nlines);
 	assert(nlines == 0);
