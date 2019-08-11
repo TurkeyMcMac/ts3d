@@ -106,6 +106,7 @@ error_item:
 
 #	include "libctf.h"
 #	include <assert.h>
+#	include <stdint.h>
 
 static void set_up_table(table *tab, int val0, int val1, int val2)
 {

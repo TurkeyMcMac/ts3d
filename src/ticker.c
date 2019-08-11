@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200112L
 #include "ticker.h"
 
 #if __APPLE__

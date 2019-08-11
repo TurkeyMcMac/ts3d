@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200112L
 #include "load-texture.h"
 #include "d3d.h"
 #include "json-util.h"
