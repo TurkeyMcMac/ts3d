@@ -6,7 +6,7 @@
 cd "`dirname "$0"`"
 
 for project in ./*/; do
-	echo "Updating $project"
+	echo "Updating `basename "$project"`"
 	cd $project
 	./update || echo "Failed"
 	cd ..
