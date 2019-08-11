@@ -24,7 +24,7 @@ static struct string *read_lines_file(FILE *file, size_t *nlines)
 		line->len = 0;
 		line->text = xmalloc(line_cap);
 		for (bool last_one = false; !last_one;) {
-			if (head >= buf + sizeof(buf)) {
+			if (head >= buf + nread) {
 				nread = fread(buf, 1, sizeof(buf), file);
 				last_one = nread < sizeof(buf);
 				head = buf;
