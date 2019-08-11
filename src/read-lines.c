@@ -17,6 +17,7 @@ static struct string *read_lines_file(FILE *file, size_t *nlines)
 	char buf[BUFSIZ];
 	size_t nread = sizeof(buf);
 	char *head = buf + nread;
+	errno = 0;
 	do {
 		size_t line_cap = 16;
 		struct string *line = GROWE(lines, *nlines, lines_cap);
