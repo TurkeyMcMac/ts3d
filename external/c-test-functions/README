@@ -23,7 +23,7 @@ short name for a non-essential command.
 SYSTEM REQUIREMENTS
 ===================
 
-This is meant for POSIX systems, specifically POSIX.1-2008. This includes, at
+This is meant for POSIX systems, specifically POSIX.1-2001. This includes, at
 least for now, the `nm` command.
 
 I think it would be possible to port it to Windows (without using a Unix

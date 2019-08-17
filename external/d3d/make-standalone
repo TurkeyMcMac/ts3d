@@ -14,18 +14,21 @@ while [ $# -ne 0 ]; do
 	fi
 	shift 1
 done
-awk -v exclude_hdr=$exclude_hdr -e '
+awk -v exclude_hdr=$exclude_hdr '
 BEGIN {
 	print "/* NOTE: auto-generated amalgamation */\n";
+	print "#line 1";
 }
 
 /^#include "d3d.*\.h"$/ {
 	file = substr($0, 11, length($0) - 11);
 	if (file != "d3d.h" || exclude_hdr != "yes") {
+		print "#line 1 \""file"\"";
 		while ((getline <file) > 0) {
 			if ($0 != "#include \"d3d.h\"")
 				{print}
 		}
+		print "#line "(NR + 1)" \"d3d.c\"";
 		next;
 	}
 }
