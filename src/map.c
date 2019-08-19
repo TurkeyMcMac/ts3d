@@ -1,5 +1,4 @@
 #include "map.h"
-#include "dir-iter.h"
 #include "grow.h"
 #include "json.h"
 #include "json-util.h"
