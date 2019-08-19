@@ -53,12 +53,36 @@ d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 	return (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir, name, file);
 }
 
+static int free_txtrs_callback(const char *key, void **val)
+{
+	(void)key;
+	d3d_free_texture(*val);
+	return 0;
+}
+
+static int free_npcs_callback(const char *key, void **val)
+{
+	free((char *)key);
+	npc_type_free(*val);
+	return 0;
+}
+
+static int free_maps_callback(const char *key, void **val)
+{
+	free((char *)key);
+	map_free(*val);
+	return 0;
+}
+
 void loader_free(struct loader *ldr)
 {
+	table_each(&ldr->txtrs, free_txtrs_callback);
 	table_free(&ldr->txtrs);
 	free(ldr->txtrs_dir);
+	table_each(&ldr->npcs, free_npcs_callback);
 	table_free(&ldr->npcs);
 	free(ldr->npcs_dir);
+	table_each(&ldr->maps, free_maps_callback);
 	table_free(&ldr->maps);
 	free(ldr->maps_dir);
 }
