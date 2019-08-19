@@ -23,6 +23,10 @@ int sbprintf(char * restrict str, size_t size, const char * restrict fmt, ...)
 // Turn a cardinal direction 180 degrees, or swap between up and down.
 d3d_direction flip_direction(d3d_direction dir);
 
+// Concat parts 1 and 2 with mid inbetween. Return the concatenated.
+// NOTE: recalculates lengths, not efficient.
+char *mid_cat(const char *part1, int mid, const char *part2);
+
 // Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
 // is +x. Underflow in x or y is NOT accounted for.
 void move_direction(d3d_direction dir, size_t *x, size_t *y);

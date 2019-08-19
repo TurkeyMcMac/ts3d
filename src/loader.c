@@ -1,34 +1,17 @@
 #include "loader.h"
 #include "string.h"
+#include "util.h"
 #include "xalloc.h"
 #include <stdlib.h>
 #include <string.h>
 
 void loader_init(struct loader *ldr, const char *root)
 {
-	const char *txtrs_rel = "textures";
-	const char *npcs_rel = "npcs";
-	const char *maps_rel = "maps";
-	size_t root_len = strlen(root);
-	size_t buf_cap;
-	struct string buf;
-	buf_cap = root_len;
-	string_init(&buf, buf_cap);
-	string_pushn(&buf, &buf_cap, root, root_len);
-	string_pushn(&buf, &buf_cap, txtrs_rel, strlen(txtrs_rel) + 1);
-	ldr->txtrs_dir = buf.text;
+	ldr->txtrs_dir = mid_cat(root, '/', "textures");
 	table_init(&ldr->txtrs, 16);
-	buf_cap = root_len;
-	string_init(&buf, buf_cap);
-	string_pushn(&buf, &buf_cap, root, root_len);
-	string_pushn(&buf, &buf_cap, npcs_rel, strlen(npcs_rel) + 1);
-	ldr->npcs_dir = buf.text;
+	ldr->npcs_dir = mid_cat(root, '/', "npcs");
 	table_init(&ldr->npcs, 16);
-	buf_cap = root_len;
-	string_init(&buf, buf_cap);
-	string_pushn(&buf, &buf_cap, root, root_len);
-	string_pushn(&buf, &buf_cap, maps_rel, strlen(maps_rel) + 1);
-	ldr->maps_dir = buf.text;
+	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
 }
 
@@ -37,12 +20,7 @@ static void **load(table *tab, const char *root, const char *name, FILE **file)
 	void **item = table_get(tab, name);
 	*file = NULL;
 	if (!item) {
-		size_t root_len = strlen(root), name_len = strlen(name);
-		size_t path_len = root_len + name_len + 1;
-		char *path = xmalloc(path_len + 1);
-		memcpy(path, root, root_len);
-		path[root_len] = '/';
-		memcpy(path + root_len + 1, name, name_len + 1);
+		char *path = mid_cat(root, '/', name);
 		*file = fopen(path, "r");
 		if (*file) {
 			table_add(tab, name, NULL);
@@ -53,14 +31,21 @@ static void **load(table *tab, const char *root, const char *name, FILE **file)
 	return item;
 }
 
+// Load with .json suffix
+static void **loadj(table *tab, const char *root, const char *name, FILE **file)
+{
+	char *fname = mid_cat(name, '.', "json");
+	return load(tab, root, fname, file);
+}
+
 struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file)
 {
-	return (struct npc_type **)load(&ldr->npcs, ldr->npcs_dir, name, file);
+	return (struct npc_type **)loadj(&ldr->npcs, ldr->npcs_dir, name, file);
 }
 
 struct map **loader_map(struct loader *ldr, const char *name, FILE **file)
 {
-	return (struct map **)load(&ldr->maps, ldr->maps_dir, name, file);
+	return (struct map **)loadj(&ldr->maps, ldr->maps_dir, name, file);
 }
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
