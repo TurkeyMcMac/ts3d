@@ -1,6 +1,5 @@
 #include "load-texture.h"
 #include "read-lines.h"
-#include "dir-iter.h"
 #include "pixel.h"
 #include "string.h"
 #include "util.h"
