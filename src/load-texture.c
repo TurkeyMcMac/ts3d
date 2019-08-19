@@ -16,12 +16,17 @@ static d3d_texture *new_empty_texture(void)
 	return empty;
 }
 
-d3d_texture *load_texture(const char *path)
+d3d_texture *load_texture(struct loader *ldr, const char *name)
 {
-	d3d_texture *txtr;
+	FILE *file;
+	d3d_texture *txtr, **txtrp;
+	txtrp = loader_texture(ldr, name, &file);
+	if (!txtrp) return NULL;
+	txtr = *txtrp;
+	if (txtr) return txtr;
 	size_t width;
 	size_t height;
-	struct string *lines = read_lines(path, &height);
+	struct string *lines = read_lines(file, &height);
 	if (!lines) return NULL;
 	width = 0;
 	for (size_t y = 0; y < height; ++y) {
@@ -43,56 +48,6 @@ d3d_texture *load_texture(const char *path)
 	} else {
 		txtr = new_empty_texture();
 	}
+	*txtrp = txtr;
 	return txtr;
-}
-
-struct texture_iter_arg {
-	table *txtrs;
-	const char *dirpath;
-};
-
-static int texture_iter(struct dirent *ent, void *ctx)
-{
-	struct texture_iter_arg *arg = ctx;
-	table *txtrs = arg->txtrs;
-	size_t cap = 0;
-	struct string path = {0};
-	string_pushz(&path, &cap, arg->dirpath);
-	string_pushc(&path, &cap, '/');
-	string_pushz(&path, &cap, ent->d_name);
-	string_pushc(&path, &cap, '\0');
-	d3d_texture *txtr = load_texture(path.text);
-	if (!txtr) {
-		fprintf(stderr, "Error reading texture '%s': %s. "
-				"Defaulting to empty texture.\n",
-				path.text, strerror(errno));
-		txtr = new_empty_texture();
-	}
-	free(path.text);
-	table_add(txtrs, str_dup(ent->d_name), txtr);
-	return 0;
-}
-
-static int free_txtrs_item(const char *key, void **val)
-{
-	free((char *)key);
-	d3d_free_texture(*val);
-	return 0;
-}
-
-int load_textures(const char *dirpath, table *txtrs)
-{
-	struct texture_iter_arg arg = {
-		.txtrs = txtrs,
-		.dirpath = dirpath
-	};
-	table_init(txtrs, 32);
-	table_add(txtrs, EMPTY_TXTR_KEY, new_empty_texture());
-	if (dir_iter(dirpath, texture_iter, &arg)) {
-		table_each(txtrs, free_txtrs_item);
-		table_free(txtrs);
-		return -1;
-	}
-	table_freeze(txtrs);
-	return 0;
 }

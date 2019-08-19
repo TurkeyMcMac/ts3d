@@ -2,6 +2,7 @@
 #define NPC_H_
 
 #include "d3d.h"
+#include "loader.h"
 #include "table.h"
 
 struct npc_frame {
@@ -34,14 +35,8 @@ struct npc_type {
 // NPC_INVALID.
 #define NPC_INVALID_TEXTURE (1 << 1)
 
-// Load an npc type from a file path, returning negative on system error. The
-// texture pointers in the txtrs table may be referenced by the new type.
-int load_npc_type(const char *path, struct npc_type *npc, table *txtrs);
-
-// Like load_npc_type, but loads from all the files in the given directory. The
-// NPC type structures are allocated and put in the table npcs. Negative is
-// returned on fatal system errors.
-int load_npc_types(const char *dirpath, table *npcs, table *txtrs);
+// Load an NPC with the name or use one previously loaded. Allocate the NPC.
+struct npc_type *load_npc_type(struct loader *ldr, const char *name);
 
 // Allocate a string representation for debugging.
 char *npc_type_to_string(const struct npc_type *npc);

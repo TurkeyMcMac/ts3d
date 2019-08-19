@@ -50,18 +50,15 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage: %s map\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	table txtrs, npcs, maps;
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
-	load_textures("data/textures", &txtrs);
-	load_npc_types("data/npcs", &npcs, &txtrs);
-	load_maps("data/maps", &maps, &npcs, &txtrs);
-	struct map **mapp = (void *)table_get(&maps, argv[1]);
-	if (!mapp) {
+	struct loader ldr;
+	loader_init(&ldr, "data");
+	struct map *map = load_map(&ldr, argv[1]);
+	if (!map) {
 		fprintf(stderr, "%s: map '%s' not found\n", argv[0], argv[1]);
 		exit(EXIT_FAILURE);
 	}
-	struct map *map = *mapp;
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
 	long *durations = xcalloc(map->n_npcs, sizeof(*durations));
 	for (size_t i = 0; i < map->n_npcs; ++i) {
@@ -153,4 +150,5 @@ int main(int argc, char *argv[])
 		display_frame(cam);
 		tick(&timer);
 	}
+	loader_free(&ldr);
 }

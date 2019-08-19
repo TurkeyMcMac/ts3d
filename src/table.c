@@ -115,7 +115,6 @@ static void set_up_table(table *tab, int val0, int val1, int val2)
 	assert(!table_add(tab, "bar", (void *)(intptr_t)val1));
 	assert(!table_add(tab, "baz", (void *)(intptr_t)val2));
 	assert(table_add(tab, "foo", (void *)(intptr_t)12345));
-	table_freeze(tab);
 }
 
 CTF_TEST(ts3d_table_add,
@@ -127,6 +126,18 @@ CTF_TEST(ts3d_table_add,
 CTF_TEST(ts3d_table_get,
 	table tab;
 	set_up_table(&tab, 2, 3, 5);
+	int product = 1;
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+CTF_TEST(ts3d_table_get_freeze,
+	table tab;
+	set_up_table(&tab, 2, 3, 5);
+	table_freeze(&tab);
 	int product = 1;
 	product *= *(intptr_t *)table_get(&tab, "foo");
 	product *= *(intptr_t *)table_get(&tab, "bar");

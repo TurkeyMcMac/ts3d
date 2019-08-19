@@ -2,6 +2,7 @@
 #define MAP_H_
 
 #include "d3d.h"
+#include "loader.h"
 #include "npc.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -47,16 +48,8 @@ struct map {
 // side length (2 * radius).
 void map_check_walls(struct map *map, d3d_vec_s *pos, double radius);
 
-// Load a map from a file path. On system error, negative is returned, but
-// otherwise zero. Passed are tables from allocated strings to struct npc_type *
-// and d3d_texture * for npcs and txtrs, respectively. The values in the tables
-// may be referenced by the loaded map.
-int load_map(const char *path, struct map *map, table *npcs, table *txtrs);
-
-// Like load_map, but loads all the files in the given directory. The maps table
-// is from allocated strings to allocated struct map *. Zero is returned unless
-// a fatal system error occurs.
-int load_maps(const char *dirpath, table *maps, table *npcs, table *txtrs);
+// Load a map with the name or use one previously loaded. Allocate the map.
+struct map *load_map(struct loader *ldr, const char *name);
 
 // Convert a map to an allocated string for debugging.
 char *map_to_string(const struct map *map);

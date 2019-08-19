@@ -15,9 +15,9 @@
 #include <string.h>
 
 static void parse_frame(struct json_node *node, struct npc_frame *frame,
-	table *txtrs)
+	struct loader *ldr)
 {
-	const char *txtr_name = EMPTY_TXTR_KEY;
+	const char *txtr_name = "";
 	long duration = 1;
 	switch (node->kind) {
 	case JN_STRING:
@@ -36,20 +36,26 @@ static void parse_frame(struct json_node *node, struct npc_frame *frame,
 	default:
 		break;
 	}
-	void **txtrp = table_get(txtrs, txtr_name);
-	if (!txtrp) txtrp = table_get(txtrs, EMPTY_TXTR_KEY);
-	frame->txtr = *txtrp;
+	d3d_texture *txtr = load_texture(ldr, txtr_name);
+	frame->txtr = txtr ? txtr : d3d_new_texture(0, 0);
 	frame->duration = duration;
 }
 
-int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
+struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 {
+	FILE *file;
+	struct npc_type *npc, **npcp;
+	npcp = loader_npc(ldr, name, &file);
+	if (!npcp) return NULL;
+	npc = *npcp;
+	if (npc) return npc;
+	npc = malloc(sizeof(*npc));
 	struct json_node jtree;
 	npc->flags = NPC_INVALID;
 	npc->name = NULL;
 	npc->frames = NULL;
 	npc->n_frames = 0;
-	if (parse_json_tree(path, &jtree)) return -1;
+	if (parse_json_tree(name, file, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	npc->flags = 0;
@@ -73,76 +79,13 @@ int load_npc_type(const char *path, struct npc_type *npc, table *txtrs)
 		npc->n_frames = got->list.n_vals;
 		npc->frames = xmalloc(npc->n_frames * sizeof(*npc->frames));
 		for (size_t i = 0; i < npc->n_frames; ++i) {
-			parse_frame(&got->list.vals[i], &npc->frames[i], txtrs);
+			parse_frame(&got->list.vals[i], &npc->frames[i], ldr);
 		}
 	}
 end:
 	free_json_tree(&jtree);
-	return 0;
-}
-
-struct npc_type_iter_arg {
-	table *npcs;
-	table *txtrs;
-	const char *dirpath;
-};
-
-static int npc_type_iter(struct dirent *ent, void *ctx)
-{
-	int retval = -1;
-	struct npc_type_iter_arg *arg = ctx;
-	table *npcs = arg->npcs;
-	table *txtrs = arg->txtrs;
-	size_t cap = 0;
-	struct string path = {0};
-	char *suffix = strstr(ent->d_name, ".json");
-	if (!suffix) return 0;
-	string_pushz(&path, &cap, arg->dirpath);
-	string_pushc(&path, &cap, '/');
-	string_pushz(&path, &cap, ent->d_name);
-	string_pushc(&path, &cap, '\0');
-	*suffix = '\0';
-	struct npc_type *npc = xmalloc(sizeof(*npc));
-	if (load_npc_type(path.text, npc, txtrs)) goto error_load_npc_type;
-	if (npc->flags & NPC_INVALID) {
-		retval = 0;
-		goto invalid_npc;
-	}
-	if (table_add(npcs, str_dup(ent->d_name), npc)) goto error_table_add;
-	return 0;
-
-invalid_npc:
-error_table_add:
-	npc_type_free(npc);
-error_load_npc_type:
-	free(npc);
-	free(path.text);
-	return retval;
-}
-
-static int free_npc_type_entry(const char *key, void **val)
-{
-	free((char *)key);
-	npc_type_free(*val);
-	free(*val);
-	return 0;
-}
-
-int load_npc_types(const char *dirpath, table *npcs, table *txtrs)
-{
-	struct npc_type_iter_arg arg = {
-		.npcs = npcs,
-		.txtrs = txtrs,
-		.dirpath = dirpath
-	};
-	table_init(npcs, 32);
-	if (dir_iter(dirpath, npc_type_iter, &arg)) {
-		table_each(npcs, free_npc_type_entry);
-		table_free(npcs);
-		return -1;
-	}
-	table_freeze(npcs);
-	return 0;
+	*npcp = npc;
+	return npc;
 }
 
 char *npc_type_to_string(const struct npc_type *npc)

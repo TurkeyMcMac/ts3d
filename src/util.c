@@ -34,6 +34,20 @@ d3d_direction flip_direction(d3d_direction dir)
 	}
 }
 
+char *mid_cat(const char *part1, int mid, const char *part2)
+{
+	char *cat;
+	size_t len1, len2, len;
+	len1 = strlen(part1);
+	len2 = strlen(part2);
+	len = len1 + 1 + len2;
+	cat = xmalloc(len + 1);
+	memcpy(cat, part1, len1);
+	cat[len1] = mid;
+	memcpy(cat + len1 + 1, part2, len2 + 1);
+	return cat;
+}
+
 void move_direction(d3d_direction dir, size_t *x, size_t *y)
 {
 	switch (dir) {
