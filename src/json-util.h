@@ -6,6 +6,7 @@
 #include "table.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 
 // A node in a JSON tree
 struct json_node {
@@ -50,9 +51,10 @@ struct json_node {
 union json_node_data *json_map_get(struct json_node *map, const char *key,
 	enum json_node_kind kind);
 
-// Parse a JSON tree from the path given into the root. Negative is returned if
-// a system error occurred, but otherwise returned is zero.
-int parse_json_tree(const char *path, struct json_node *root);
+// Parse a JSON tree from the file given into the root. Negative is returned if
+// a system error occurred, but otherwise returned is zero. The name is used for
+// errors.
+int parse_json_tree(const char *name, FILE *file, struct json_node *root);
 
 // Completely free a JSON tree, including all the strings and stuff.
 void free_json_tree(struct json_node *root);

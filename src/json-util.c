@@ -5,12 +5,11 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 struct json_reader_ctx {
 	char buf[BUFSIZ];
-	const char *path;
+	const char *name;
 	FILE *file;
 	int line;
 };
@@ -90,7 +89,7 @@ static void print_json_error(const json_reader *rdr,
 		break;
 	}
 	fprintf(stderr, "JSON parse error in '%s', line %d: %s\n",
-		ctx->path, line, msg);
+		ctx->name, line, msg);
 }
 
 union json_node_data *json_map_get(struct json_node *map, const char *key,
@@ -196,27 +195,19 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 	}
 }
 
-static int parse_json_tree_file(const char *path, FILE *file,
-	struct json_node *root)
+int parse_json_tree(const char *name, FILE *file, struct json_node *root)
 {
 	json_reader rdr;
 	struct json_reader_ctx ctx;
 	ctx.file = file;
 	json_alloc(&rdr, NULL, 8, xmalloc, free, xrealloc);
 	json_source(&rdr, ctx.buf, sizeof(ctx.buf), &ctx, refill);
-	ctx.path = path;
+	ctx.name = name;
 	ctx.line = 1;
 	char *key;
 	parse_node(&rdr, root, &key);
 	fclose(file);
 	return 0;
-}
-
-int parse_json_tree(const char *path, struct json_node *root)
-{
-	FILE *file = fopen(path, "r");
-	if (!file) return -1;
-	return parse_json_tree_file(path, file, root);
 }
 
 void free_json_tree(struct json_node *nd)
@@ -267,7 +258,7 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 	do { \
 		char str[] = (text); \
 		FILE *source = fmemopen(str, sizeof(str), "r"); \
-		parse_json_tree_file("(memory)", source, &root); \
+		parse_json_tree("(memory)", source, &root); \
 	} while (0)
 
 CTF_TEST(ts3d_printed_json_error,

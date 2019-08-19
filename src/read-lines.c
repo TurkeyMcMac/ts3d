@@ -3,10 +3,9 @@
 #include "xalloc.h"
 #include <errno.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
-static struct string *read_lines_file(FILE *file, size_t *nlines)
+struct string *read_lines(FILE *file, size_t *nlines)
 {
 	int errnum;
 	size_t lines_cap;
@@ -61,13 +60,6 @@ done:
 	return lines;
 }
 
-struct string *read_lines(const char *path, size_t *nlines)
-{
-	FILE *file = fopen(path, "r");
-	if (!file) return NULL;
-	return read_lines_file(file, nlines);
-}
-
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
@@ -84,7 +76,7 @@ CTF_TEST(ts3d_read_lines_final_newline,
 	char str[] = "a\nb\nc\n";
 	FILE *source = fmemopen(str, 6, "r");
 	size_t nlines;
-	struct string *lines = read_lines_file(source, &nlines);
+	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
 	for (size_t i = 0; i < nlines; ++i) {
 		dump_line(lines, i);
@@ -97,7 +89,7 @@ CTF_TEST(ts3d_read_lines_no_final_newline,
 	char str[] = "a\nb\nc";
 	FILE *source = fmemopen(str, 5, "r");
 	size_t nlines;
-	struct string *lines = read_lines_file(source, &nlines);
+	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
 	for (size_t i = 0; i < nlines; ++i) {
 		dump_line(lines, i);
@@ -113,7 +105,7 @@ CTF_TEST(ts3d_read_lines_empty,
 	close(pipefds[1]);
 	FILE *source = fdopen(pipefds[0], "r");
 	size_t nlines;
-	read_lines_file(source, &nlines);
+	read_lines(source, &nlines);
 	assert(nlines == 0);
 )
 
@@ -121,7 +113,7 @@ CTF_TEST(ts3d_read_lines_just_newline,
 	char str[] = "\n";
 	FILE *source = fmemopen(str, 1, "r");
 	size_t nlines;
-	struct string *lines = read_lines_file(source, &nlines);
+	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 1);
 	assert(lines[0].len == 0);
 )

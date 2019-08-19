@@ -3,6 +3,7 @@
 #include "grow.h"
 #include "json.h"
 #include "json-util.h"
+#include "load-texture.h"
 #include "string.h"
 #include "util.h"
 #include "xalloc.h"
@@ -39,7 +40,7 @@ static uint8_t get_wall_ck(const struct map *map, long lx, long ly)
 }
 
 static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
-	table *txtrs)
+	struct loader *ldr)
 {
 	union json_node_data *got;
 	*wall = 0;
@@ -53,14 +54,14 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 		}
 	}
 	if ((got = json_map_get(nd, "all", JN_STRING))) {
-		const d3d_texture **txtrp = (void *)table_get(txtrs, got->str);
-		if (txtrp) {
+		const d3d_texture *txtr = load_texture(ldr, got->str);
+		if (txtr) {
 			block->faces[D3D_DNORTH] =
 			block->faces[D3D_DSOUTH] =
 			block->faces[D3D_DEAST] =
 			block->faces[D3D_DWEST] =
 			block->faces[D3D_DUP] =
-			block->faces[D3D_DDOWN] = *txtrp;
+			block->faces[D3D_DDOWN] = txtr;
 		}
 	}
 	struct { const char *txtr, *wall; d3d_direction dir; } faces[] = {
@@ -73,9 +74,8 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 	};
 	for (size_t i = 0; i < ARRSIZE(faces); ++i) {
 		if ((got = json_map_get(nd, faces[i].txtr, JN_STRING))) {
-			const d3d_texture **txtrp =
-				(void *)table_get(txtrs, got->str);
-			if (txtrp) block->faces[faces[i].dir] = *txtrp;
+			const d3d_texture *txtr = load_texture(ldr, got->str);
+			if (txtr) block->faces[faces[i].dir] = txtr;
 		}
 		if (!all_solid
 		 && (got = json_map_get(nd, faces[i].wall, JN_BOOLEAN)))
@@ -146,15 +146,15 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	}
 }
 
-static int parse_npc_start(struct map_npc_start *start, table *npcs,
+static int parse_npc_start(struct map_npc_start *start, struct loader *ldr,
 	struct json_node *root)
 {
 	union json_node_data *got;
 	start->frame = 0;
 	if ((got = json_map_get(root, "kind", JN_STRING))) {
-		struct npc_type **kind = (void *)table_get(npcs, got->str);
+		struct npc_type *kind = load_npc_type(ldr, got->str);
 		if (!kind) return -1;
-		start->type = *kind;
+		start->type = kind;
 	} else {
 		return -1;
 	}
@@ -188,8 +188,14 @@ static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
 
 bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
 
-int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
+struct map *load_map(struct loader *ldr, const char *name)
 {
+	FILE *file;
+	struct map **mapp = loader_map(ldr, name, &file);
+	if (!mapp) return NULL;
+	struct map *map = *mapp;
+	if (map) return map;
+	map = malloc(sizeof(*map));
 	struct json_node jtree;
 	map->flags = MAP_INVALID;
 	map->name = NULL;
@@ -197,7 +203,7 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	map->walls = NULL;
 	map->blocks = NULL;
 	map->npcs = NULL;
-	if (parse_json_tree(path, &jtree)) return -1;
+	if (parse_json_tree(name, file, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	map->flags = 0;
@@ -215,7 +221,7 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 		map->blocks = xmalloc(n_blocks * sizeof(*map->blocks));
 		for (size_t i = 0; i < n_blocks; ++i) {
 			parse_block(&map->blocks[i], &walls[i],
-				&got->list.vals[i], txtrs);
+				&got->list.vals[i], ldr);
 		}
 	}
 	struct json_node_data_list *layout = NULL;
@@ -274,7 +280,7 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 		map->npcs = xmalloc(got->list.n_vals * sizeof(*map->npcs));
 		for (size_t i = 0; i < got->list.n_vals; ++i) {
 			struct map_npc_start *start = &map->npcs[map->n_npcs];
-			if (!parse_npc_start(start, npcs, &got->list.vals[i])) {
+			if (!parse_npc_start(start, ldr, &got->list.vals[i])) {
 				// See DIRECTION NOTE:
 				start->pos.y = height - start->pos.y;
 				++map->n_npcs;
@@ -283,73 +289,8 @@ int load_map(const char *path, struct map *map, table *npcs, table *txtrs)
 	}
 end:
 	free_json_tree(&jtree);
-	return 0;
-}
-
-struct map_iter_arg {
-	table *maps;
-	table *npcs;
-	table *txtrs;
-	const char *dirpath;
-};
-
-static int map_iter(struct dirent *ent, void *ctx)
-{
-	int retval = -1;
-	struct map_iter_arg *arg = ctx;
-	table *maps = arg->maps;
-	table *npcs = arg->npcs;
-	table *txtrs = arg->txtrs;
-	size_t cap = 0;
-	struct string path = {0};
-	char *suffix = strstr(ent->d_name, ".json");
-	if (!suffix) return 0;
-	string_pushz(&path, &cap, arg->dirpath);
-	string_pushc(&path, &cap, '/');
-	string_pushz(&path, &cap, ent->d_name);
-	string_pushc(&path, &cap, '\0');
-	*suffix = '\0';
-	struct map *map = xmalloc(sizeof(*map));
-	if (load_map(path.text, map, npcs, txtrs)) goto error_load_map;
-	if (map->flags & MAP_INVALID) {
-		retval = 0;
-		goto invalid_map;
-	}
-	table_add(maps, str_dup(ent->d_name), map);
-	return 0;
-
-invalid_map:
-	map_free(map);
-error_load_map:
-	free(map);
-	free(path.text);
-	return retval;
-}
-
-static int free_map_entry(const char *key, void **val)
-{
-	free((char *)key);
-	map_free(*val);
-	free(*val);
-	return 0;
-}
-
-int load_maps(const char *dirpath, table *maps, table *npcs, table *txtrs)
-{
-	struct map_iter_arg arg = {
-		.maps = maps,
-		.npcs = npcs,
-		.txtrs = txtrs,
-		.dirpath = dirpath
-	};
-	table_init(maps, 32);
-	if (dir_iter(dirpath, map_iter, &arg)) {
-		table_each(npcs, free_map_entry);
-		table_free(maps);
-		return -1;
-	}
-	table_freeze(maps);
-	return 0;
+	*mapp = map;
+	return map;
 }
 
 char *map_to_string(const struct map *map)
