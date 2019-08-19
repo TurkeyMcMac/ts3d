@@ -7,6 +7,7 @@
 #include "ticker.h"
 #include "util.h"
 #include "xalloc.h"
+#include <ctype.h>
 #include <curses.h>
 #include <errno.h>
 #include <stdio.h>
@@ -22,6 +23,11 @@
 
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
+
+#define FORWARD_COEFF 0.05
+#define BACKWARD_COEFF 0.03
+#define TURN_COEFF 0.055
+#define SIDEWAYS_COEFF 0.04
 
 void display_frame(d3d_camera *cam)
 {
@@ -72,8 +78,9 @@ int main(int argc, char *argv[])
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
-	d3d_camera_position(cam)->x = 2.5;
-	d3d_camera_position(cam)->y = 2.5;
+	d3d_vec_s *pos = d3d_camera_position(cam);
+	pos->x = 3.5;
+	pos->y = 3.5;
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
@@ -82,14 +89,39 @@ int main(int argc, char *argv[])
 	}
 	struct ticker timer;
 	ticker_init(&timer, 15);
-	d3d_vec_s *pos = d3d_camera_position(cam);
 	double *facing = d3d_camera_facing(cam);
+	int key;
 	*facing = M_PI / 2;
 	timeout(0);
-	while (getch() != 'x') {
-		// This produces a cool effect:
-		pos->x = .3 * cos(M_PI * cos(*facing)) + map->player_pos.x;
-		pos->y = .3 * sin(M_PI * sin(*facing)) + map->player_pos.y;
+	while ((key = getch()) != 'x') {
+		switch (tolower(key)) {
+			double sideway;
+		case 'w': // Forward
+			pos->x += FORWARD_COEFF * cos(*facing);
+			pos->y += FORWARD_COEFF * sin(*facing);
+			break;
+		case 'q': // Turn CCW
+			*facing += TURN_COEFF;
+			break;
+		case 's': // Backward
+			pos->x -= BACKWARD_COEFF * cos(*facing);
+			pos->y -= BACKWARD_COEFF * sin(*facing);
+			break;
+		case 'e': // Turn CW
+			*facing -= TURN_COEFF;
+			break;
+		case 'a': // Left
+			sideway = *facing + M_PI / 2;
+			pos->x += SIDEWAYS_COEFF * cos(sideway);
+			pos->y += SIDEWAYS_COEFF * sin(sideway);
+			break;
+		case 'd': // Right
+			sideway = *facing - M_PI / 2;
+			pos->x += SIDEWAYS_COEFF * cos(sideway);
+			pos->y += SIDEWAYS_COEFF * sin(sideway);
+			break;
+		}
+		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		for (size_t i = 0; i < map->n_npcs; ++i) {
@@ -106,14 +138,19 @@ int main(int argc, char *argv[])
 			d3d_vec_s *spos = &sprites[i].pos;
 			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
 			double dist = hypot(disp.x, disp.y);
-			disp.x /= dist * -1000;
-			disp.y /= dist * -1000;
+			disp.x /= dist * -400;
+			disp.y /= dist * -400;
+			d3d_vec_s move = *spos;
+			map_check_walls(map, &move, CAM_RADIUS);
+			disp.x += move.x - spos->x;
+			disp.y += move.y - spos->y;
+			dist = hypot(disp.x, disp.y);
+			disp.x /= dist * 250;
+			disp.y /= dist * 250;
 			spos->x += disp.x;
 			spos->y += disp.y;
-			map_check_walls(map, spos, CAM_RADIUS);
 		}
 		display_frame(cam);
-		*facing -= 0.004;
 		tick(&timer);
 	}
 }
