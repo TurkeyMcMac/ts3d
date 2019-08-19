@@ -113,4 +113,5 @@ int main(int argc, char *argv[])
 		*facing -= 0.004;
 		tick(&timer);
 	}
+	loader_free(&ldr);
 }
