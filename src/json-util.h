@@ -53,7 +53,7 @@ union json_node_data *json_map_get(struct json_node *map, const char *key,
 
 // Parse a JSON tree from the file given into the root. Negative is returned if
 // a system error occurred, but otherwise returned is zero. The name is used for
-// errors.
+// errors. The file is closed.
 int parse_json_tree(const char *name, FILE *file, struct json_node *root);
 
 // Completely free a JSON tree, including all the strings and stuff.

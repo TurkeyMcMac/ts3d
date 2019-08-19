@@ -35,7 +35,7 @@ struct npc_type {
 // NPC_INVALID.
 #define NPC_INVALID_TEXTURE (1 << 1)
 
-// TODO: doc
+// Load an NPC with the name or use one previously loaded. Allocate the NPC.
 struct npc_type *load_npc_type(struct loader *ldr, const char *name);
 
 // Allocate a string representation for debugging.

@@ -48,7 +48,7 @@ struct map {
 // side length (2 * radius).
 void map_check_walls(struct map *map, d3d_vec_s *pos, double radius);
 
-// TODO: doc
+// Load a map with the name or use one previously loaded. Allocate the map.
 struct map *load_map(struct loader *ldr, const char *name);
 
 // Convert a map to an allocated string for debugging.
