@@ -86,3 +86,29 @@ void loader_free(struct loader *ldr)
 	table_free(&ldr->maps);
 	free(ldr->maps_dir);
 }
+
+#if CTF_TESTS_ENABLED
+
+#	include "libctf.h"
+#	include <assert.h>
+
+CTF_TEST(ts3d_loader_loads_only_once,
+	FILE *file;
+	struct loader ldr;
+	loader_init(&ldr, "data");
+	d3d_texture *empty = d3d_new_texture(0, 0);
+	d3d_texture **loaded = loader_texture(&ldr, "empty", &file);
+	*loaded = empty;
+	assert(*loader_texture(&ldr, "empty", &file) == empty);
+	loader_free(&ldr);
+)
+
+CTF_TEST(ts3d_loader_nonexistent_gives_null,
+	FILE *file;
+	struct loader ldr;
+	loader_init(&ldr, "data");
+	assert(!loader_map(&ldr, "doesn't exist", &file));
+	loader_free(&ldr);
+)
+
+#endif /* CTF_TESTS_ENABLED */
