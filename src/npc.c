@@ -42,6 +42,7 @@ static void parse_frame(struct json_node *node, struct npc_frame *frame,
 
 struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 {
+	struct logger *log = loader_logger(ldr);
 	FILE *file;
 	struct npc_type *npc, **npcp;
 	npcp = loader_npc(ldr, name, &file);
@@ -51,18 +52,25 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 	npc = malloc(sizeof(*npc));
 	struct json_node jtree;
 	npc->flags = NPC_INVALID;
-	npc->name = NULL;
+	npc->name = str_dup(name);
 	npc->frames = NULL;
 	npc->n_frames = 0;
-	if (parse_json_tree(name, file, &jtree)) return NULL;
-	if (jtree.kind != JN_MAP) goto end;
+	if (parse_json_tree(name, file, log, &jtree)) return NULL;
+	if (jtree.kind != JN_MAP) {
+		logger_printf(log, LOGGER_WARNING,
+			"NPC type \"%s\" is not a JSON dictionary\n", name);
+		goto end;
+	}
 	union json_node_data *got;
 	npc->flags = 0;
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
+		free(npc->name);
 		npc->name = got->str;
 		got->str = NULL;
 	} else {
-		npc->name = str_dup("");
+		logger_printf(log, LOGGER_WARNING,
+			"NPC type \"%s\" does not have a \"name\" attribute\n",
+			name);
 	}
 	npc->width = 1.0;
 	if ((got = json_map_get(&jtree, "width", JN_NUMBER)))

@@ -152,15 +152,20 @@ static int parse_npc_start(struct map_npc_start *start, struct loader *ldr,
 	start->frame = 0;
 	if ((got = json_map_get(root, "kind", JN_STRING))) {
 		struct npc_type *kind = load_npc_type(ldr, got->str);
-		if (!kind) return -1;
+		if (!kind) goto error;
 		start->type = kind;
 	} else {
-		return -1;
+		goto error;
 	}
 	start->pos.x = start->pos.y = 0;
 	if ((got = json_map_get(root, "pos", JN_LIST)))
 		parse_json_vec(&start->pos, &got->list);
 	return 0;
+
+error:
+	logger_printf(loader_logger(ldr), LOGGER_ERROR,
+		"NPC start specification has no \"kind\" attribute\n");
+	return -1;
 }
 
 static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
@@ -189,6 +194,7 @@ bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
 
 struct map *load_map(struct loader *ldr, const char *name)
 {
+	struct logger *log = loader_logger(ldr);
 	FILE *file;
 	struct map **mapp = loader_map(ldr, name, &file);
 	if (!mapp) return NULL;
@@ -197,20 +203,26 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map = malloc(sizeof(*map));
 	struct json_node jtree;
 	map->flags = MAP_INVALID;
-	map->name = NULL;
+	map->name = str_dup(name);
 	map->board = NULL;
 	map->walls = NULL;
 	map->blocks = NULL;
 	map->npcs = NULL;
-	if (parse_json_tree(name, file, &jtree)) return NULL;
-	if (jtree.kind != JN_MAP) goto end;
+	if (parse_json_tree(name, file, log, &jtree)) return NULL;
+	if (jtree.kind != JN_MAP) {
+		logger_printf(log, LOGGER_WARNING,
+			"Map \"%s\" is not a JSON dictionary\n", name);
+		goto end;
+	}
 	union json_node_data *got;
 	map->flags = 0;
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
+		free(map->name);
 		map->name = got->str;
 		got->str = NULL;
 	} else {
-		map->name = str_dup("");
+		logger_printf(log, LOGGER_WARNING,
+			"Map \"%s\" has no \"name\" attribute\n", name);
 	}
 	uint8_t *walls = NULL;
 	size_t n_blocks = 0;

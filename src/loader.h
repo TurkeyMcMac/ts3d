@@ -6,6 +6,7 @@ struct loader;
 #include "npc.h"
 #include "map.h"
 #include "d3d.h"
+#include "logger.h"
 #include <stdio.h>
 
 // An object for loading game resources recursively. The fields are private.
@@ -16,6 +17,7 @@ struct loader {
 	char *npcs_dir;
 	table maps;
 	char *maps_dir;
+	struct logger log;
 };
 
 // Initialize a loader with the given data root directory. If the directory is
@@ -34,7 +36,11 @@ struct map **loader_map(struct loader *ldr, const char *name, FILE **file);
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file);
 
-// Free a loaded and the items it has loaded.
+// Get a pointer to a loader's logger. Initially, this will have the default
+// settings.
+struct logger *loader_logger(struct loader *ldr);
+
+// Free a loader, its logger, and the items it has loaded.
 void loader_free(struct loader *ldr);
 
 #endif /* LOADER_H_ */

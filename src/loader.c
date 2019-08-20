@@ -13,9 +13,11 @@ void loader_init(struct loader *ldr, const char *root)
 	table_init(&ldr->npcs, 16);
 	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
+	logger_init(&ldr->log);
 }
 
-static void **load(table *tab, const char *root, const char *name, FILE **file)
+static void **load(table *tab, const char *root, const char *name, FILE **file,
+	struct logger *log)
 {
 	void **item = table_get(tab, name);
 	*file = NULL;
@@ -23,8 +25,12 @@ static void **load(table *tab, const char *root, const char *name, FILE **file)
 		char *path = mid_cat(root, '/', name);
 		*file = fopen(path, "r");
 		if (*file) {
+			logger_printf(log, LOGGER_INFO, "Loading %s\n", path);
 			table_add(tab, name, NULL);
 			item = table_get(tab, name); // TODO: more efficient?
+		} else {
+			logger_printf(log, LOGGER_ERROR,
+				"Cannot load %s\n", path);
 		}
 		free(path);
 	}
@@ -32,25 +38,29 @@ static void **load(table *tab, const char *root, const char *name, FILE **file)
 }
 
 // Load with .json suffix
-static void **loadj(table *tab, const char *root, const char *name, FILE **file)
+static void **loadj(table *tab, const char *root, const char *name, FILE **file,
+	struct logger *log)
 {
 	char *fname = mid_cat(name, '.', "json");
-	return load(tab, root, fname, file);
+	return load(tab, root, fname, file, log);
 }
 
 struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file)
 {
-	return (struct npc_type **)loadj(&ldr->npcs, ldr->npcs_dir, name, file);
+	return (struct npc_type **)loadj(&ldr->npcs, ldr->npcs_dir, name, file,
+		&ldr->log);
 }
 
 struct map **loader_map(struct loader *ldr, const char *name, FILE **file)
 {
-	return (struct map **)loadj(&ldr->maps, ldr->maps_dir, name, file);
+	return (struct map **)loadj(&ldr->maps, ldr->maps_dir, name, file,
+		&ldr->log);
 }
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 {
-	return (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir, name, file);
+	return (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir, name, file,
+		&ldr->log);
 }
 
 static int free_txtrs_callback(const char *key, void **val)
@@ -72,6 +82,11 @@ static int free_maps_callback(const char *key, void **val)
 	free((char *)key);
 	map_free(*val);
 	return 0;
+}
+
+struct logger *loader_logger(struct loader *ldr)
+{
+	return &ldr->log;
 }
 
 void loader_free(struct loader *ldr)

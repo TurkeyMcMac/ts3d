@@ -26,7 +26,11 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 	size_t width;
 	size_t height;
 	struct string *lines = read_lines(file, &height);
-	if (!lines) return NULL;
+	if (!lines) {
+		logger_printf(loader_logger(ldr), LOGGER_ERROR,
+			"Error while reading lines: %s\n", strerror(errno));
+		return NULL;
+	}
 	width = 0;
 	for (size_t y = 0; y < height; ++y) {
 		if (lines[y].len > width) width = lines[y].len;

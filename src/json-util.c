@@ -12,6 +12,7 @@ struct json_reader_ctx {
 	const char *name;
 	FILE *file;
 	int line;
+	struct logger *log;
 };
 
 static int refill(char **buf, size_t *size, void *ctx_v)
@@ -88,7 +89,8 @@ static void print_json_error(const json_reader *rdr,
 		msg = "Unknown error";
 		break;
 	}
-	fprintf(stderr, "JSON parse error in '%s', line %d: %s\n",
+	logger_printf(ctx->log, LOGGER_ERROR,
+		"JSON parse error in '%s', line %d: %s\n",
 		ctx->name, line, msg);
 }
 
@@ -195,11 +197,13 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 	}
 }
 
-int parse_json_tree(const char *name, FILE *file, struct json_node *root)
+int parse_json_tree(const char *name, FILE *file, struct logger *log,
+	struct json_node *root)
 {
 	json_reader rdr;
 	struct json_reader_ctx ctx;
 	ctx.file = file;
+	ctx.log = log;
 	json_alloc(&rdr, NULL, 8, xmalloc, free, xrealloc);
 	json_source(&rdr, ctx.buf, sizeof(ctx.buf), &ctx, refill);
 	ctx.name = name;
@@ -255,10 +259,12 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 
 #	define SOURCE(text) \
 	struct json_node root; \
+	struct logger logger; \
+	logger_init(&logger); \
 	do { \
 		char str[] = (text); \
 		FILE *source = fmemopen(str, sizeof(str), "r"); \
-		parse_json_tree("(memory)", source, &root); \
+		parse_json_tree("(memory)", source, &logger, &root); \
 	} while (0)
 
 CTF_TEST(ts3d_printed_json_error,

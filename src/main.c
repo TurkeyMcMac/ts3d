@@ -56,7 +56,8 @@ int main(int argc, char *argv[])
 	loader_init(&ldr, "data");
 	struct map *map = load_map(&ldr, argv[1]);
 	if (!map) {
-		fprintf(stderr, "%s: map '%s' not found\n", argv[0], argv[1]);
+		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
+			"Failed to load map \"%s\"\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
