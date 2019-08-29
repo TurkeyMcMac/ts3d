@@ -43,7 +43,7 @@ static void **loadj(table *tab, const char *root, const char *name, FILE **file,
 {
 	char *fname = mid_cat(name, '.', "json");
 	void **loaded = load(tab, root, fname, file, log);
-	if (!loaded) free(fname);
+	if (!*file) free(fname);
 	return loaded;
 }
 
