@@ -93,6 +93,7 @@ struct logger *loader_logger(struct loader *ldr)
 
 void loader_free(struct loader *ldr)
 {
+	logger_free(&ldr->log);
 	table_each(&ldr->txtrs, free_txtrs_callback);
 	table_free(&ldr->txtrs);
 	free(ldr->txtrs_dir);
