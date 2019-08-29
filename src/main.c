@@ -153,5 +153,7 @@ int main(int argc, char *argv[])
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
+	free(durations);
+	free(sprites);
 	loader_free(&ldr);
 }
