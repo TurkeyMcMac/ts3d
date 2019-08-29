@@ -210,6 +210,7 @@ int parse_json_tree(const char *name, FILE *file, struct logger *log,
 	ctx.line = 1;
 	char *key;
 	parse_node(&rdr, root, &key);
+	json_free(&rdr);
 	fclose(file);
 	return 0;
 }
