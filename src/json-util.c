@@ -138,6 +138,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 			struct json_node *entry = xmalloc(sizeof(*entry));
 			parse_node(rdr, entry, &key);
 			if (entry->kind == JN_END_) {
+				free(entry);
 				break;
 			} else if (entry->kind == JN_ERROR) {
 				table_each(&nd->d.map, free_json_pair);
