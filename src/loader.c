@@ -42,7 +42,9 @@ static void **loadj(table *tab, const char *root, const char *name, FILE **file,
 	struct logger *log)
 {
 	char *fname = mid_cat(name, '.', "json");
-	return load(tab, root, fname, file, log);
+	void **loaded = load(tab, root, fname, file, log);
+	if (!loaded) free(fname);
+	return loaded;
 }
 
 struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file)
