@@ -134,6 +134,8 @@ char *npc_type_to_string(const struct npc_type *npc)
 
 void npc_type_free(struct npc_type *npc)
 {
+	if (!npc) return;
 	free(npc->name);
 	free(npc->frames);
+	free(npc);
 }

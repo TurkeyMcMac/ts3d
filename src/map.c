@@ -314,9 +314,11 @@ char *map_to_string(const struct map *map)
 
 void map_free(struct map *map)
 {
+	if (!map) return;
 	free(map->name);
 	d3d_free_board(map->board);
 	free(map->walls);
 	free(map->blocks);
 	free(map->npcs);
+	free(map);
 }

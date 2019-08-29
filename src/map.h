@@ -54,7 +54,7 @@ struct map *load_map(struct loader *ldr, const char *name);
 // Convert a map to an allocated string for debugging.
 char *map_to_string(const struct map *map);
 
-// Free a loaded map (not the structure itself.)
+// Free a loaded map. Does nothing when given NULL.
 void map_free(struct map *map);
 
 #endif /* MAP_H_ */

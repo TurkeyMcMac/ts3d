@@ -41,7 +41,7 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name);
 // Allocate a string representation for debugging.
 char *npc_type_to_string(const struct npc_type *npc);
 
-// Free a loaded NPC type.
+// Free a loaded NPC type. Does nothing when given NULL.
 void npc_type_free(struct npc_type *npc);
 
 #endif /* NPC_H_ */
