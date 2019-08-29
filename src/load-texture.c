@@ -51,6 +51,7 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 	} else {
 		txtr = new_empty_texture();
 	}
+	free(lines);
 	*txtrp = txtr;
 	return txtr;
 }
