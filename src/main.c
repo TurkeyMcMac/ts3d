@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
 	if (!map) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
 			"Failed to load map \"%s\"\n", argv[1]);
+		loader_free(&ldr);
 		exit(EXIT_FAILURE);
 	}
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
@@ -151,5 +152,6 @@ int main(int argc, char *argv[])
 		display_frame(cam);
 		tick(&timer);
 	}
+	d3d_free_camera(cam);
 	loader_free(&ldr);
 }
