@@ -61,13 +61,16 @@ struct map **loader_map(struct loader *ldr, const char *name, FILE **file)
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 {
-	return (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir, name, file,
-		&ldr->log);
+	char *fname = str_dup(name);
+	d3d_texture **loaded = (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir,
+		fname, file, &ldr->log);
+	if (!*file) free(fname);
+	return loaded;
 }
 
 static int free_txtrs_callback(const char *key, void **val)
 {
-	(void)key;
+	free((char *)key);
 	d3d_free_texture(*val);
 	return 0;
 }

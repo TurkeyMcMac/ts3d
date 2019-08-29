@@ -27,7 +27,6 @@ static void parse_frame(struct json_node *node, struct npc_frame *frame,
 		if (node->d.list.n_vals < 1
 		 || node->d.list.vals[0].kind != JN_STRING) break;
 		txtr_name = node->d.list.vals[0].d.str;
-		node->d.list.vals[0].d.str = NULL;
 		if (node->d.list.n_vals < 2
 		 || node->d.list.vals[1].kind != JN_NUMBER) break;
 		duration = node->d.list.vals[1].d.num;
