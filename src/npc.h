@@ -25,6 +25,10 @@ struct npc_type {
 	size_t n_frames;
 	// The allocated list of n_frames frames.
 	struct npc_frame *frames;
+	// NPC to spawn on death.
+	struct npc_type *death_spawn;
+	// Ticks to stay alive, or -1 for forever.
+	long lifetime;
 };
 
 // Load an NPC with the name or use one previously loaded. Allocate the NPC.

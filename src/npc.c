@@ -53,6 +53,8 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 	npc->name = str_dup(name);
 	npc->frames = NULL;
 	npc->n_frames = 0;
+	npc->death_spawn = NULL;
+	npc->lifetime = -1;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
 		logger_printf(log, LOGGER_WARNING,
@@ -86,6 +88,13 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 			parse_frame(&got->list.vals[i], &npc->frames[i], ldr);
 		}
 	}
+	if ((got = json_map_get(&jtree, "death_spawn", JN_STRING))) {
+		// To prevent infinite recursion with infinite cycles:
+		*npcp = npc;
+		npc->death_spawn = load_npc_type(ldr, got->str);
+	}
+	if ((got = json_map_get(&jtree, "lifetime", JN_NUMBER)))
+		npc->lifetime = got->num;
 end:
 	free_json_tree(&jtree);
 	*npcp = npc;
