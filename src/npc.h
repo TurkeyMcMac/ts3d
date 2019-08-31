@@ -25,15 +25,7 @@ struct npc_type {
 	size_t n_frames;
 	// The allocated list of n_frames frames.
 	struct npc_frame *frames;
-	// The flags. See NPC_INVALID, etc. below.
-	int flags;
 };
-
-// The valid JSON was not a valid NPC
-#define NPC_INVALID (1 << 0)
-// A texture referenced was not found in the table. Always accompanied by
-// NPC_INVALID.
-#define NPC_INVALID_TEXTURE (1 << 1)
 
 // Load an NPC with the name or use one previously loaded. Allocate the NPC.
 struct npc_type *load_npc_type(struct loader *ldr, const char *name);

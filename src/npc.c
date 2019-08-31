@@ -50,7 +50,6 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 	if (npc) return npc;
 	npc = malloc(sizeof(*npc));
 	struct json_node jtree;
-	npc->flags = NPC_INVALID;
 	npc->name = str_dup(name);
 	npc->frames = NULL;
 	npc->n_frames = 0;
@@ -61,7 +60,6 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 		goto end;
 	}
 	union json_node_data *got;
-	npc->flags = 0;
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		free(npc->name);
 		npc->name = got->str;

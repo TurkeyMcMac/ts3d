@@ -202,7 +202,6 @@ struct map *load_map(struct loader *ldr, const char *name)
 	if (map) return map;
 	map = malloc(sizeof(*map));
 	struct json_node jtree;
-	map->flags = MAP_INVALID;
 	map->name = str_dup(name);
 	map->board = NULL;
 	map->walls = NULL;
@@ -215,7 +214,6 @@ struct map *load_map(struct loader *ldr, const char *name)
 		goto end;
 	}
 	union json_node_data *got;
-	map->flags = 0;
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		free(map->name);
 		map->name = got->str;

@@ -35,13 +35,7 @@ struct map {
 	// The list of NPC types and corresponding starting positions. This
 	// refers to data in the npcs table passed to load_map(s).
 	struct map_npc_start *npcs;
-	// See MAP_INVALID, etc. below.
-	int flags;
 };
-
-// Set in a map returned by load_map if the JSON was valid but could not
-// adequately describe a map.
-#define MAP_INVALID 0x01
 
 // Move an object's position so as not to conflict with the map's walls. The
 // object's malleable position is stored in pos. The object is a square with
