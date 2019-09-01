@@ -61,9 +61,10 @@ int main(int argc, char *argv[])
 		loader_free(&ldr);
 		exit(EXIT_FAILURE);
 	}
-	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
-	struct npc *npcs = xmalloc(map->n_npcs * sizeof(*npcs));
-	for (size_t i = 0; i < map->n_npcs; ++i) {
+	size_t n_npcs = map->n_npcs;
+	d3d_sprite_s *sprites = xmalloc(n_npcs * sizeof(*sprites));
+	struct npc *npcs = xmalloc(n_npcs * sizeof(*npcs));
+	for (size_t i = 0; i < n_npcs; ++i) {
 		struct npc_type *type = map->npcs[i].type;
 		npc_init(&npcs[i], type, &sprites[i], &map->npcs[i].pos);
 	}
@@ -117,8 +118,8 @@ int main(int argc, char *argv[])
 		}
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, map->n_npcs, sprites);
-		for (size_t i = 0; i < map->n_npcs; ++i) {
+		d3d_draw_sprites(cam, n_npcs, sprites);
+		for (size_t i = 0; i < n_npcs; ++i) {
 			npc_tick(&npcs[i]);
 			d3d_vec_s *spos = &sprites[i].pos;
 			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
@@ -136,6 +137,12 @@ int main(int argc, char *argv[])
 			spos->y += disp.y;
 		}
 		display_frame(cam);
+		for (size_t i = 0; i < n_npcs; ++i) {
+			if (npc_is_dead(&npcs[i])) {
+				--n_npcs;
+				npc_relocate(&npcs[n_npcs], &npcs[i], &sprites[i]);
+			}
+		}
 		tick(&timer);
 	}
 	d3d_free_camera(cam);

@@ -8,7 +8,6 @@
 #include "util.h"
 #include "xalloc.h"
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -163,18 +162,32 @@ void npc_init(struct npc *npc, struct npc_type *type, d3d_sprite_s *sprite,
 
 void npc_tick(struct npc *npc)
 {
-	if (npc->lifetime-- != 0 || !npc->type->death_spawn) {
+	if (npc->type->lifetime < 0 || --npc->lifetime > 0) {
 		if (npc->frame_duration-- <= 0) {
 			if (++npc->frame >= npc->type->n_frames) npc->frame = 0;
 			npc->frame_duration =
 				npc->type->frames[npc->frame].duration;
 			npc->sprite->txtr = npc->type->frames[npc->frame].txtr;
 		}
-	} else {
+	} else if (npc->type->death_spawn) {
 		npc_destroy(npc);
 		npc_init(npc, npc->type->death_spawn, npc->sprite,
 			&npc->sprite->pos);
+	} else {
+		npc->lifetime = 0;
 	}
+}
+
+void npc_relocate(struct npc *npc, struct npc *to_npc, d3d_sprite_s *to_sprite)
+{
+	*to_npc = *npc;
+	*to_sprite = *to_npc->sprite;
+	to_npc->sprite = to_sprite;
+}
+
+bool npc_is_dead(const struct npc *npc)
+{
+	return npc->type->lifetime >= 0 && npc->lifetime <= 0;
 }
 
 void npc_destroy(struct npc *npc)

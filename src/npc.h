@@ -4,6 +4,7 @@
 #include "d3d.h"
 #include "loader.h"
 #include "table.h"
+#include <stdbool.h>
 
 struct npc_frame {
 	// The texture displayed.
@@ -54,6 +55,14 @@ void npc_init(struct npc *npc, struct npc_type *type, d3d_sprite_s *sprite,
 
 // Go forward a tick of the normal lifecycle. Does not move the NPC.
 void npc_tick(struct npc *npc);
+
+// Move an NPC in memory. Its sprite will move to the given location. The
+// destinations will be overwritten and the source will become effectively
+// uninitialized.
+void npc_relocate(struct npc *npc, struct npc *to_npc, d3d_sprite_s *to_sprite);
+
+// Returns whether or not the NPC is dead and should be removed.
+bool npc_is_dead(const struct npc *npc);
 
 // Clean up NPC resources. Does not free the pointer.
 void npc_destroy(struct npc *npc);
