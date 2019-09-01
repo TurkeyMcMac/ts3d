@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
 		for (size_t i = 0; i < n_npcs; ++i) {
 			if (npc_is_dead(&npcs[i])) {
 				--n_npcs;
+				npc_destroy(&npcs[i]);
 				npc_relocate(&npcs[n_npcs], &npcs[i], &sprites[i]);
 			}
 		}
