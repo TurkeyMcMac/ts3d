@@ -1,0 +1,38 @@
+#!/usr/bin/env perl
+#
+# Texture utilities
+# Sub-commands:
+#  - view <file>: Print the colorized texture from the given file.
+#  - table: Print out characters next to the colors they produce.
+
+sub colorize_pix {
+	my ($pix) = @_;
+	my $code = ord($pix) - ord(' ') - 1;
+	if ($code >= 0 && $code < 64) {
+		my $fg = $code >> 3;
+		my $bg = $code & 0b111;
+		my $bright = $bg ? '1;' : '';
+		$pix = "\e[${bright}3${fg};4${bg}m#\e[0m";
+	}
+	return $pix;
+}
+
+my $subcmd = @ARGV[0];
+if ($subcmd eq 'view') {
+	open(my $file, "<", @ARGV[1])
+		or die "Can't open file @ARGV[1]";
+	while (defined(my $pix = getc($file))) {
+		print &colorize_pix($pix);
+	}
+} elsif ($subcmd eq 'table') {
+	my $ascii = ' ';
+	for (my $y = 0; $y < 8; ++$y) {
+		for (my $x = 0; $x < 8; ++$x) {
+			printf "%s%s   ", $ascii, &colorize_pix($ascii);
+			$ascii = chr(ord($ascii) + 1);
+		}
+		print "\n";
+	}
+} else {
+	die "Unknown sub-command $subcmd";
+}
