@@ -62,15 +62,10 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	d3d_sprite_s *sprites = xmalloc(map->n_npcs * sizeof(*sprites));
-	long *durations = xcalloc(map->n_npcs, sizeof(*durations));
+	struct npc *npcs = xmalloc(map->n_npcs * sizeof(*npcs));
 	for (size_t i = 0; i < map->n_npcs; ++i) {
-		d3d_sprite_s *sp = &sprites[i];
-		const struct npc_type *npc = map->npcs[i].type;
-		sp->pos = map->npcs[i].pos;
-		sp->scale.x = npc->width;
-		sp->scale.y = npc->height;
-		sp->txtr = npc->frames[0].txtr;
-		sp->transparent = npc->transparent;
+		struct npc_type *type = map->npcs[i].type;
+		npc_init(&npcs[i], type, &sprites[i], &map->npcs[i].pos);
 	}
 	d3d_board *board = map->board;
 	initscr();
@@ -124,16 +119,7 @@ int main(int argc, char *argv[])
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, map->n_npcs, sprites);
 		for (size_t i = 0; i < map->n_npcs; ++i) {
-			if (durations[i] == 0) {
-				size_t *frame = &map->npcs[i].frame;
-				durations[i] = map->npcs[i].type
-					->frames[*frame].duration;
-				sprites[i].txtr = map->npcs[i].type
-					->frames[(*frame)++].txtr;
-				*frame %= map->npcs[i].type->n_frames;
-			} else {
-				--durations[i];
-			}
+			npc_tick(&npcs[i]);
 			d3d_vec_s *spos = &sprites[i].pos;
 			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
 			double dist = hypot(disp.x, disp.y);
@@ -153,7 +139,7 @@ int main(int argc, char *argv[])
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
-	free(durations);
+	free(npcs);
 	free(sprites);
 	loader_free(&ldr);
 }

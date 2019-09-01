@@ -40,4 +40,22 @@ char *npc_type_to_string(const struct npc_type *npc);
 // Free a loaded NPC type. Does nothing when given NULL.
 void npc_type_free(struct npc_type *npc);
 
+struct npc {
+	struct npc_type *type;
+	d3d_sprite_s *sprite;
+	long lifetime;
+	size_t frame;
+	long frame_duration;
+};
+
+// Initialize an NPC. The sprite will be owned and manipulated by it.
+void npc_init(struct npc *npc, struct npc_type *type, d3d_sprite_s *sprite,
+	const d3d_vec_s *pos);
+
+// Go forward a tick of the normal lifecycle. Does not move the NPC.
+void npc_tick(struct npc *npc);
+
+// Clean up NPC resources. Does not free the pointer.
+void npc_destroy(struct npc *npc);
+
 #endif /* NPC_H_ */

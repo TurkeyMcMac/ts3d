@@ -10,7 +10,7 @@
 // Not yet used.
 struct map_npc_start {
 	d3d_vec_s pos;
-	const struct npc_type *type;
+	struct npc_type *type;
 	size_t frame;
 };
 

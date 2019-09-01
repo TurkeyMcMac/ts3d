@@ -145,3 +145,39 @@ void npc_type_free(struct npc_type *npc)
 	free(npc->frames);
 	free(npc);
 }
+
+void npc_init(struct npc *npc, struct npc_type *type, d3d_sprite_s *sprite,
+	const d3d_vec_s *pos)
+{
+	npc->type = type;
+	npc->sprite = sprite;
+	npc->lifetime = type->lifetime;
+	npc->frame = 0;
+	npc->frame_duration = type->frames[0].duration;
+	sprite->txtr = type->frames[0].txtr;
+	sprite->transparent = type->transparent;
+	sprite->pos = *pos;
+	sprite->scale.x = type->width;
+	sprite->scale.y = type->height;
+}
+
+void npc_tick(struct npc *npc)
+{
+	if (npc->lifetime-- != 0 || !npc->type->death_spawn) {
+		if (npc->frame_duration-- <= 0) {
+			if (++npc->frame >= npc->type->n_frames) npc->frame = 0;
+			npc->frame_duration =
+				npc->type->frames[npc->frame].duration;
+			npc->sprite->txtr = npc->type->frames[npc->frame].txtr;
+		}
+	} else {
+		npc_destroy(npc);
+		npc_init(npc, npc->type->death_spawn, npc->sprite,
+			&npc->sprite->pos);
+	}
+}
+
+void npc_destroy(struct npc *npc)
+{
+	(void)npc;
+}
