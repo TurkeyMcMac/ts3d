@@ -2,7 +2,9 @@
  "name": "Bat",
  "width": 0.3,
  "height": 0.15,
+ "death_spawn": "escaping-spirit",
  "random_start_frame": true,
+ "lifetime": 200,
  "frames": [
   ["bat-wings-1", 7],
   ["bat-wings-2", 4],
