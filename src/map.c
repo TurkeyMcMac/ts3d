@@ -209,8 +209,9 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map->npcs = NULL;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
-		logger_printf(log, LOGGER_WARNING,
-			"Map \"%s\" is not a JSON dictionary\n", name);
+		if (jtree.kind != JN_ERROR)
+			logger_printf(log, LOGGER_WARNING,
+				"Map \"%s\" is not a JSON dictionary\n", name);
 		goto end;
 	}
 	union json_node_data *got;

@@ -56,8 +56,10 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 	npc->lifetime = -1;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
-		logger_printf(log, LOGGER_WARNING,
-			"NPC type \"%s\" is not a JSON dictionary\n", name);
+		if (jtree.kind != JN_ERROR)
+			logger_printf(log, LOGGER_WARNING,
+				"NPC type \"%s\" is not a JSON dictionary\n",
+				name);
 		goto end;
 	}
 	union json_node_data *got;
