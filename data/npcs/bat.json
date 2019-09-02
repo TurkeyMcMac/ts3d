@@ -4,7 +4,7 @@
  "height": 0.15,
  "death_spawn": "escaping-spirit",
  "random_start_frame": true,
- "lifetime": 200,
+ "lifetime": 800,
  "frames": [
   ["bat-wings-1", 7],
   ["bat-wings-2", 4],
