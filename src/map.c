@@ -297,6 +297,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 		}
 	}
 end:
+	if (!map->board) map->board = d3d_new_board(0, 0);
 	free_json_tree(&jtree);
 	*mapp = map;
 	return map;
