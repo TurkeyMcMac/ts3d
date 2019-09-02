@@ -11,6 +11,7 @@ struct loader;
 
 // An object for loading game resources recursively. The fields are private.
 struct loader {
+	d3d_texture *empty_txtr;
 	table txtrs;
 	char *txtrs_dir;
 	table npcs;
@@ -35,6 +36,9 @@ struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file);
 struct map **loader_map(struct loader *ldr, const char *name, FILE **file);
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file);
+
+// Load an empty (transparent) texture shared per loader.
+const d3d_texture *loader_empty_texture(struct loader *ldr);
 
 // Get a pointer to a loader's logger. Initially, this will have the default
 // settings.

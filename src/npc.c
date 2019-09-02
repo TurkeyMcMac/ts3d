@@ -34,7 +34,7 @@ static void parse_frame(struct json_node *node, struct npc_frame *frame,
 		break;
 	}
 	d3d_texture *txtr = load_texture(ldr, txtr_name);
-	frame->txtr = txtr ? txtr : d3d_new_texture(0, 0);
+	frame->txtr = txtr ? txtr : loader_empty_texture(ldr);
 	frame->duration = duration;
 }
 
@@ -95,6 +95,11 @@ struct npc_type *load_npc_type(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "lifetime", JN_NUMBER)))
 		npc->lifetime = got->num;
 end:
+	if (npc->n_frames == 0) {
+		npc->frames = xrealloc(npc->frames, sizeof(*npc->frames));
+		npc->frames[0].txtr = loader_empty_texture(ldr);
+		npc->frames[0].duration = 0;
+	}
 	free_json_tree(&jtree);
 	*npcp = npc;
 	return npc;

@@ -1,4 +1,5 @@
 #include "loader.h"
+#include "pixel.h"
 #include "string.h"
 #include "util.h"
 #include "xalloc.h"
@@ -14,6 +15,7 @@ void loader_init(struct loader *ldr, const char *root)
 	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
 	logger_init(&ldr->log);
+	ldr->empty_txtr = NULL;
 }
 
 static void **load(table *tab, const char *root, const char *name, FILE **file,
@@ -66,6 +68,15 @@ d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 		fname, file, &ldr->log);
 	if (!*file) free(fname);
 	return loaded;
+}
+
+const d3d_texture *loader_empty_texture(struct loader *ldr)
+{
+	if (!ldr->empty_txtr) {
+		ldr->empty_txtr = d3d_new_texture(1, 1);
+		*d3d_texture_get(ldr->empty_txtr, 0, 0) = EMPTY_PIXEL;
+	}
+	return ldr->empty_txtr;
 }
 
 static int free_txtrs_callback(const char *key, void **val)
