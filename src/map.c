@@ -145,13 +145,13 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	}
 }
 
-static int parse_npc_start(struct map_npc_start *start, struct loader *ldr,
+static int parse_ent_start(struct map_ent_start *start, struct loader *ldr,
 	struct json_node *root)
 {
 	union json_node_data *got;
 	start->frame = 0;
 	if ((got = json_map_get(root, "kind", JN_STRING))) {
-		struct npc_type *kind = load_npc_type(ldr, got->str);
+		struct ent_type *kind = load_ent_type(ldr, got->str);
 		if (!kind) goto error;
 		start->type = kind;
 	} else {
@@ -164,7 +164,7 @@ static int parse_npc_start(struct map_npc_start *start, struct loader *ldr,
 
 error:
 	logger_printf(loader_logger(ldr), LOGGER_ERROR,
-		"NPC start specification has no \"kind\" attribute\n");
+		"Entity start specification has no \"kind\" attribute\n");
 	return -1;
 }
 
@@ -206,7 +206,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map->board = NULL;
 	map->walls = NULL;
 	map->blocks = NULL;
-	map->npcs = NULL;
+	map->ents = NULL;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
 		if (jtree.kind != JN_ERROR)
@@ -285,15 +285,15 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map->player_facing = 0;
 	if ((got = json_map_get(&jtree, "player_facing", JN_NUMBER)))
 		map->player_facing = got->num;
-	map->n_npcs = 0;
-	if ((got = json_map_get(&jtree, "npcs", JN_LIST))) {
-		map->npcs = xmalloc(got->list.n_vals * sizeof(*map->npcs));
+	map->n_ents = 0;
+	if ((got = json_map_get(&jtree, "ents", JN_LIST))) {
+		map->ents = xmalloc(got->list.n_vals * sizeof(*map->ents));
 		for (size_t i = 0; i < got->list.n_vals; ++i) {
-			struct map_npc_start *start = &map->npcs[map->n_npcs];
-			if (!parse_npc_start(start, ldr, &got->list.vals[i])) {
+			struct map_ent_start *start = &map->ents[map->n_ents];
+			if (!parse_ent_start(start, ldr, &got->list.vals[i])) {
 				// See DIRECTION NOTE:
 				start->pos.y = height - start->pos.y;
-				++map->n_npcs;
+				++map->n_ents;
 			}
 		}
 	}
@@ -319,6 +319,6 @@ void map_free(struct map *map)
 	d3d_free_board(map->board);
 	free(map->walls);
 	free(map->blocks);
-	free(map->npcs);
+	free(map->ents);
 	free(map);
 }

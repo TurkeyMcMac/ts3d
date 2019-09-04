@@ -3,14 +3,14 @@
 
 #include "d3d.h"
 #include "loader.h"
-#include "npc.h"
+#include "ent.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 // Not yet used.
-struct map_npc_start {
+struct map_ent_start {
 	d3d_vec_s pos;
-	struct npc_type *type;
+	struct ent_type *type;
 	size_t frame;
 };
 
@@ -30,11 +30,11 @@ struct map {
 	d3d_vec_s player_pos;
 	// The starting direction of the player on the board (in radians).
 	double player_facing;
-	// The starting number of NPCs.
-	size_t n_npcs;
-	// The list of NPC types and corresponding starting positions. This
-	// refers to data in the npcs table passed to load_map(s).
-	struct map_npc_start *npcs;
+	// The starting number of entities.
+	size_t n_ents;
+	// The list of entity types and corresponding starting positions. This
+	// refers to data in the ents table passed to load_map(s).
+	struct map_ent_start *ents;
 };
 
 // Move an object's position so as not to conflict with the map's walls. The

@@ -10,8 +10,8 @@ void loader_init(struct loader *ldr, const char *root)
 {
 	ldr->txtrs_dir = mid_cat(root, '/', "textures");
 	table_init(&ldr->txtrs, 16);
-	ldr->npcs_dir = mid_cat(root, '/', "npcs");
-	table_init(&ldr->npcs, 16);
+	ldr->ents_dir = mid_cat(root, '/', "ents");
+	table_init(&ldr->ents, 16);
 	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
 	logger_init(&ldr->log);
@@ -49,9 +49,9 @@ static void **loadj(table *tab, const char *root, const char *name, FILE **file,
 	return loaded;
 }
 
-struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file)
+struct ent_type **loader_ent(struct loader *ldr, const char *name, FILE **file)
 {
-	return (struct npc_type **)loadj(&ldr->npcs, ldr->npcs_dir, name, file,
+	return (struct ent_type **)loadj(&ldr->ents, ldr->ents_dir, name, file,
 		&ldr->log);
 }
 
@@ -86,10 +86,10 @@ static int free_txtrs_callback(const char *key, void **val)
 	return 0;
 }
 
-static int free_npcs_callback(const char *key, void **val)
+static int free_ents_callback(const char *key, void **val)
 {
 	free((char *)key);
-	npc_type_free(*val);
+	ent_type_free(*val);
 	return 0;
 }
 
@@ -111,9 +111,9 @@ void loader_free(struct loader *ldr)
 	table_each(&ldr->txtrs, free_txtrs_callback);
 	table_free(&ldr->txtrs);
 	free(ldr->txtrs_dir);
-	table_each(&ldr->npcs, free_npcs_callback);
-	table_free(&ldr->npcs);
-	free(ldr->npcs_dir);
+	table_each(&ldr->ents, free_ents_callback);
+	table_free(&ldr->ents);
+	free(ldr->ents_dir);
 	table_each(&ldr->maps, free_maps_callback);
 	table_free(&ldr->maps);
 	free(ldr->maps_dir);

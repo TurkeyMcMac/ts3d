@@ -3,7 +3,7 @@
 
 #include "table.h"
 struct loader;
-#include "npc.h"
+#include "ent.h"
 #include "map.h"
 #include "d3d.h"
 #include "logger.h"
@@ -14,8 +14,8 @@ struct loader {
 	d3d_texture *empty_txtr;
 	table txtrs;
 	char *txtrs_dir;
-	table npcs;
-	char *npcs_dir;
+	table ents;
+	char *ents_dir;
 	table maps;
 	char *maps_dir;
 	struct logger log;
@@ -31,7 +31,7 @@ void loader_init(struct loader *ldr, const char *root);
 // is set to the file from which it can be loaded and a pointer to be later set
 // by the user to the parsed item is returned.
 
-struct npc_type **loader_npc(struct loader *ldr, const char *name, FILE **file);
+struct ent_type **loader_ent(struct loader *ldr, const char *name, FILE **file);
 
 struct map **loader_map(struct loader *ldr, const char *name, FILE **file);
 

@@ -2,7 +2,7 @@
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
-#include "npc.h"
+#include "ent.h"
 #include "pixel.h"
 #include "ticker.h"
 #include "util.h"
@@ -61,12 +61,12 @@ int main(int argc, char *argv[])
 		loader_free(&ldr);
 		exit(EXIT_FAILURE);
 	}
-	size_t n_npcs = map->n_npcs;
-	d3d_sprite_s *sprites = xmalloc(n_npcs * sizeof(*sprites));
-	struct npc *npcs = xmalloc(n_npcs * sizeof(*npcs));
-	for (size_t i = 0; i < n_npcs; ++i) {
-		struct npc_type *type = map->npcs[i].type;
-		npc_init(&npcs[i], type, &sprites[i], &map->npcs[i].pos);
+	size_t n_ents = map->n_ents;
+	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites));
+	struct ent *ents = xmalloc(n_ents * sizeof(*ents));
+	for (size_t i = 0; i < n_ents; ++i) {
+		struct ent_type *type = map->ents[i].type;
+		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
 	}
 	d3d_board *board = map->board;
 	initscr();
@@ -118,9 +118,9 @@ int main(int argc, char *argv[])
 		}
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, n_npcs, sprites);
-		for (size_t i = 0; i < n_npcs; ++i) {
-			npc_tick(&npcs[i]);
+		d3d_draw_sprites(cam, n_ents, sprites);
+		for (size_t i = 0; i < n_ents; ++i) {
+			ent_tick(&ents[i]);
 			d3d_vec_s *spos = &sprites[i].pos;
 			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
 			double dist = hypot(disp.x, disp.y);
@@ -137,17 +137,17 @@ int main(int argc, char *argv[])
 			spos->y += disp.y;
 		}
 		display_frame(cam);
-		for (size_t i = 0; i < n_npcs; ++i) {
-			if (npc_is_dead(&npcs[i])) {
-				--n_npcs;
-				npc_destroy(&npcs[i]);
-				npc_relocate(&npcs[n_npcs], &npcs[i], &sprites[i]);
+		for (size_t i = 0; i < n_ents; ++i) {
+			if (ent_is_dead(&ents[i])) {
+				--n_ents;
+				ent_destroy(&ents[i]);
+				ent_relocate(&ents[n_ents], &ents[i], &sprites[i]);
 			}
 		}
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
-	free(npcs);
+	free(ents);
 	free(sprites);
 	loader_free(&ldr);
 }
