@@ -2,7 +2,7 @@
  "name": "Spirit",
  "width": 0.1,
  "height": 0.2,
- "lifetime": 55,
+ "lifetime": 59,
  "frames": [
   ["escaping-spirit-01", 5],
   ["escaping-spirit-02", 4],
