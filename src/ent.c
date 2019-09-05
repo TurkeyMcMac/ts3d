@@ -169,7 +169,7 @@ void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
 void ent_tick(struct ent *ent)
 {
 	if (ent->type->lifetime < 0 || --ent->lifetime > 0) {
-		if (ent->frame_duration-- <= 0) {
+		if (--ent->frame_duration <= 0) {
 			if (++ent->frame >= ent->type->n_frames) ent->frame = 0;
 			ent->frame_duration =
 				ent->type->frames[ent->frame].duration;
@@ -180,7 +180,7 @@ void ent_tick(struct ent *ent)
 		ent_init(ent, ent->type->death_spawn, ent->sprite,
 			&ent->sprite->pos);
 	} else {
-		ent->lifetime = 0;
+		ent->lifetime = -1;
 	}
 }
 
@@ -193,7 +193,7 @@ void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite)
 
 bool ent_is_dead(const struct ent *ent)
 {
-	return ent->type->lifetime >= 0 && ent->lifetime <= 0;
+	return ent->type->lifetime >= 0 && ent->lifetime < 0;
 }
 
 void ent_destroy(struct ent *ent)
