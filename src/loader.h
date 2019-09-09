@@ -40,6 +40,9 @@ d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file);
 // Load an empty (transparent) texture shared per loader.
 const d3d_texture *loader_empty_texture(struct loader *ldr);
 
+// Print to the INFO log a count of all that has been loaded thus far.
+void loader_print_summary(struct loader *ldr);
+
 // Get a pointer to a loader's logger. Initially, this will have the default
 // settings.
 struct logger *loader_logger(struct loader *ldr);

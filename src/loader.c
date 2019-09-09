@@ -100,6 +100,15 @@ static int free_maps_callback(const char *key, void **val)
 	return 0;
 }
 
+void loader_print_summary(struct loader *ldr)
+{
+	logger_printf(&ldr->log, LOGGER_INFO,
+		"Load summary: %zu maps, %zu entity types, %zu textures\n",
+		table_count(&ldr->maps),
+		table_count(&ldr->ents),
+		table_count(&ldr->txtrs));
+}
+
 struct logger *loader_logger(struct loader *ldr)
 {
 	return &ldr->log;

@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 		loader_free(&ldr);
 		exit(EXIT_FAILURE);
 	}
+	loader_print_summary(&ldr);
 	size_t n_ents = map->n_ents;
 	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites));
 	struct ent *ents = xmalloc(n_ents * sizeof(*ents));
