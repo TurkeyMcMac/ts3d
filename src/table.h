@@ -26,6 +26,10 @@ void table_freeze(table *tbl);
 // NULL is returned.
 void **table_get(table *tbl, const char *key);
 
+
+// Count the number of unique keys added to the table.
+size_t table_count(const table *tbl);
+
 // Iterate through all the entries. The first argument to the given function is
 // the key, and the second is the mutable pointer to the corresponding value.
 // The order is undefined.

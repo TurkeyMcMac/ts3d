@@ -63,6 +63,11 @@ void **table_get(table *tbl, const char *key)
 	return find(tbl, &got, key) ? &got->val : NULL;
 }
 
+size_t table_count(const table *tbl)
+{
+	return tbl->len;
+}
+
 int table_each(table *tbl, int (*item)(const char *, void **))
 {
 	for (size_t i = 0; i < tbl->len; ++i) {
@@ -120,6 +125,7 @@ static void set_up_table(table *tab, int val0, int val1, int val2)
 CTF_TEST(ts3d_table_add,
 	table tab;
 	set_up_table(&tab, 0, 0, 0);
+	assert(table_count(&tab) == 3);
 	table_free(&tab);
 )
 
