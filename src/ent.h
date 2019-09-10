@@ -43,10 +43,15 @@ char *ent_type_to_string(const struct ent_type *ent);
 void ent_type_free(struct ent_type *ent);
 
 struct ent {
+	// The type of this entity.
 	struct ent_type *type;
+	// The sprite location of this entity.
 	d3d_sprite_s *sprite;
+	// The remaining lifetime of this entity in ticks.
 	long lifetime;
+	// The frame index into the array help by the type.
 	size_t frame;
+	// The remaining duration of the current frame.
 	long frame_duration;
 };
 
