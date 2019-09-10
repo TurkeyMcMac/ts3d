@@ -30,6 +30,8 @@ struct ent_type {
 	struct ent_type *death_spawn;
 	// Ticks to stay alive, or -1 for forever.
 	long lifetime;
+	// Whether or not the animation should start at a random frame.
+	bool random_start_frame;
 };
 
 // Load an entity with the name or use one previously loaded.

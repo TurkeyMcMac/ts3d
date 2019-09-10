@@ -81,6 +81,9 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)
 		ent->height = *got->str;
+	ent->random_start_frame =
+		(got = json_map_get(&jtree, "random_start_frame", JN_BOOLEAN))
+		&& got->boolean;
 	if ((got = json_map_get(&jtree, "frames", JN_LIST))) {
 		ent->n_frames = got->list.n_vals;
 		ent->frames = xmalloc(ent->n_frames * sizeof(*ent->frames));
@@ -157,7 +160,7 @@ void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
 	ent->type = type;
 	ent->sprite = sprite;
 	ent->lifetime = type->lifetime;
-	ent->frame = 0;
+	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
 	sprite->txtr = type->frames[0].txtr;
 	sprite->transparent = type->transparent;
