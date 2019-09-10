@@ -95,10 +95,12 @@ void logger_printf(struct logger *log, int flags, const char *format, ...)
 	int mode = get_mode(flags);
 	if (!(log->flags & mode)) return;
 	FILE *file = *get_filep(log, mode);
+	const char *color;
 	bool colored = !(log->flags & LOGGER_NO_COLOR)
-	            && ((log->flags & LOGGER_COLOR) || isatty(fileno(file)));
+	            && ((log->flags & LOGGER_COLOR) || isatty(fileno(file)))
+	            && *(color = get_color(log, mode)) != '\0';
 	if (colored) {
-		fprintf(file, "%s", get_color(log, mode));
+		fprintf(file, "%s", color);
 	}
 	if (!(flags & LOGGER_NO_PREFIX)) {
 		fprintf(file, "%s", get_prefix(log, mode));
