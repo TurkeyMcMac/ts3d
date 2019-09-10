@@ -5,6 +5,10 @@
 #include <unistd.h>
 #endif
 
+/* Get a pointer to the structure containing the member pointed to by ptr. */
+#define container_of(ptr, type, member) \
+	((type *)((char *)(ptr) - offsetof(type, member)))
+
 /* Flags for reader::flags */
 #define SOURCE_DEPLETED  0x0100
 #define STARTED_COMPOUND 0x0200
@@ -59,7 +63,7 @@ void json_source(json_reader *reader,
 	char *buf, size_t bufsiz, void *ctx,
 	int (*refill)(char **buf, size_t *bufsiz, void *ctx))
 {
-	reader->ctx = ctx;
+	reader->ctx.p = ctx;
 	reader->buf = buf;
 	reader->bufsiz = bufsiz;
 	reader->head = bufsiz;
@@ -74,7 +78,7 @@ void json_source(json_reader *reader,
 
 void json_source_string(json_reader *reader, const char *str, size_t len)
 {
-	reader->ctx = NULL;
+	reader->ctx.p = NULL;
 	reader->buf = (char *)str;
 	reader->bufsiz = len;
 	reader->head = 0;
@@ -105,19 +109,22 @@ void json_source_file(json_reader *reader, char *buf, size_t bufsiz, FILE *file)
 /* reader::refill compatible function which reads from a file descriptor. */
 static int refill_fd(char **buf, size_t *size, void *ctx)
 {
-	int fd = (intptr_t)ctx;
+	/* WARNING: This is a hack! */
+	int fd = container_of(buf, json_reader, buf)->ctx.fd;
 	ssize_t got = read(fd, *buf, *size);
 	if (got < 0) return -JSON_ERROR_ERRNO;
 	if ((size_t)got < *size) {
 		*size = got;
 		return 0;
 	}
+	(void)ctx;
 	return 1;
 }
 
 void json_source_fd(json_reader *reader, char *buf, size_t bufsiz, int fd)
 {
-	json_source(reader, buf, bufsiz, (void *)(intptr_t)fd, refill_fd);
+	json_source(reader, buf, bufsiz, NULL, refill_fd);
+	reader->ctx.fd = fd;
 }
 #endif /* JSON_WITH_FD */
 
@@ -129,7 +136,7 @@ void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz)
 
 void **json_get_ctx(json_reader *reader)
 {
-	return &reader->ctx;
+	return &reader->ctx.p;
 }
 
 void json_free(json_reader *reader)
@@ -167,28 +174,26 @@ static int to_lower(int ch)
 }
 
 /* Returns whether an error has been set. */
-static int has_error(json_reader *reader)
+static int has_error(const json_reader *reader)
 {
 	return (reader->flags & 0xFF) != 0;
+}
+
+int json_get_last_error(const json_reader *reader,
+	enum json_type *code, size_t *erridx)
+{
+	if (has_error(reader)) {
+		if (erridx) *erridx = reader->head;
+		if (code) *code = reader->flags & 0xFF;
+		return 1;
+	}
+	return 0;
 }
 
 /* Set error indicator if it has yet to be set. */
 static void set_error(json_reader *reader, enum json_type err)
 {
 	if (!has_error(reader)) reader->flags |= err;
-}
-
-/* Clear the error indicator. */
-static void clear_error(json_reader *reader)
-{
-	reader->flags &= ~0xFF;
-}
-
-/* Set error information in the item to that in the reader. */
-static void carry_error(json_reader *from, struct json_item *to)
-{
-	to->type = from->flags & 0xFF;
-	to->val.erridx = from->head;
 }
 
 /* Allocate using the reader's function or set error on failure. */
@@ -278,7 +283,8 @@ static int is_in_range(const json_reader *reader)
 static int refill(json_reader *reader)
 {
 	size_t newsiz = reader->bufsiz;
-	int retval = reader->refill(&reader->buf, &newsiz, reader->ctx);
+	/* WARNING: Must refer to &reader->buf for refill_fd to work! */
+	int retval = reader->refill(&reader->buf, &newsiz, reader->ctx.p);
 	if (retval < 0) {
 		set_error(reader, -retval & 0xFF);
 		return -1;
@@ -794,6 +800,7 @@ static int parse_colon(json_reader *reader)
 
 int json_read_item(json_reader *reader, struct json_item *result)
 {
+	if (has_error(reader)) return -1;
 	result->type = JSON_EMPTY;
 	result->key.len = 0;
 	result->key.bytes = NULL;
@@ -856,7 +863,6 @@ int json_read_item(json_reader *reader, struct json_item *result)
 	return 0;
 
 error:
-	carry_error(reader, result);
-	clear_error(reader);
+	json_get_last_error(reader, &result->type, &result->val.erridx);
 	return -1;
 }

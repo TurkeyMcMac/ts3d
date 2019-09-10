@@ -27,7 +27,13 @@ typedef struct {
 	/* The data buffer size given by refill. */
 	size_t  bufsiz;
 	/* The pointer passed to json_source. */
-	void    *ctx;
+	union {
+		/* The pointer version. */
+		void *p;
+		/* The fd version for use when the source is an fd. This is a
+		 * hack to make things more portable. */
+		int   fd;
+	} ctx;
 	/* The index into the buffer of the next byte to be read. */
 	size_t  head;
 	/* The stack of list and map brackets. */
@@ -267,8 +273,23 @@ int json_read_item(json_reader *reader, struct json_item *result);
  */
 void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz);
 
-/* Get a pointer to the parser's context. This can be modified. */
+/* Get a pointer to the parser's context. If the context was set using
+ * json_source, the return value is what the context was last set to and it can
+ * be modified. If any other json_source_* function was used instead, the
+ * contents are of unspecified value and cannot be modified. Avoid this function
+ * unless you used plain old json_source. */
 void **json_get_ctx(json_reader *reader);
+
+/* Check the last reading error. If none occurred, 0 is returned and the given
+ * pointers contain no meaningful information. If there has been an error, the
+ * code and index** are put into the appropriate pointers. If the second or
+ * third argument is NULL, that pointer will never be dereferenced and therefore
+ * will never be set.
+ *
+ * ** See the erridx member of union json_data for details. */
+int json_get_last_error(const json_reader *reader,
+	enum json_type *code,
+	size_t *erridx);
 
 /* Deallocate all memory associated with the given parser. */
 void json_free(json_reader *reader);
