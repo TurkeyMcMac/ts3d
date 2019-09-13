@@ -28,8 +28,8 @@ if ($subcmd eq 'view') {
 	my $ascii = ' ';
 	for (my $y = 0; $y < 8; ++$y) {
 		for (my $x = 0; $x < 8; ++$x) {
-			printf "%s%s   ", $ascii, &colorize_pix($ascii);
 			$ascii = chr(ord($ascii) + 1);
+			printf "%s%s   ", $ascii, &colorize_pix($ascii);
 		}
 		print "\n";
 	}
