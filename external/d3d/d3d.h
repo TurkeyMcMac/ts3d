@@ -21,7 +21,9 @@
  *    default case, when this happens, sprites are assumed not to move much
  *    between frames, which can hurt performance if that is seldom true. You
  *    NEED NOT compile the client code with this option, since the interface is
- *    the same either way. */
+ *    the same either way.
+ *  - D3D_USE_INTERNAL_STRUCTS: Define this to have access to unstable internal
+ *    structure layouts of opaque types used by the library. */
 
 #ifndef D3D_PIXEL_TYPE
 #	define D3D_PIXEL_TYPE uint8_t
@@ -191,5 +193,74 @@ void d3d_draw_sprites(
  * previously drawn closer sprites; it is just drawn closer than them. You
  * probably want d3d_draw_sprites. */
 void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp);
+
+/* Complete structure definitions. */
+#ifdef D3D_USE_INTERNAL_STRUCTS
+
+#define D3D_SIZED_TEXTURE(name, arr_size) struct name { \
+	/* Width and height in pixels */ \
+	size_t width, height; \
+	/* Row-major pixels */ \
+	d3d_pixel pixels arr_size; \
+}
+
+D3D_SIZED_TEXTURE(d3d_texture_s, [/* size is width * height */]);
+
+// Meant for internal use only
+D3D_SIZED_TEXTURE(d3d_texture_one_pixel, [1]);
+
+// This is for drawing multiple sprites.
+struct d3d_sprite_order {
+	// The distance from the camera
+	double dist;
+	// The corresponding index into the given d3d_sprite_s list
+	size_t index;
+};
+
+struct d3d_camera_s {
+	// The position of the camera on the board
+	d3d_vec_s pos;
+	// The field of view in the x (sideways) and y (vertical) screen axes.
+	// Measured in radians.
+	d3d_vec_s fov;
+	// The direction of the camera relative to the positive x direction,
+	// increasing counterclockwise. In the range [0, 2π).
+	double facing;
+	// The width and height of the camera screen, in pixels.
+	size_t width, height;
+	// The 1x1 texture containing the empty pixel.
+	struct d3d_texture_one_pixel empty_texture;
+	// The block containing all empty textures.
+	d3d_block_s blank_block;
+	// The last buffer used when sorting sprites, or NULL the first time.
+	struct d3d_sprite_order *order;
+	// The capacity (allocation size) of the field above.
+	size_t order_buf_cap;
+#ifndef D3D_DONT_OPTIMIZE_SAME_SPRITES
+	// The last sprite list passed to d3d_draw_sprites. If this is the same
+	// the next time, some optimizations are enabled.
+	const d3d_sprite_s *last_sprites;
+#endif
+	// For each row of the screen, the tangent of the angle of that row
+	// relative to the center of the screen, in radians
+	// For example, the 0th item is tan(fov.y / 2)
+	double *tans;
+	// For each column of the screen, the distance from the camera to the
+	// first wall in that direction. This is calculated when drawing columns
+	// and is used when drawing sprites.
+	double *dists;
+	// The pixels of the screen in row-major order.
+	d3d_pixel pixels[];
+};
+
+struct d3d_board_s {
+	// The width and height of the board, in blocks
+	size_t width, height;
+	// The blocks of the boards. These are pointers to save space with many
+	// identical blocks.
+	const d3d_block_s *blocks[];
+};
+
+#endif /* D3D_USE_INTERNAL_STRUCTS */
 
 #endif /* D3D_H_ */
