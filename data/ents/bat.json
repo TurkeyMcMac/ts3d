@@ -2,6 +2,8 @@
  "name": "Bat",
  "width": 0.3,
  "height": 0.15,
+ "turn_chance": 1.5,
+ "speed": 0.004,
  "death_spawn": "escaping-spirit",
  "random_start_frame": true,
  "lifetime": 800,

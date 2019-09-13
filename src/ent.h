@@ -32,6 +32,8 @@ struct ent_type {
 	long lifetime;
 	// Whether or not the animation should start at a random frame.
 	bool random_start_frame;
+	int turn_chance;
+	double speed;
 };
 
 // Load an entity with the name or use one previously loaded.
@@ -45,6 +47,7 @@ char *ent_type_to_string(const struct ent_type *ent);
 void ent_type_free(struct ent_type *ent);
 
 struct ent {
+	d3d_vec_s vel;
 	// The type of this entity.
 	struct ent_type *type;
 	// The sprite location of this entity.
@@ -71,6 +74,14 @@ void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite);
 
 // Returns whether or not the entity is dead and should be removed.
 bool ent_is_dead(const struct ent *ent);
+
+// Get mutable pointer to entity velocity. This is valid until another ent_*
+// function is called.
+d3d_vec_s *ent_pos(struct ent *ent);
+
+// Get mutable pointer to entity position. This is valid until another ent_*
+// function is called.
+d3d_vec_s *ent_vel(struct ent *ent);
 
 // Clean up entity resources. Does not free the pointer.
 void ent_destroy(struct ent *ent);

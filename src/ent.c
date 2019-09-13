@@ -77,6 +77,13 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->height = 1.0;
 	if ((got = json_map_get(&jtree, "height", JN_NUMBER)))
 		ent->height = got->num;
+	ent->speed = 0.0;
+	if ((got = json_map_get(&jtree, "speed", JN_NUMBER)))
+		ent->speed = got->num;
+	ent->turn_chance = 0;
+	if ((got = json_map_get(&jtree, "turn_chance", JN_NUMBER)))
+		// Convert from percent to an equivalent portion of RAND_MAX.
+		ent->turn_chance = got->num * (RAND_MAX / 100.0);
 	ent->transparent = EMPTY_PIXEL;
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)
@@ -157,6 +164,7 @@ void ent_type_free(struct ent_type *ent)
 void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
 	const d3d_vec_s *pos)
 {
+	ent->vel.x = ent->vel.y = 0;
 	ent->type = type;
 	ent->sprite = sprite;
 	ent->lifetime = type->lifetime;
@@ -197,6 +205,16 @@ void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite)
 bool ent_is_dead(const struct ent *ent)
 {
 	return ent->type->lifetime >= 0 && ent->lifetime < 0;
+}
+
+d3d_vec_s *ent_pos(struct ent *ent)
+{
+	return &ent->sprite->pos;
+}
+
+d3d_vec_s *ent_vel(struct ent *ent)
+{
+	return &ent->vel;
 }
 
 void ent_destroy(struct ent *ent)

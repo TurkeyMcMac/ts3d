@@ -123,20 +123,29 @@ int main(int argc, char *argv[])
 		d3d_draw_sprites(cam, n_ents, sprites);
 		for (size_t i = 0; i < n_ents; ++i) {
 			ent_tick(&ents[i]);
-			d3d_vec_s *spos = &sprites[i].pos;
-			d3d_vec_s disp = {spos->x - pos->x, spos->y - pos->y};
-			double dist = hypot(disp.x, disp.y);
-			disp.x /= dist * -400;
-			disp.y /= dist * -400;
-			d3d_vec_s move = *spos;
+			d3d_vec_s *epos = ent_pos(&ents[i]);
+			d3d_vec_s *evel = ent_vel(&ents[i]);
+			epos->x += evel->x;
+			epos->y += evel->y;
+			d3d_vec_s disp;
+			double dist;
+			if (ents[i].type->turn_chance > rand()) {
+				disp.x = epos->x - pos->x;
+				disp.y = epos->y - pos->y;
+				dist = hypot(disp.x, disp.y) /
+					-ents[i].type->speed;
+				disp.x /= dist;
+				disp.y /= dist;
+			} else {
+				disp.x = disp.y = 0;
+			}
+			d3d_vec_s move = *epos;
 			map_check_walls(map, &move, CAM_RADIUS);
-			disp.x += move.x - spos->x;
-			disp.y += move.y - spos->y;
-			dist = hypot(disp.x, disp.y);
-			disp.x /= dist * 250;
-			disp.y /= dist * 250;
-			spos->x += disp.x;
-			spos->y += disp.y;
+			disp.x += move.x - epos->x;
+			disp.y += move.y - epos->y;
+			*epos = move;
+			if (disp.x != 0.0) evel->x = disp.x;
+			if (disp.y != 0.0) evel->y = disp.y;
 		}
 		display_frame(cam);
 		for (size_t i = 0; i < n_ents; ++i) {
