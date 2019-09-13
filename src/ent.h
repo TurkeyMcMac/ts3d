@@ -32,7 +32,10 @@ struct ent_type {
 	long lifetime;
 	// Whether or not the animation should start at a random frame.
 	bool random_start_frame;
+	// Percent chance that the entity will turn toward the player in any
+	// given tick.
 	int turn_chance;
+	// Movement speed (in blocks/tick).
 	double speed;
 };
 
@@ -47,6 +50,7 @@ char *ent_type_to_string(const struct ent_type *ent);
 void ent_type_free(struct ent_type *ent);
 
 struct ent {
+	// Current velocity (in blocks/tick)
 	d3d_vec_s vel;
 	// The type of this entity.
 	struct ent_type *type;
