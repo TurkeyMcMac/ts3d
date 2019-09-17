@@ -1,0 +1,9 @@
+{
+ "name": "Bullet",
+ "width": 0.03,
+ "height": 0.03,
+ "speed": 0.01,
+ "death_spawn": "explosion",
+ "lifetime": 500,
+ "frames": ["bullet"]
+}
