@@ -52,7 +52,10 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->name = str_dup(name);
 	ent->frames = NULL;
 	ent->n_frames = 0;
+	ent->turn_chance = 0;
+	ent->shoot_chance = 0;
 	ent->death_spawn = NULL;
+	ent->bullet = NULL;
 	ent->lifetime = -1;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
@@ -80,10 +83,11 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->speed = 0.0;
 	if ((got = json_map_get(&jtree, "speed", JN_NUMBER)))
 		ent->speed = got->num;
-	ent->turn_chance = 0;
 	if ((got = json_map_get(&jtree, "turn_chance", JN_NUMBER)))
 		// Convert from percent to an equivalent portion of RAND_MAX.
 		ent->turn_chance = got->num * (RAND_MAX / 100.0);
+	if ((got = json_map_get(&jtree, "shoot_chance", JN_NUMBER)))
+		ent->shoot_chance = got->num * (RAND_MAX / 100.0);
 	ent->transparent = EMPTY_PIXEL;
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)
@@ -98,11 +102,12 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 			parse_frame(&got->list.vals[i], &ent->frames[i], ldr);
 		}
 	}
-	if ((got = json_map_get(&jtree, "death_spawn", JN_STRING))) {
-		// To prevent infinite recursion with infinite cycles:
-		*entp = ent;
+	// To prevent infinite recursion with infinite cycles.
+	*entp = ent;
+	if ((got = json_map_get(&jtree, "death_spawn", JN_STRING)))
 		ent->death_spawn = load_ent_type(ldr, got->str);
-	}
+	if ((got = json_map_get(&jtree, "bullet", JN_STRING)))
+		ent->bullet = load_ent_type(ldr, got->str);
 	if ((got = json_map_get(&jtree, "lifetime", JN_NUMBER)))
 		ent->lifetime = got->num;
 end:

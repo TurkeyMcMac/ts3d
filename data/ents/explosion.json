@@ -3,6 +3,7 @@
  "width": 0.3,
  "height": 0.2,
  "random_start_frame": true,
+ "lifetime": 29,
  "frames": [
   ["explosion-1", 5],
   ["explosion-2", 4],

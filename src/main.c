@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	size_t n_ents = map->n_ents;
-	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites));
-	struct ent *ents = xmalloc(n_ents * sizeof(*ents));
+	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites) * 2);
+	struct ent *ents = xmalloc(n_ents * sizeof(*ents) * 2);
 	for (size_t i = 0; i < n_ents; ++i) {
 		struct ent_type *type = map->ents[i].type;
 		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
@@ -154,6 +154,33 @@ int main(int argc, char *argv[])
 				ent_destroy(&ents[i]);
 				ent_relocate(&ents[n_ents], &ents[i], &sprites[i]);
 			}
+		}
+		size_t bullet_at = n_ents;
+		for (size_t i = 0; i < n_ents; ++i) {
+			if (ents[i].type->bullet
+			 && ents[i].type->shoot_chance > rand()) {
+				size_t b = bullet_at++;
+				ent_init(&ents[b], ents[i].type->bullet,
+					&sprites[b], ent_pos(&ents[i]));
+				d3d_vec_s *bvel = ent_vel(&ents[b]);
+				*bvel = *ent_vel(&ents[i]);
+				double speed = hypot(bvel->x, bvel->y) /
+					ents[b].type->speed;
+				bvel->x += bvel->x / speed;
+				bvel->y += bvel->y / speed;
+			}
+		}
+		if (bullet_at != n_ents) {
+			n_ents = bullet_at;
+			d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * n_ents
+				* sizeof(*sprites));
+			if (new_sprites != sprites) {
+				sprites = new_sprites;
+				for (size_t i = 0; i < n_ents; ++i) {
+					ents[i].sprite = &sprites[i];
+				}
+			}
+			ents = xrealloc(ents, 2 * n_ents * sizeof(*ents));
 		}
 		tick(&timer);
 	}

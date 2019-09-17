@@ -32,16 +32,8 @@
    "pos": [2.5, 1.5]
   },
   {
-   "kind": "explosion",
-   "pos": [5.5, 2.5]
-  },
-  {
    "kind": "bat",
    "pos": [2.5, 5.5]
-  },
-  {
-   "kind": "explosion",
-   "pos": [1.5, 2.5]
   }
  ]
 }

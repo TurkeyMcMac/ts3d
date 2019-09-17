@@ -28,13 +28,17 @@ struct ent_type {
 	struct ent_frame *frames;
 	// entity to spawn on death.
 	struct ent_type *death_spawn;
+	// entity to act as a bullet.
+	struct ent_type *bullet;
 	// Ticks to stay alive, or -1 for forever.
 	long lifetime;
 	// Whether or not the animation should start at a random frame.
 	bool random_start_frame;
-	// Percent chance that the entity will turn toward the player in any
-	// given tick.
+	// Chance out of RAND_MAX that the entity will turn toward the player in
+	// any given tick.
 	int turn_chance;
+	// Chance out of RAND_MAX that the entity will shoot in any given tick.
+	int shoot_chance;
 	// Movement speed (in blocks/tick).
 	double speed;
 };
