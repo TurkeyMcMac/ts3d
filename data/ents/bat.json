@@ -8,7 +8,6 @@
  "death_spawn": "escaping-spirit",
  "bullet": "bullet",
  "random_start_frame": true,
- "lifetime": 800,
  "frames": [
   ["bat-wings-1", 7],
   ["bat-wings-2", 4],
