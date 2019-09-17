@@ -5,5 +5,6 @@
  "speed": 0.01,
  "death_spawn": "explosion",
  "lifetime": 500,
+ "wall_die": true,
  "frames": ["bullet"]
 }

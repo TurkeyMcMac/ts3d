@@ -141,11 +141,16 @@ int main(int argc, char *argv[])
 			}
 			d3d_vec_s move = *epos;
 			map_check_walls(map, &move, CAM_RADIUS);
-			disp.x += move.x - epos->x;
-			disp.y += move.y - epos->y;
-			*epos = move;
-			if (disp.x != 0.0) evel->x = disp.x;
-			if (disp.y != 0.0) evel->y = disp.y;
+			if (ents[i].type->wall_die
+			 && (move.x != epos->x || move.y != epos->y)) {
+				ents[i].lifetime = 0;
+			} else {
+				disp.x += move.x - epos->x;
+				disp.y += move.y - epos->y;
+				*epos = move;
+				if (disp.x != 0.0) evel->x = disp.x;
+				if (disp.y != 0.0) evel->y = disp.y;
+			}
 		}
 		display_frame(cam);
 		for (size_t i = 0; i < n_ents; ++i) {
