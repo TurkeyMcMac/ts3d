@@ -76,8 +76,7 @@ int main(int argc, char *argv[])
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
 	d3d_vec_s *pos = d3d_camera_position(cam);
-	pos->x = 3.5;
-	pos->y = 3.5;
+	*pos = map->player_pos;
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
