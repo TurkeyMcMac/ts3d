@@ -24,10 +24,10 @@
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
 
-#define FORWARD_COEFF 0.05
-#define BACKWARD_COEFF 0.03
+#define FORWARD_COEFF 0.025
+#define BACKWARD_COEFF 0.015
 #define TURN_COEFF 0.055
-#define SIDEWAYS_COEFF 0.04
+#define SIDEWAYS_COEFF 0.02
 
 void display_frame(d3d_camera *cam)
 {
@@ -87,35 +87,46 @@ int main(int argc, char *argv[])
 	struct ticker timer;
 	ticker_init(&timer, 15);
 	double *facing = d3d_camera_facing(cam);
+	int translation = '\0';
 	int key;
 	*facing = M_PI / 2;
 	timeout(0);
-	while ((key = getch()) != 'x') {
-		switch (tolower(key)) {
+	while ((key = tolower(getch())) != 'x') {
+		switch (key) {
+		case 'w': // Forward
+		case 's': // Backward
+		case 'a': // Left
+		case 'd': // Right
+			translation = translation != key ? key : '\0';
+			break;
+		case 'q': // Turn CCW
+			*facing += TURN_COEFF;
+			break;
+		case 'e': // Turn CW
+			*facing -= TURN_COEFF;
+			break;
+		}
+		switch (translation) {
 			double sideway;
 		case 'w': // Forward
 			pos->x += FORWARD_COEFF * cos(*facing);
 			pos->y += FORWARD_COEFF * sin(*facing);
 			break;
-		case 'q': // Turn CCW
-			*facing += TURN_COEFF;
-			break;
 		case 's': // Backward
-			pos->x -= BACKWARD_COEFF * cos(*facing);
-			pos->y -= BACKWARD_COEFF * sin(*facing);
-			break;
-		case 'e': // Turn CW
-			*facing -= TURN_COEFF;
+			pos->x -= FORWARD_COEFF * cos(*facing);
+			pos->y -= FORWARD_COEFF * sin(*facing);
 			break;
 		case 'a': // Left
 			sideway = *facing + M_PI / 2;
-			pos->x += SIDEWAYS_COEFF * cos(sideway);
-			pos->y += SIDEWAYS_COEFF * sin(sideway);
+			pos->x += FORWARD_COEFF * cos(sideway);
+			pos->y += FORWARD_COEFF * sin(sideway);
 			break;
 		case 'd': // Right
 			sideway = *facing - M_PI / 2;
-			pos->x += SIDEWAYS_COEFF * cos(sideway);
-			pos->y += SIDEWAYS_COEFF * sin(sideway);
+			pos->x += FORWARD_COEFF * cos(sideway);
+			pos->y += FORWARD_COEFF * sin(sideway);
+			break;
+		default:
 			break;
 		}
 		map_check_walls(map, pos, CAM_RADIUS);
