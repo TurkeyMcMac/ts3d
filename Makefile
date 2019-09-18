@@ -1,18 +1,21 @@
 exe = ts3d
 tests = tests
 test-log = tests.log
-sources = $(wildcard src/*.c)
-headers = $(wildcard src/*.h)
+sources = src/*.c
+headers = src/*.h
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L ${CFLAGS}
 linkage = -lm -lcurses
 test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 
+CC ?= cc
+RM ?= rm -f
+
 $(exe): $(sources) $(headers)
 	$(CC) $(cflags) -o $@ $(sources) $(linkage)
 
 $(tests): $(sources) $(headers)
-	$(CC) $(test-flags) $(cflags) -o $@ $(sources) $(linkage)
+	$(CC) $(cflags) $(test-flags) -o $@ $(sources) $(linkage)
 
 $(test-log): $(tests)
 	ceeteef -s $(tests) > $(test-log)
