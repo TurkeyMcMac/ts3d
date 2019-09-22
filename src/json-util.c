@@ -264,7 +264,7 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 	struct logger logger; \
 	logger_init(&logger); \
 	do { \
-		char str[] = (text); \
+		char str[] = text; \
 		FILE *source = fmemopen(str, sizeof(str), "r"); \
 		parse_json_tree("(memory)", source, &logger, &root); \
 	} while (0)
