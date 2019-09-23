@@ -5,7 +5,7 @@ sources = src/*.c
 headers = src/*.h
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L ${CFLAGS}
-linkage = -lm -lcurses
+linkage = -lm -lcurses -lpthread
 test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 
 CC ?= cc

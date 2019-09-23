@@ -4,6 +4,7 @@
 #include "map.h"
 #include "ent.h"
 #include "pixel.h"
+#include "sim-worker.h"
 #include "ticker.h"
 #include "util.h"
 #include "xalloc.h"
@@ -63,144 +64,29 @@ int main(int argc, char *argv[])
 	}
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
-	size_t n_ents = map->n_ents;
-	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites) * 2);
-	struct ent *ents = xmalloc(n_ents * sizeof(*ents) * 2);
-	for (size_t i = 0; i < n_ents; ++i) {
-		struct ent_type *type = map->ents[i].type;
-		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
-	}
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
 		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
-	d3d_vec_s *pos = d3d_camera_position(cam);
-	*pos = map->player_pos;
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
 			init_pair((fg << 3 | bg) + 1, fg, bg);
 		}
 	}
+	struct sim_worker sim;
+	sim_worker_init(&sim, cam, map);
 	struct ticker timer;
 	ticker_init(&timer, 15);
-	double *facing = d3d_camera_facing(cam);
-	int translation = '\0';
 	int key;
-	*facing = M_PI / 2;
 	timeout(0);
 	while ((key = tolower(getch())) != 'x') {
-		switch (key) {
-		case 'w': // Forward
-		case 's': // Backward
-		case 'a': // Left
-		case 'd': // Right
-			translation = translation != key ? key : '\0';
-			break;
-		case 'q': // Turn CCW
-			*facing += TURN_COEFF;
-			break;
-		case 'e': // Turn CW
-			*facing -= TURN_COEFF;
-			break;
-		}
-		switch (translation) {
-			double sideway;
-		case 'w': // Forward
-			pos->x += FORWARD_COEFF * cos(*facing);
-			pos->y += FORWARD_COEFF * sin(*facing);
-			break;
-		case 's': // Backward
-			pos->x -= FORWARD_COEFF * cos(*facing);
-			pos->y -= FORWARD_COEFF * sin(*facing);
-			break;
-		case 'a': // Left
-			sideway = *facing + M_PI / 2;
-			pos->x += FORWARD_COEFF * cos(sideway);
-			pos->y += FORWARD_COEFF * sin(sideway);
-			break;
-		case 'd': // Right
-			sideway = *facing - M_PI / 2;
-			pos->x += FORWARD_COEFF * cos(sideway);
-			pos->y += FORWARD_COEFF * sin(sideway);
-			break;
-		default:
-			break;
-		}
-		map_check_walls(map, pos, CAM_RADIUS);
-		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, n_ents, sprites);
-		for (size_t i = 0; i < n_ents; ++i) {
-			ent_tick(&ents[i]);
-			d3d_vec_s *epos = ent_pos(&ents[i]);
-			d3d_vec_s *evel = ent_vel(&ents[i]);
-			epos->x += evel->x;
-			epos->y += evel->y;
-			d3d_vec_s disp;
-			double dist;
-			if (ents[i].type->turn_chance > rand()) {
-				disp.x = epos->x - pos->x;
-				disp.y = epos->y - pos->y;
-				dist = hypot(disp.x, disp.y) /
-					-ents[i].type->speed;
-				disp.x /= dist;
-				disp.y /= dist;
-			} else {
-				disp.x = disp.y = 0;
-			}
-			d3d_vec_s move = *epos;
-			map_check_walls(map, &move, CAM_RADIUS);
-			if (ents[i].type->wall_die
-			 && (move.x != epos->x || move.y != epos->y)) {
-				ents[i].lifetime = 0;
-			} else {
-				disp.x += move.x - epos->x;
-				disp.y += move.y - epos->y;
-				*epos = move;
-				if (disp.x != 0.0) evel->x = disp.x;
-				if (disp.y != 0.0) evel->y = disp.y;
-			}
-		}
+		sim_worker_start_tick(&sim, key);
+		sim_worker_finish_tick(&sim);
 		display_frame(cam);
-		for (size_t i = 0; i < n_ents; ++i) {
-			if (ent_is_dead(&ents[i])) {
-				--n_ents;
-				ent_destroy(&ents[i]);
-				ent_relocate(&ents[n_ents], &ents[i], &sprites[i]);
-			}
-		}
-		size_t bullet_at = n_ents;
-		for (size_t i = 0; i < n_ents; ++i) {
-			if (ents[i].type->bullet
-			 && ents[i].type->shoot_chance > rand()) {
-				size_t b = bullet_at++;
-				ent_init(&ents[b], ents[i].type->bullet,
-					&sprites[b], ent_pos(&ents[i]));
-				d3d_vec_s *bvel = ent_vel(&ents[b]);
-				*bvel = *ent_vel(&ents[i]);
-				double speed = hypot(bvel->x, bvel->y) /
-					ents[b].type->speed;
-				bvel->x += bvel->x / speed;
-				bvel->y += bvel->y / speed;
-			}
-		}
-		if (bullet_at != n_ents) {
-			n_ents = bullet_at;
-			d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * n_ents
-				* sizeof(*sprites));
-			if (new_sprites != sprites) {
-				sprites = new_sprites;
-				for (size_t i = 0; i < n_ents; ++i) {
-					ents[i].sprite = &sprites[i];
-				}
-			}
-			ents = xrealloc(ents, 2 * n_ents * sizeof(*ents));
-		}
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
-	free(ents);
-	free(sprites);
 	loader_free(&ldr);
 }
