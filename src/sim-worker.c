@@ -17,16 +17,27 @@
 static void destroy_sim_worker(void *arg)
 {
 	struct sim_worker *sim = arg;
-	barrier_stop_using(&sim->cam_bar);
+	pthread_cond_destroy(&sim->start_draw_cond);
+	pthread_cond_destroy(&sim->finish_draw_cond);
+}
+
+static void destroy_cond_mutex(void *arg)
+{
+	pthread_mutex_t *cond_mtx = arg;
+	pthread_mutex_trylock(cond_mtx);
+	pthread_mutex_unlock(cond_mtx);
+	pthread_mutex_destroy(cond_mtx);
 }
 
 static void *run_sim_worker(void *arg)
 {
 	int cancel_junk; // This value is never used
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_junk);
+	pthread_mutex_t cond_mtx;
+	if (pthread_mutex_init(&cond_mtx, NULL)) return NULL;
+	pthread_cleanup_push(destroy_cond_mutex, &cond_mtx);
 	struct sim_worker *sim = arg;
 	pthread_cleanup_push(destroy_sim_worker, sim);
-	barrier_start_using(&sim->cam_bar);
 	d3d_sprite_s *sprites = NULL;
 	pthread_cleanup_push(free, sprites);
 	struct ent *ents = NULL;
@@ -37,6 +48,7 @@ static void *run_sim_worker(void *arg)
 	size_t n_ents = map->n_ents;
 	sprites = xmalloc(n_ents * sizeof(*sprites) * 2);
 	ents = xmalloc(n_ents * sizeof(*ents) * 2);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &cancel_junk);
 	for (size_t i = 0; i < n_ents; ++i) {
 		struct ent_type *type = map->ents[i].type;
 		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
@@ -48,7 +60,6 @@ static void *run_sim_worker(void *arg)
 	int key = '\0';
 	*facing = M_PI / 2;
 	for (;;) {
-		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_junk);
 		switch (key) {
 		case 'w': // Forward
 		case 's': // Backward
@@ -87,11 +98,15 @@ static void *run_sim_worker(void *arg)
 			break;
 		}
 		map_check_walls(map, pos, CAM_RADIUS);
-		barrier_wait(&sim->cam_bar);
+		pthread_cond_wait(&sim->start_draw_cond, &cond_mtx);
 		key = sim->input_char;
+		// Disable cancellation while drawing frame.
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_junk);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, n_ents, sprites);
-		barrier_wait(&sim->cam_bar);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &cancel_junk);
+		pthread_testcancel();
+		pthread_cond_wait(&sim->finish_draw_cond, &cond_mtx);
 		for (size_t i = 0; i < n_ents; ++i) {
 			ent_tick(&ents[i]);
 			d3d_vec_s *epos = ent_pos(&ents[i]);
@@ -145,6 +160,8 @@ static void *run_sim_worker(void *arg)
 				bvel->y += bvel->y / speed;
 			}
 		}
+		// Disable cancellation while reallocating memory.
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_junk);
 		if (bullet_at != n_ents) {
 			n_ents = bullet_at;
 			d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * n_ents
@@ -163,6 +180,7 @@ static void *run_sim_worker(void *arg)
 	pthread_cleanup_pop(true); // free(ents)
 	pthread_cleanup_pop(true); // free(sprites)
 	pthread_cleanup_pop(true); // destroy_sim_worker(sim)
+	pthread_cleanup_pop(true); // destroy_cond_mtx(&cond_mtx)
 }
 
 int sim_worker_init(struct sim_worker *sim, d3d_camera *cam, struct map *map)
@@ -171,15 +189,19 @@ int sim_worker_init(struct sim_worker *sim, d3d_camera *cam, struct map *map)
 	sim->input_char = '\0';
 	sim->cam = cam;
 	sim->map = map;
-	if (barrier_init(&sim->cam_bar)) goto error_barrier_init;
+	if (pthread_cond_init(&sim->start_draw_cond, NULL))
+		goto error_cond_start;
+	if (pthread_cond_init(&sim->finish_draw_cond, NULL))
+		goto error_cond_finish;
 	if ((err = pthread_create(&sim->thread, NULL, run_sim_worker, sim)))
 		goto error_thread;
-	barrier_start_using(&sim->cam_bar);
 	return 0;
 
 error_thread:
-	barrier_destroy(&sim->cam_bar);
-error_barrier_init:
+	pthread_cond_destroy(&sim->finish_draw_cond);
+error_cond_finish:
+	pthread_cond_destroy(&sim->start_draw_cond);
+error_cond_start:
 	errno = err;
 	return -1;
 }
@@ -187,20 +209,18 @@ error_barrier_init:
 int sim_worker_start_tick(struct sim_worker *sim, int input_char)
 {
 	sim->input_char = input_char;
-	barrier_wait(&sim->cam_bar);
+	pthread_cond_broadcast(&sim->start_draw_cond);
 	return 0;
 }
 
 int sim_worker_finish_tick(struct sim_worker *sim)
 {
-	barrier_wait(&sim->cam_bar);
+	pthread_cond_broadcast(&sim->finish_draw_cond);
 	return 0;
 }
 
 void sim_worker_destroy(struct sim_worker *sim)
 {
-	barrier_stop_using(&sim->cam_bar);
 	pthread_cancel(sim->thread);
 	pthread_join(sim->thread, NULL);
-	barrier_destroy(&sim->cam_bar);
 }

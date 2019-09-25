@@ -1,14 +1,14 @@
 #ifndef SIM_WORKER_H_
 #define SIM_WORKER_H_
 
-#include "barrier.h"
 #include "d3d.h"
 #include "map.h"
 #include <pthread.h>
 
 struct sim_worker {
 	pthread_t thread;
-	struct barrier cam_bar;
+	pthread_cond_t start_draw_cond;
+	pthread_cond_t finish_draw_cond;
 	d3d_camera *cam;
 	struct map *map;
 	int input_char;
