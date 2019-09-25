@@ -17,7 +17,7 @@
 static void destroy_sim_worker(void *arg)
 {
 	struct sim_worker *sim = arg;
-	pthread_mutex_destroy(&sim->cam_mtx);
+	barrier_stop_using(&sim->cam_bar);
 }
 
 static void *run_sim_worker(void *arg)
@@ -27,6 +27,7 @@ static void *run_sim_worker(void *arg)
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &cancel_junk);
 	struct sim_worker *sim = arg;
 	pthread_cleanup_push(destroy_sim_worker, sim);
+	barrier_start_using(&sim->cam_bar);
 	d3d_sprite_s *sprites = NULL;
 	pthread_cleanup_push(free, sprites);
 	struct ent *ents = NULL;
@@ -87,14 +88,11 @@ static void *run_sim_worker(void *arg)
 			break;
 		}
 		map_check_walls(map, pos, CAM_RADIUS);
-		if (pthread_mutex_lock(&sim->cam_mtx) == 0) {
-			key = sim->input_char;
-			if (key >= 0)
-				fprintf(stderr, "key == '%c'\n", key);
-			d3d_draw_walls(cam, board);
-			d3d_draw_sprites(cam, n_ents, sprites);
-			pthread_mutex_unlock(&sim->cam_mtx);
-		}
+		barrier_wait(&sim->cam_bar);
+		key = sim->input_char;
+		d3d_draw_walls(cam, board);
+		d3d_draw_sprites(cam, n_ents, sprites);
+		barrier_wait(&sim->cam_bar);
 		for (size_t i = 0; i < n_ents; ++i) {
 			ent_tick(&ents[i]);
 			d3d_vec_s *epos = ent_pos(&ents[i]);
@@ -170,50 +168,40 @@ static void *run_sim_worker(void *arg)
 
 int sim_worker_init(struct sim_worker *sim, d3d_camera *cam, struct map *map)
 {
-	int err;
+	int err = 0;
 	sim->input_char = '\0';
 	sim->cam = cam;
 	sim->map = map;
-	if ((err = pthread_mutex_init(&sim->cam_mtx, NULL)))
-		goto error_mutex_init;
-	if ((err = pthread_mutex_lock(&sim->cam_mtx))) goto error_mutex_lock;
+	if (barrier_init(&sim->cam_bar)) goto error_barrier_init;
 	if ((err = pthread_create(&sim->thread, NULL, run_sim_worker, sim)))
 		goto error_thread;
+	barrier_start_using(&sim->cam_bar);
 	return 0;
 
 error_thread:
-error_mutex_lock:
-	pthread_mutex_destroy(&sim->cam_mtx);
-error_mutex_init:
+	barrier_destroy(&sim->cam_bar);
+error_barrier_init:
 	errno = err;
 	return -1;
 }
 
 int sim_worker_start_tick(struct sim_worker *sim, int input_char)
 {
-	if (input_char >= 0) fprintf(stderr, "PARENT KEY: '%c'\n", input_char);
-	int err;
 	sim->input_char = input_char;
-	if ((err = pthread_mutex_unlock(&sim->cam_mtx))) goto error;
+	barrier_wait(&sim->cam_bar);
 	return 0;
-
-error:
-	errno = err;
-	return -1;
 }
 
 int sim_worker_finish_tick(struct sim_worker *sim)
 {
-	int err;
-	if ((err = pthread_mutex_lock(&sim->cam_mtx))) goto error;
+	barrier_wait(&sim->cam_bar);
 	return 0;
-
-error:
-	errno = err;
-	return -1;
 }
 
 void sim_worker_destroy(struct sim_worker *sim)
 {
 	pthread_cancel(sim->thread);
+	pthread_join(sim->thread, NULL);
+	barrier_stop_using(&sim->cam_bar);
+	barrier_destroy(&sim->cam_bar);
 }

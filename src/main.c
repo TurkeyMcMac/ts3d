@@ -83,10 +83,11 @@ int main(int argc, char *argv[])
 	timeout(0);
 	while ((key = tolower(getch())) != 'x') {
 		sim_worker_start_tick(&sim, key);
+		tick(&timer);
 		sim_worker_finish_tick(&sim);
 		display_frame(cam);
-		tick(&timer);
 	}
+	sim_worker_destroy(&sim);
 	d3d_free_camera(cam);
 	loader_free(&ldr);
 }
