@@ -24,7 +24,6 @@ static void *run_sim_worker(void *arg)
 {
 	int cancel_junk; // This value is never used
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_junk);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &cancel_junk);
 	struct sim_worker *sim = arg;
 	pthread_cleanup_push(destroy_sim_worker, sim);
 	barrier_start_using(&sim->cam_bar);
@@ -159,7 +158,7 @@ static void *run_sim_worker(void *arg)
 			ents = xrealloc(ents, 2 * n_ents * sizeof(*ents));
 		}
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &cancel_junk);
-		// The thread acknowledges cancel requests
+		pthread_testcancel();
 	}
 	pthread_cleanup_pop(true); // free(ents)
 	pthread_cleanup_pop(true); // free(sprites)
@@ -200,8 +199,8 @@ int sim_worker_finish_tick(struct sim_worker *sim)
 
 void sim_worker_destroy(struct sim_worker *sim)
 {
+	barrier_stop_using(&sim->cam_bar);
 	pthread_cancel(sim->thread);
 	pthread_join(sim->thread, NULL);
-	barrier_stop_using(&sim->cam_bar);
 	barrier_destroy(&sim->cam_bar);
 }
