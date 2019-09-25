@@ -30,10 +30,10 @@ static void *run_sim_worker(void *arg)
 	d3d_sprite_s *sprites = NULL;
 	pthread_cleanup_push(free, sprites);
 	struct ent *ents = NULL;
+	pthread_cleanup_push(free, ents);
 	struct map *map = sim->map;
 	d3d_board *board = map->board;
 	d3d_camera *cam = sim->cam;
-	pthread_cleanup_push(free, ents);
 	size_t n_ents = map->n_ents;
 	sprites = xmalloc(n_ents * sizeof(*sprites) * 2);
 	ents = xmalloc(n_ents * sizeof(*ents) * 2);
