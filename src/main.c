@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 	}
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
-	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = d3d_new_camera(FOV_X,
