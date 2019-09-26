@@ -82,6 +82,10 @@ void ent_tick(struct ent *ent);
 // uninitialized.
 void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite);
 
+// Make the entity use a new sprite which already has had its information copied
+// from the old sprite. Use this when the old sprite location is valid no more.
+void ent_use_moved_sprite(struct ent *ent, d3d_sprite_s *moved);
+
 // Returns whether or not the entity is dead and should be removed.
 bool ent_is_dead(const struct ent *ent);
 

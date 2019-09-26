@@ -192,7 +192,8 @@ int main(int argc, char *argv[])
 			if (new_sprites != sprites) {
 				sprites = new_sprites;
 				for (size_t i = 0; i < n_ents; ++i) {
-					ents[i].sprite = &sprites[i];
+					ent_use_moved_sprite(&ents[i],
+						&sprites[i]);
 				}
 			}
 			ents = xrealloc(ents, 2 * n_ents * sizeof(*ents));

@@ -211,6 +211,11 @@ void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite)
 	to_ent->sprite = to_sprite;
 }
 
+void ent_use_moved_sprite(struct ent *ent, d3d_sprite_s *moved)
+{
+	ent->sprite = moved;
+}
+
 bool ent_is_dead(const struct ent *ent)
 {
 	return ent->type->lifetime >= 0 && ent->lifetime < 0;
