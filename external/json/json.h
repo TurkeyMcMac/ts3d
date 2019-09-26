@@ -273,6 +273,15 @@ int json_read_item(json_reader *reader, struct json_item *result);
  */
 void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz);
 
+/* Get the number of characters in the buffer used already to parse JSON. If the
+ * reader was initialized with json_source_string, returned is the number of
+ * characters so far used in the given string.
+ * PARAMETERS:
+ *  1. reader: The parser.
+ * RETURN VALUE: The number of characters used in the current buffer/string.
+ */
+size_t json_get_num_used(const json_reader *reader);
+
 /* Get a pointer to the parser's context. If the context was set using
  * json_source, the return value is what the context was last set to and it can
  * be modified. If any other json_source_* function was used instead, the

@@ -1,5 +1,9 @@
 #define D3D_USE_INTERNAL_STRUCTS
-#include "d3d.h"
+#ifdef D3D_HEADER_INCLUDE
+#	include D3D_HEADER_INCLUDE
+#else
+#	include "d3d.h"
+#endif
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>

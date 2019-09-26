@@ -134,6 +134,11 @@ void json_get_buf(const json_reader *reader, char **buf, size_t *bufsiz)
 	*bufsiz = reader->bufsiz;
 }
 
+size_t json_get_num_used(const json_reader *reader)
+{
+	return reader->head;
+}
+
 void **json_get_ctx(json_reader *reader)
 {
 	return &reader->ctx.p;
@@ -800,7 +805,7 @@ static int parse_colon(json_reader *reader)
 
 int json_read_item(json_reader *reader, struct json_item *result)
 {
-	if (has_error(reader)) return -1;
+	if (has_error(reader)) goto error;
 	result->type = JSON_EMPTY;
 	result->key.len = 0;
 	result->key.bytes = NULL;

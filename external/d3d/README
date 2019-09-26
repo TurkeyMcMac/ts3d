@@ -17,15 +17,15 @@ Documentation is in d3d.h. The demo is under the 'demo' directory.
 
 USAGE
 -----
-To use this in another project, just copy in some files. d3d.c expects d3d.h and
-d3d-internal-structures.h to be in the same directory as it is. If this is not
-what you want, you can use the make-standalone executable, which requires awk to
-run. This bundles the headers in with d3d.c. If you just want to bundle
-d3d-internal-structures, use the --exclude-d3d.h option of the executable. The
-preprocessed code is printed to the standard output.
+To use this in another project, just copy in some files. d3d.c expects d3d.h to
+be in the same directory as it is. If this is not what you want, you can define
+D3D_HEADER_INCLUDE to be something other than '"d3d.h"' when compiling d3d.c.
 
 DEPENDENCIES
 ------------
+The header can be used from C89 unless D3D_USE_INTERNAL_STRUCTS is defined. When
+compiling the code in d3d.c, however, the C99 standard is required.
+
 This library depends only on the standard library and the standard math library
 (compile/link it with -lm.) The demo depends on libcurses for actually drawing
 the pixels.

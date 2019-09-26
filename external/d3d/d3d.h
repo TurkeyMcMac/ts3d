@@ -23,7 +23,11 @@
  *    NEED NOT compile the client code with this option, since the interface is
  *    the same either way.
  *  - D3D_USE_INTERNAL_STRUCTS: Define this to have access to unstable internal
- *    structure layouts of opaque types used by the library. */
+ *    structure layouts of opaque types used by the library. You NEED NOT
+ *    compile d3d.c and your code with the same setting of this option.
+ *  - D3D_HEADER_INCLUDE: If this is defined, instead of '#include "d3d.h"',
+ *    d3d.c will use '#include D3D_HEADER_INCLUDE'. This is ONLY useful when
+ *    compiling d3d.c, not the client code. */
 
 #ifndef D3D_PIXEL_TYPE
 #	define D3D_PIXEL_TYPE uint8_t
