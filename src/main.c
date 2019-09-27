@@ -44,6 +44,129 @@ void display_frame(d3d_camera *cam)
 
 void end_win(void) { endwin(); }
 
+void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
+{
+	switch (key) {
+	case 'w': // Forward
+	case 's': // Backward
+	case 'a': // Left
+	case 'd': // Right
+		*translation = *translation != key ? key : '\0';
+		break;
+	case 'q': // Turn CCW
+		*facing += TURN_COEFF;
+		break;
+	case 'e': // Turn CW
+		*facing -= TURN_COEFF;
+		break;
+	}
+	switch (*translation) {
+		double sideway;
+	case 'w': // Forward
+		pos->x += FORWARD_COEFF * cos(*facing);
+		pos->y += FORWARD_COEFF * sin(*facing);
+		break;
+	case 's': // Backward
+		pos->x -= FORWARD_COEFF * cos(*facing);
+		pos->y -= FORWARD_COEFF * sin(*facing);
+		break;
+	case 'a': // Left
+		sideway = *facing + M_PI / 2;
+		pos->x += FORWARD_COEFF * cos(sideway);
+		pos->y += FORWARD_COEFF * sin(sideway);
+		break;
+	case 'd': // Right
+		sideway = *facing - M_PI / 2;
+		pos->x += FORWARD_COEFF * cos(sideway);
+		pos->y += FORWARD_COEFF * sin(sideway);
+		break;
+	default:
+		break;
+	}
+}
+
+void move_ents(struct ent *ents, size_t n_ents, struct map *map,
+	d3d_vec_s *cam_pos)
+{
+	for (size_t i = 0; i < n_ents; ++i) {
+		ent_tick(&ents[i]);
+		d3d_vec_s *epos = ent_pos(&ents[i]);
+		d3d_vec_s *evel = ent_vel(&ents[i]);
+		epos->x += evel->x;
+		epos->y += evel->y;
+		d3d_vec_s disp;
+		double dist;
+		if (ents[i].type->turn_chance > rand()) {
+			disp.x = epos->x - cam_pos->x;
+			disp.y = epos->y - cam_pos->y;
+			dist = hypot(disp.x, disp.y) / -ents[i].type->speed;
+			disp.x /= dist;
+			disp.y /= dist;
+		} else {
+			disp.x = disp.y = 0;
+		}
+		d3d_vec_s move = *epos;
+		map_check_walls(map, &move, CAM_RADIUS);
+		if (ents[i].type->wall_die
+		 && (move.x != epos->x || move.y != epos->y)) {
+			ents[i].lifetime = 0;
+		} else {
+			disp.x += move.x - epos->x;
+			disp.y += move.y - epos->y;
+			*epos = move;
+			if (disp.x != 0.0) evel->x = disp.x;
+			if (disp.y != 0.0) evel->y = disp.y;
+		}
+	}
+}
+
+void clean_up_dead(struct ent *ents, d3d_sprite_s *sprites, size_t *n_ents)
+{
+	for (size_t i = 0; i < *n_ents; ++i) {
+		if (ent_is_dead(&ents[i])) {
+			--*n_ents;
+			ent_destroy(&ents[i]);
+			ent_relocate(&ents[*n_ents], &ents[i], &sprites[i]);
+		}
+	}
+}
+
+void shoot_bullets(struct ent **entsp, d3d_sprite_s **spritesp, size_t *n_ents)
+{
+	struct ent *ents = *entsp;
+	d3d_sprite_s *sprites = *spritesp;
+	size_t bullet_at = *n_ents;
+	for (size_t i = 0; i < *n_ents; ++i) {
+		if (ents[i].type->bullet
+		 && ents[i].type->shoot_chance > rand()) {
+			size_t b = bullet_at++;
+			ent_init(&ents[b], ents[i].type->bullet,
+				&sprites[b], ent_pos(&ents[i]));
+			d3d_vec_s *bvel = ent_vel(&ents[b]);
+			*bvel = *ent_vel(&ents[i]);
+			double speed = hypot(bvel->x, bvel->y) /
+				ents[b].type->speed;
+			bvel->x += bvel->x / speed;
+			bvel->y += bvel->y / speed;
+		}
+	}
+	if (bullet_at != *n_ents) {
+		*n_ents = bullet_at;
+		d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * *n_ents
+			* sizeof(*sprites));
+		if (new_sprites != sprites) {
+			sprites = new_sprites;
+			for (size_t i = 0; i < *n_ents; ++i) {
+				ent_use_moved_sprite(&ents[i],
+					&sprites[i]);
+			}
+		}
+		ents = xrealloc(ents, 2 * *n_ents * sizeof(*ents));
+	}
+	*entsp = ents;
+	*spritesp = sprites;
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc < 2) {
@@ -91,113 +214,14 @@ int main(int argc, char *argv[])
 	*facing = M_PI / 2;
 	timeout(0);
 	while ((key = tolower(getch())) != 'x') {
-		switch (key) {
-		case 'w': // Forward
-		case 's': // Backward
-		case 'a': // Left
-		case 'd': // Right
-			translation = translation != key ? key : '\0';
-			break;
-		case 'q': // Turn CCW
-			*facing += TURN_COEFF;
-			break;
-		case 'e': // Turn CW
-			*facing -= TURN_COEFF;
-			break;
-		}
-		switch (translation) {
-			double sideway;
-		case 'w': // Forward
-			pos->x += FORWARD_COEFF * cos(*facing);
-			pos->y += FORWARD_COEFF * sin(*facing);
-			break;
-		case 's': // Backward
-			pos->x -= FORWARD_COEFF * cos(*facing);
-			pos->y -= FORWARD_COEFF * sin(*facing);
-			break;
-		case 'a': // Left
-			sideway = *facing + M_PI / 2;
-			pos->x += FORWARD_COEFF * cos(sideway);
-			pos->y += FORWARD_COEFF * sin(sideway);
-			break;
-		case 'd': // Right
-			sideway = *facing - M_PI / 2;
-			pos->x += FORWARD_COEFF * cos(sideway);
-			pos->y += FORWARD_COEFF * sin(sideway);
-			break;
-		default:
-			break;
-		}
+		move_player(pos, facing, &translation, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, n_ents, sprites);
-		for (size_t i = 0; i < n_ents; ++i) {
-			ent_tick(&ents[i]);
-			d3d_vec_s *epos = ent_pos(&ents[i]);
-			d3d_vec_s *evel = ent_vel(&ents[i]);
-			epos->x += evel->x;
-			epos->y += evel->y;
-			d3d_vec_s disp;
-			double dist;
-			if (ents[i].type->turn_chance > rand()) {
-				disp.x = epos->x - pos->x;
-				disp.y = epos->y - pos->y;
-				dist = hypot(disp.x, disp.y) /
-					-ents[i].type->speed;
-				disp.x /= dist;
-				disp.y /= dist;
-			} else {
-				disp.x = disp.y = 0;
-			}
-			d3d_vec_s move = *epos;
-			map_check_walls(map, &move, CAM_RADIUS);
-			if (ents[i].type->wall_die
-			 && (move.x != epos->x || move.y != epos->y)) {
-				ents[i].lifetime = 0;
-			} else {
-				disp.x += move.x - epos->x;
-				disp.y += move.y - epos->y;
-				*epos = move;
-				if (disp.x != 0.0) evel->x = disp.x;
-				if (disp.y != 0.0) evel->y = disp.y;
-			}
-		}
 		display_frame(cam);
-		for (size_t i = 0; i < n_ents; ++i) {
-			if (ent_is_dead(&ents[i])) {
-				--n_ents;
-				ent_destroy(&ents[i]);
-				ent_relocate(&ents[n_ents], &ents[i], &sprites[i]);
-			}
-		}
-		size_t bullet_at = n_ents;
-		for (size_t i = 0; i < n_ents; ++i) {
-			if (ents[i].type->bullet
-			 && ents[i].type->shoot_chance > rand()) {
-				size_t b = bullet_at++;
-				ent_init(&ents[b], ents[i].type->bullet,
-					&sprites[b], ent_pos(&ents[i]));
-				d3d_vec_s *bvel = ent_vel(&ents[b]);
-				*bvel = *ent_vel(&ents[i]);
-				double speed = hypot(bvel->x, bvel->y) /
-					ents[b].type->speed;
-				bvel->x += bvel->x / speed;
-				bvel->y += bvel->y / speed;
-			}
-		}
-		if (bullet_at != n_ents) {
-			n_ents = bullet_at;
-			d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * n_ents
-				* sizeof(*sprites));
-			if (new_sprites != sprites) {
-				sprites = new_sprites;
-				for (size_t i = 0; i < n_ents; ++i) {
-					ent_use_moved_sprite(&ents[i],
-						&sprites[i]);
-				}
-			}
-			ents = xrealloc(ents, 2 * n_ents * sizeof(*ents));
-		}
+		move_ents(ents, n_ents, map, pos);
+		clean_up_dead(ents, sprites, &n_ents);
+		shoot_bullets(&ents, &sprites, &n_ents);
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
