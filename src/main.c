@@ -233,6 +233,7 @@ int main(int argc, char *argv[])
 	int translation = '\0';
 	int key;
 	*facing = M_PI / 2;
+	curs_set(0);
 	timeout(0);
 	while ((key = tolower(getch())) != 'x') {
 		move_player(pos, facing, &translation, key);
