@@ -29,6 +29,16 @@
 #define TURN_COEFF 0.055
 #define SIDEWAYS_COEFF 0.02
 
+void set_up_colors(void)
+{
+	start_color();
+	for (int fg = 0; fg < 8; ++fg) {
+		for (int bg = 0; bg < 8; ++bg) {
+			init_pair((fg << 3 | bg) + 1, fg, bg);
+		}
+	}
+}
+
 void display_frame(d3d_camera *cam)
 {
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
@@ -43,6 +53,20 @@ void display_frame(d3d_camera *cam)
 }
 
 void end_win(void) { endwin(); }
+
+void init_entities(struct ent **entsp, d3d_sprite_s **spritesp, size_t *n_ents,
+	struct map *map)
+{
+	*n_ents = map->n_ents;
+	d3d_sprite_s *sprites = xmalloc(*n_ents * sizeof(*sprites) * 2);
+	struct ent *ents = xmalloc(*n_ents * sizeof(*ents) * 2);
+	for (size_t i = 0; i < *n_ents; ++i) {
+		struct ent_type *type = map->ents[i].type;
+		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
+	}
+	*spritesp = sprites;
+	*entsp = ents;
+}
 
 void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 {
@@ -120,6 +144,12 @@ void move_ents(struct ent *ents, size_t n_ents, struct map *map,
 	}
 }
 
+d3d_camera *make_camera(void)
+{
+	return d3d_new_camera(FOV_X, LINES * FOV_X / COLS / PIXEL_ASPECT,
+		COLS, LINES);
+}
+
 void clean_up_dead(struct ent *ents, d3d_sprite_s *sprites, size_t *n_ents)
 {
 	for (size_t i = 0; i < *n_ents; ++i) {
@@ -187,25 +217,16 @@ int main(int argc, char *argv[])
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	size_t n_ents = map->n_ents;
-	d3d_sprite_s *sprites = xmalloc(n_ents * sizeof(*sprites) * 2);
-	struct ent *ents = xmalloc(n_ents * sizeof(*ents) * 2);
-	for (size_t i = 0; i < n_ents; ++i) {
-		struct ent_type *type = map->ents[i].type;
-		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
-	}
+	struct ent *ents;
+	d3d_sprite_s *sprites;
+	init_entities(&ents, &sprites, &n_ents, map);
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
-	d3d_camera *cam = d3d_new_camera(FOV_X,
-		LINES * FOV_X / COLS / PIXEL_ASPECT, COLS, LINES);
+	d3d_camera *cam = make_camera();
 	d3d_vec_s *pos = d3d_camera_position(cam);
 	*pos = map->player_pos;
-	start_color();
-	for (int fg = 0; fg < 8; ++fg) {
-		for (int bg = 0; bg < 8; ++bg) {
-			init_pair((fg << 3 | bg) + 1, fg, bg);
-		}
-	}
+	set_up_colors();
 	struct ticker timer;
 	ticker_init(&timer, 15);
 	double *facing = d3d_camera_facing(cam);
