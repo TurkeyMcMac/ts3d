@@ -1,1 +1,1 @@
-../external/json/json.c
+../external/./json//json.c

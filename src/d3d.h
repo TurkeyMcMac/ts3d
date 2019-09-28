@@ -1,1 +1,1 @@
-../external/d3d/d3d.h
+../external/./d3d//d3d.h

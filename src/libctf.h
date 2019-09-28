@@ -1,1 +1,1 @@
-../external/c-test-functions/lib/libctf.h
+../external/./c-test-functions//lib/libctf.h
