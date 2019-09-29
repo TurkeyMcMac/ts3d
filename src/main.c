@@ -1,4 +1,7 @@
 #include "load-texture.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
@@ -8,12 +11,15 @@
 #include "util.h"
 #include "xalloc.h"
 #include <ctype.h>
-#include <curses.h>
+//#include <curses.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+#define LINES 40
+#define COLS 150
 
 #ifndef M_PI
 #	define M_PI 3.14159265358979323846
@@ -29,27 +35,30 @@
 #define TURN_COEFF 0.055
 #define SIDEWAYS_COEFF 0.02
 
-void set_up_colors(void)
-{
-	start_color();
-	for (int fg = 0; fg < 8; ++fg) {
-		for (int bg = 0; bg < 8; ++bg) {
-			init_pair((fg << 3 | bg) + 1, fg, bg);
-		}
-	}
-}
-
 void display_frame(d3d_camera *cam)
 {
-	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
-		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
+	printf("\x1B[H");
+	for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
+		d3d_pixel last_wrote = pixel_letter('\0');
+		for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			int cell = COLOR_PAIR(pix + 1) | '#';
-			if (pixel_is_bold(pix)) cell |= A_BOLD;
-			mvaddch(y, x, cell);
+			if (pixel_is_letter(pix)) {
+				if (!pixel_is_letter(last_wrote))
+					printf("\x1B[0m");
+				putchar(pix);
+			} else {
+				if (last_wrote != pix) {
+					printf("\x1B[%s3%d;4%dm",
+						pixel_is_bold(pix) ? "1;" : "",
+						pixel_fg(pix), pixel_bg(pix));
+				}
+				putchar('#');
+			}
+			last_wrote = pix;
 		}
+		puts("\x1B[0m");
 	}
-	refresh();
+	fflush(stdout);
 }
 
 void end_win(void) { endwin(); }
@@ -199,6 +208,8 @@ void shoot_bullets(struct ent **entsp, d3d_sprite_s **spritesp, size_t *n_ents)
 
 int main(int argc, char *argv[])
 {
+	char stdout_buf[BUFSIZ];
+	setbuf(stdout, stdout_buf);
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s map\n", argv[0]);
 		exit(EXIT_FAILURE);
@@ -206,6 +217,7 @@ int main(int argc, char *argv[])
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
 	struct loader ldr;
+	srand(time(NULL)); // For random_start_frame
 	loader_init(&ldr, "data");
 	struct map *map = load_map(&ldr, argv[1]);
 	if (!map) {
@@ -215,27 +227,30 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	loader_print_summary(&ldr);
-	srand(time(NULL)); // For random_start_frame
 	size_t n_ents = map->n_ents;
 	struct ent *ents;
 	d3d_sprite_s *sprites;
 	init_entities(&ents, &sprites, &n_ents, map);
 	d3d_board *board = map->board;
-	initscr();
-	atexit(end_win);
+	//initscr();
+	//atexit(end_win);
 	d3d_camera *cam = make_camera();
 	d3d_vec_s *pos = d3d_camera_position(cam);
 	*pos = map->player_pos;
-	set_up_colors();
 	struct ticker timer;
 	ticker_init(&timer, 15);
 	double *facing = d3d_camera_facing(cam);
 	int translation = '\0';
 	int key;
 	*facing = M_PI / 2;
-	curs_set(0);
-	timeout(0);
-	while ((key = tolower(getch())) != 'x') {
+	//curs_set(0);
+	//timeout(0);
+	struct termios termios;
+	tcgetattr(STDIN_FILENO, &termios);
+	termios.c_lflag &= ~(ECHO | ICANON);
+	tcsetattr(STDIN_FILENO, TCSANOW, &termios);
+//	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+	while ((key = tolower(getchar())) != 'x') {
 		move_player(pos, facing, &translation, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
