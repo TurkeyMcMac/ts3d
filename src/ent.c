@@ -12,6 +12,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct ent {
+	// Current velocity (in blocks/tick)
+	d3d_vec_s vel;
+	// The type of this entity.
+	struct ent_type *type;
+	// The remaining lifetime of this entity in ticks.
+	long lifetime;
+	// The frame index into the array help by the type.
+	size_t frame;
+	// The remaining duration of the current frame.
+	long frame_duration;
+};
+
+
 static void parse_frame(struct json_node *node, struct ent_frame *frame,
 	struct loader *ldr)
 {
@@ -170,12 +184,11 @@ void ent_type_free(struct ent_type *ent)
 	free(ent);
 }
 
-void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
-	const d3d_vec_s *pos)
+static void ent_init(struct ent *ent, struct ent_type *type,
+	d3d_sprite_s *sprite, const d3d_vec_s *pos)
 {
 	ent->vel.x = ent->vel.y = 0;
 	ent->type = type;
-	ent->sprite = sprite;
 	ent->lifetime = type->lifetime;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
@@ -186,52 +199,105 @@ void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
 	sprite->scale.y = type->height;
 }
 
-void ent_tick(struct ent *ent)
+static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 {
 	if (ent->type->lifetime < 0 || --ent->lifetime > 0) {
 		if (--ent->frame_duration <= 0) {
 			if (++ent->frame >= ent->type->n_frames) ent->frame = 0;
 			ent->frame_duration =
 				ent->type->frames[ent->frame].duration;
-			ent->sprite->txtr = ent->type->frames[ent->frame].txtr;
+			sprite->txtr = ent->type->frames[ent->frame].txtr;
 		}
 	} else if (ent->type->death_spawn) {
-		ent_destroy(ent);
-		ent_init(ent, ent->type->death_spawn, ent->sprite,
-			&ent->sprite->pos);
+		ent_init(ent, ent->type->death_spawn, sprite,
+			&sprite->pos);
 	} else {
 		ent->lifetime = -1;
 	}
 }
 
-void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite)
-{
-	*to_ent = *ent;
-	*to_sprite = *to_ent->sprite;
-	to_ent->sprite = to_sprite;
-}
-
-void ent_use_moved_sprite(struct ent *ent, d3d_sprite_s *moved)
-{
-	ent->sprite = moved;
-}
-
-bool ent_is_dead(const struct ent *ent)
+static bool ent_is_dead(const struct ent *ent)
 {
 	return ent->type->lifetime >= 0 && ent->lifetime < 0;
 }
 
-d3d_vec_s *ent_pos(struct ent *ent)
+void ents_init(struct ents *ents, size_t cap)
 {
-	return &ent->sprite->pos;
+	ents->ents = xmalloc(cap * sizeof(*ents->ents));
+	ents->sprites = xmalloc(cap * sizeof(*ents->sprites));
+	ents->num = 0;
+	ents->cap = cap;
 }
 
-d3d_vec_s *ent_vel(struct ent *ent)
+size_t ents_num(const struct ents *ents)
 {
-	return &ent->vel;
+	return ents->num;
 }
 
-void ent_destroy(struct ent *ent)
+d3d_sprite_s *ents_sprites(struct ents *ents)
 {
-	(void)ent;
+	return ents->sprites;
+}
+
+ent_id ents_add(struct ents *ents, struct ent_type *type, const d3d_vec_s *pos)
+{
+	size_t old_num = ents->num;
+	size_t old_cap = ents->cap;
+	struct ent *ent = GROWE(ents->ents, ents->num, ents->cap);
+	if (ents->cap != old_cap) {
+		ents->sprites = xrealloc(ents->sprites, ents->cap
+			* sizeof(*ents->sprites));
+	}
+	ent_init(ent, type, &ents->sprites[old_num], pos);
+	return ents->num - 1;
+}
+
+void ents_tick(struct ents *ents)
+{
+	for (size_t i = 0; i < ents->num; ++i) {
+		ent_tick(&ents->ents[i], &ents->sprites[i]);
+	}
+}
+
+d3d_vec_s *ents_pos(struct ents *ents, ent_id eid)
+{
+	return &ents->sprites[eid].pos;
+}
+
+d3d_vec_s *ents_vel(struct ents *ents, ent_id eid)
+{
+	return &ents->ents[eid].vel;
+}
+
+struct ent_type *ents_type(struct ents *ents, ent_id eid)
+{
+	return ents->ents[eid].type;
+}
+
+bool ents_is_dead(struct ents *ents, ent_id eid)
+{
+	return ent_is_dead(&ents->ents[eid]);
+}
+
+void ents_kill(struct ents *ents, ent_id eid)
+{
+	ents->ents[eid].lifetime = 0;
+}
+
+void ents_clean_up_dead(struct ents *ents)
+{
+	for (size_t i = 0; i < ents->num; ++i) {
+		struct ent *ent = &ents->ents[i];
+		if (ent_is_dead(ent)) {
+			--ents->num;
+			*ent = ents->ents[ents->num];
+			ents->sprites[i] = ents->sprites[ents->num];
+		}
+	}
+}
+
+void ents_destroy(struct ents *ents)
+{
+	free(ents->ents);
+	free(ents->sprites);
 }

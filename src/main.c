@@ -52,21 +52,15 @@ void display_frame(d3d_camera *cam)
 	refresh();
 }
 
-void end_win(void) { endwin(); }
-
-void init_entities(struct ent **entsp, d3d_sprite_s **spritesp, size_t *n_ents,
-	struct map *map)
+void init_entities(struct ents *ents, struct map *map)
 {
-	*n_ents = map->n_ents;
-	d3d_sprite_s *sprites = xmalloc(*n_ents * sizeof(*sprites) * 2);
-	struct ent *ents = xmalloc(*n_ents * sizeof(*ents) * 2);
-	for (size_t i = 0; i < *n_ents; ++i) {
-		struct ent_type *type = map->ents[i].type;
-		ent_init(&ents[i], type, &sprites[i], &map->ents[i].pos);
+	ents_init(ents, map->n_ents * 2);
+	for (size_t i = 0; i < map->n_ents; ++i) {
+		ents_add(ents, map->ents[i].type, &map->ents[i].pos);
 	}
-	*spritesp = sprites;
-	*entsp = ents;
 }
+
+void end_win(void) { endwin(); }
 
 void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 {
@@ -109,21 +103,20 @@ void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 	}
 }
 
-void move_ents(struct ent *ents, size_t n_ents, struct map *map,
-	d3d_vec_s *cam_pos)
+void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 {
-	for (size_t i = 0; i < n_ents; ++i) {
-		ent_tick(&ents[i]);
-		d3d_vec_s *epos = ent_pos(&ents[i]);
-		d3d_vec_s *evel = ent_vel(&ents[i]);
+	ENTS_FOR_EACH(ents, e) {
+		const struct ent_type *type = ents_type(ents, e);
+		d3d_vec_s *epos = ents_pos(ents, e);
+		d3d_vec_s *evel = ents_vel(ents, e);
 		epos->x += evel->x;
 		epos->y += evel->y;
 		d3d_vec_s disp;
 		double dist;
-		if (ents[i].type->turn_chance > rand()) {
+		if (type->turn_chance > rand()) {
 			disp.x = epos->x - cam_pos->x;
 			disp.y = epos->y - cam_pos->y;
-			dist = hypot(disp.x, disp.y) / -ents[i].type->speed;
+			dist = hypot(disp.x, disp.y) / -type->speed;
 			disp.x /= dist;
 			disp.y /= dist;
 		} else {
@@ -131,9 +124,9 @@ void move_ents(struct ent *ents, size_t n_ents, struct map *map,
 		}
 		d3d_vec_s move = *epos;
 		map_check_walls(map, &move, CAM_RADIUS);
-		if (ents[i].type->wall_die
-		 && (move.x != epos->x || move.y != epos->y)) {
-			ents[i].lifetime = 0;
+		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
+		{
+			ents_kill(ents, e);
 		} else {
 			disp.x += move.x - epos->x;
 			disp.y += move.y - epos->y;
@@ -150,51 +143,21 @@ d3d_camera *make_camera(void)
 		COLS, LINES);
 }
 
-void clean_up_dead(struct ent *ents, d3d_sprite_s *sprites, size_t *n_ents)
+void shoot_bullets(struct ents *ents)
 {
-	for (size_t i = 0; i < *n_ents; ++i) {
-		if (ent_is_dead(&ents[i])) {
-			--*n_ents;
-			ent_destroy(&ents[i]);
-			ent_relocate(&ents[*n_ents], &ents[i], &sprites[i]);
-		}
-	}
-}
-
-void shoot_bullets(struct ent **entsp, d3d_sprite_s **spritesp, size_t *n_ents)
-{
-	struct ent *ents = *entsp;
-	d3d_sprite_s *sprites = *spritesp;
-	size_t bullet_at = *n_ents;
-	for (size_t i = 0; i < *n_ents; ++i) {
-		if (ents[i].type->bullet
-		 && ents[i].type->shoot_chance > rand()) {
-			size_t b = bullet_at++;
-			ent_init(&ents[b], ents[i].type->bullet,
-				&sprites[b], ent_pos(&ents[i]));
-			d3d_vec_s *bvel = ent_vel(&ents[b]);
-			*bvel = *ent_vel(&ents[i]);
+	ENTS_FOR_EACH(ents, e) {
+		struct ent_type *type = ents_type(ents, e);
+		if (type->bullet && type->shoot_chance > rand()) {
+			ent_id bullet = ents_add(ents, type->bullet,
+				ents_pos(ents, e));
+			d3d_vec_s *bvel = ents_vel(ents, bullet);
+			*bvel = *ents_vel(ents, e);
 			double speed = hypot(bvel->x, bvel->y) /
-				ents[b].type->speed;
+				ents_type(ents, bullet)->speed;
 			bvel->x += bvel->x / speed;
 			bvel->y += bvel->y / speed;
 		}
 	}
-	if (bullet_at != *n_ents) {
-		*n_ents = bullet_at;
-		d3d_sprite_s *new_sprites = xrealloc(sprites, 2 * *n_ents
-			* sizeof(*sprites));
-		if (new_sprites != sprites) {
-			sprites = new_sprites;
-			for (size_t i = 0; i < *n_ents; ++i) {
-				ent_use_moved_sprite(&ents[i],
-					&sprites[i]);
-			}
-		}
-		ents = xrealloc(ents, 2 * *n_ents * sizeof(*ents));
-	}
-	*entsp = ents;
-	*spritesp = sprites;
 }
 
 int main(int argc, char *argv[])
@@ -216,10 +179,8 @@ int main(int argc, char *argv[])
 	}
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
-	size_t n_ents = map->n_ents;
-	struct ent *ents;
-	d3d_sprite_s *sprites;
-	init_entities(&ents, &sprites, &n_ents, map);
+	struct ents ents;
+	init_entities(&ents, map);
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
@@ -239,15 +200,15 @@ int main(int argc, char *argv[])
 		move_player(pos, facing, &translation, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, n_ents, sprites);
+		d3d_draw_sprites(cam, ents.num, ents_sprites(&ents));
 		display_frame(cam);
-		move_ents(ents, n_ents, map, pos);
-		clean_up_dead(ents, sprites, &n_ents);
-		shoot_bullets(&ents, &sprites, &n_ents);
+		ents_tick(&ents);
+		move_ents(&ents, map, pos);
+		ents_clean_up_dead(&ents);
+		shoot_bullets(&ents);
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
-	free(ents);
-	free(sprites);
+	ents_destroy(&ents);
 	loader_free(&ldr);
 }

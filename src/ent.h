@@ -55,49 +55,67 @@ char *ent_type_to_string(const struct ent_type *ent);
 // Free a loaded entity type. Does nothing when given NULL.
 void ent_type_free(struct ent_type *ent);
 
-struct ent {
-	// Current velocity (in blocks/tick)
-	d3d_vec_s vel;
-	// The type of this entity.
-	struct ent_type *type;
-	// The sprite location of this entity.
-	d3d_sprite_s *sprite;
-	// The remaining lifetime of this entity in ticks.
-	long lifetime;
-	// The frame index into the array help by the type.
-	size_t frame;
-	// The remaining duration of the current frame.
-	long frame_duration;
+// A set of entities
+struct ent;
+struct ents {
+	// Per-entity data.
+	struct ent *ents;
+	// Sprite data, parallel to ents.
+	d3d_sprite_s *sprites;
+	// The number of entities.
+	size_t num;
+	// The memory capacity of the ents and sprites buffers.
+	size_t cap;
 };
 
-// Initialize an entity. The sprite will be owned and manipulated by it.
-void ent_init(struct ent *ent, struct ent_type *type, d3d_sprite_s *sprite,
-	const d3d_vec_s *pos);
+// A number representing an entity. This is valid from when it is returned by
+// add_ents to when ents_clean_up_dead is called.
+typedef size_t ent_id;
 
-// Go forward a tick of the normal lifecycle. Does not move the entity.
-void ent_tick(struct ent *ent);
+// Initialize the entity set with the given capacity.
+void ents_init(struct ents *ents, size_t cap);
 
-// Move an entity in memory. Its sprite will move to the given location. The
-// destinations will be overwritten and the source will become effectively
-// uninitialized.
-void ent_relocate(struct ent *ent, struct ent *to_ent, d3d_sprite_s *to_sprite);
+// Get the current number of entities in the set.
+size_t ents_num(const struct ents *ents);
 
-// Make the entity use a new sprite which already has had its information copied
-// from the old sprite. Use this when the old sprite location is valid no more.
-void ent_use_moved_sprite(struct ent *ent, d3d_sprite_s *moved);
+// Return the sprite buffer of the set. Valid until another ents_* function is
+// called.
+d3d_sprite_s *ents_sprites(struct ents *ents);
 
-// Returns whether or not the entity is dead and should be removed.
-bool ent_is_dead(const struct ent *ent);
+// Add an entity to the set with the given type and position. Its id, valid
+// until ents_clean_up_dead is called, is returned.
+ent_id ents_add(struct ents *ents, struct ent_type *type, const d3d_vec_s *pos);
 
-// Get mutable pointer to entity velocity. This is valid until another ent_*
-// function is called.
-d3d_vec_s *ent_pos(struct ent *ent);
+// A loop header to go through each entity id in ents. A variable var is created
+// and updated with an ID for each iteration. Don't call ents_clean_up_dead
+// while looping.
+#define ENTS_FOR_EACH(ents, var) for (ent_id var = 0; var < ents->num; ++var)
 
-// Get mutable pointer to entity position. This is valid until another ent_*
-// function is called.
-d3d_vec_s *ent_vel(struct ent *ent);
+// Perform lifecycle stuff for each entity. Kills old entities. Doesn't move
+// anything.
+void ents_tick(struct ents *ents);
 
-// Clean up entity resources. Does not free the pointer.
-void ent_destroy(struct ent *ent);
+// Determines whether an entity with the given ID is dead.
+bool ents_is_dead(struct ents *ents, ent_id eid);
+
+// Gets a pointer to entity position of entity with ID eid. Valid until ents_add
+// or any function that modifies all entities is called.
+d3d_vec_s *ents_pos(struct ents *ents, ent_id eid);
+
+// Same as ents_pos, but for velocity.
+d3d_vec_s *ents_vel(struct ents *ents, ent_id eid);
+
+// Get a pointer to the desired entity's type, valid until ents_clean_up_dead is
+// called.
+struct ent_type *ents_type(struct ents *ents, ent_id eid);
+
+// Kill an entity so that it will be removed when ent_clean_up_dead is called.
+void ents_kill(struct ents *ents, ent_id eid);
+
+// Remove memory for dead entities. May shuffle entity IDs.
+void ents_clean_up_dead(struct ents *ents);
+
+// Deallocate memory for an entity set.
+void ents_destroy(struct ents *ents);
 
 #endif /* ENTITY_H_ */
