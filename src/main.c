@@ -144,16 +144,12 @@ d3d_camera *make_camera(void)
 		COLS, LINES);
 }
 
-void shoot_player_bullet(int *reload, const d3d_vec_s *pos, double facing,
-	struct ents *ents)
+void shoot_player_bullet(const d3d_vec_s *pos, double facing, struct ents *ents)
 {
-	if (--*reload < 0) {
-		ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, pos);
-		d3d_vec_s *bvel = ents_vel(ents, bullet);
-		bvel->x = 2 * FORWARD_COEFF * cos(facing);
-		bvel->y = 2 * FORWARD_COEFF * sin(facing);
-		*reload = RELOAD;
-	}
+	ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, pos);
+	d3d_vec_s *bvel = ents_vel(ents, bullet);
+	bvel->x = 2 * FORWARD_COEFF * cos(facing);
+	bvel->y = 2 * FORWARD_COEFF * sin(facing);
 }
 
 void shoot_bullets(struct ents *ents)
@@ -219,8 +215,11 @@ int main(int argc, char *argv[])
 		ents_tick(&ents);
 		move_ents(&ents, map, pos);
 		ents_clean_up_dead(&ents);
-		if (key == ' ')
-			shoot_player_bullet(&reload, pos, *facing, &ents);
+		--reload;
+		if (key == ' ' && reload < 0) {
+			shoot_player_bullet(pos, *facing, &ents);
+			reload = RELOAD;
+		}
 		shoot_bullets(&ents);
 		tick(&timer);
 	}
