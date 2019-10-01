@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 	*pos = map->player_pos;
 	set_up_colors();
 	struct ticker timer;
-	ticker_init(&timer, 15);
+	ticker_init(&timer, 30);
 	double *facing = d3d_camera_facing(cam);
 	int reload = 0;
 	int translation = '\0';
