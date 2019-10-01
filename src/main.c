@@ -28,6 +28,7 @@
 #define BACKWARD_COEFF 0.015
 #define TURN_COEFF 0.055
 #define SIDEWAYS_COEFF 0.02
+#define RELOAD 50
 
 void set_up_colors(void)
 {
@@ -143,6 +144,18 @@ d3d_camera *make_camera(void)
 		COLS, LINES);
 }
 
+void shoot_player_bullet(int *reload, const d3d_vec_s *pos, double facing,
+	struct ents *ents)
+{
+	if (--*reload < 0) {
+		ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, pos);
+		d3d_vec_s *bvel = ents_vel(ents, bullet);
+		bvel->x = 2 * FORWARD_COEFF * cos(facing);
+		bvel->y = 2 * FORWARD_COEFF * sin(facing);
+		*reload = RELOAD;
+	}
+}
+
 void shoot_bullets(struct ents *ents)
 {
 	ENTS_FOR_EACH(ents, e) {
@@ -191,6 +204,7 @@ int main(int argc, char *argv[])
 	struct ticker timer;
 	ticker_init(&timer, 15);
 	double *facing = d3d_camera_facing(cam);
+	int reload = 0;
 	int translation = '\0';
 	int key;
 	*facing = M_PI / 2;
@@ -205,6 +219,8 @@ int main(int argc, char *argv[])
 		ents_tick(&ents);
 		move_ents(&ents, map, pos);
 		ents_clean_up_dead(&ents);
+		if (key == ' ')
+			shoot_player_bullet(&reload, pos, *facing, &ents);
 		shoot_bullets(&ents);
 		tick(&timer);
 	}
