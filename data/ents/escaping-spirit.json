@@ -2,6 +2,7 @@
  "name": "Spirit",
  "width": 0.1,
  "height": 0.2,
+ "wall_block": false,
  "lifetime": 59,
  "frames": [
   ["escaping-spirit-01", 5],
