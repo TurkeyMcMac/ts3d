@@ -2,7 +2,6 @@
  "name": "Explosion",
  "width": 0.3,
  "height": 0.2,
- "random_start_frame": true,
  "wall_block": false,
  "lifetime": 29,
  "frames": [
