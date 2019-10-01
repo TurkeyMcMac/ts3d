@@ -65,6 +65,7 @@ void end_win(void) { endwin(); }
 
 void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 {
+	key = tolower(key);
 	switch (key) {
 	case 'w': // Forward
 	case 's': // Backward
@@ -206,7 +207,7 @@ int main(int argc, char *argv[])
 	*facing = M_PI / 2;
 	curs_set(0);
 	timeout(0);
-	while ((key = tolower(getch())) != 'x') {
+	while (tolower(key = getch()) != 'x') {
 		move_player(pos, facing, &translation, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
@@ -216,7 +217,7 @@ int main(int argc, char *argv[])
 		move_ents(&ents, map, pos);
 		ents_clean_up_dead(&ents);
 		--reload;
-		if (key == ' ' && reload < 0) {
+		if ((isupper(key) || key == ' ') && reload < 0) {
 			shoot_player_bullet(pos, *facing, &ents);
 			reload = RELOAD;
 		}
