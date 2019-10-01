@@ -127,7 +127,7 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
 		{
 			ents_kill(ents, e);
-		} else {
+		} else if (type->wall_block) {
 			disp.x += move.x - epos->x;
 			disp.y += move.y - epos->y;
 			*epos = move;

@@ -71,6 +71,7 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->death_spawn = NULL;
 	ent->bullet = NULL;
 	ent->lifetime = -1;
+	ent->wall_block = true;
 	ent->wall_die = false;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
@@ -125,6 +126,9 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 		ent->bullet = load_ent_type(ldr, got->str);
 	if ((got = json_map_get(&jtree, "lifetime", JN_NUMBER)))
 		ent->lifetime = got->num;
+	if ((got = json_map_get(&jtree, "wall_block", JN_BOOLEAN))
+	 && !got->boolean)
+		ent->wall_block = false;
 	if ((got = json_map_get(&jtree, "wall_die", JN_BOOLEAN))
 	 && got->boolean)
 		ent->wall_die = true;

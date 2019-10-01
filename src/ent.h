@@ -41,6 +41,8 @@ struct ent_type {
 	int shoot_chance;
 	// Movement speed (in blocks/tick).
 	double speed;
+	// Whether the entity is blocked by walls.
+	bool wall_block;
 	// Whether the entity dies when it hits a wall.
 	bool wall_die;
 };
