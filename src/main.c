@@ -26,9 +26,10 @@
 
 #define FORWARD_COEFF 0.025
 #define BACKWARD_COEFF 0.015
-#define TURN_COEFF 0.055
+#define TURN_COEFF 0.038
 #define SIDEWAYS_COEFF 0.02
 #define RELOAD 50
+#define TURN_DURATION 5
 
 void set_up_colors(void)
 {
@@ -63,7 +64,8 @@ void init_entities(struct ents *ents, struct map *map)
 
 void end_win(void) { endwin(); }
 
-void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
+void move_player(d3d_vec_s *pos, double *facing, int *translation,
+	int *turn_duration, int key)
 {
 	key = tolower(key);
 	switch (key) {
@@ -74,10 +76,10 @@ void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 		*translation = *translation != key ? key : '\0';
 		break;
 	case 'q': // Turn CCW
-		*facing += TURN_COEFF;
+		*turn_duration = +TURN_DURATION;
 		break;
 	case 'e': // Turn CW
-		*facing -= TURN_COEFF;
+		*turn_duration = -TURN_DURATION;
 		break;
 	}
 	switch (*translation) {
@@ -102,6 +104,13 @@ void move_player(d3d_vec_s *pos, double *facing, int *translation, int key)
 		break;
 	default:
 		break;
+	}
+	if (*turn_duration > 0) {
+		*facing += TURN_COEFF;
+		--*turn_duration;
+	} else if (*turn_duration < 0) {
+		*facing -= TURN_COEFF;
+		++*turn_duration;
 	}
 }
 
@@ -203,12 +212,13 @@ int main(int argc, char *argv[])
 	double *facing = d3d_camera_facing(cam);
 	int reload = 0;
 	int translation = '\0';
+	int turn_duration = 0;
 	int key;
 	*facing = M_PI / 2;
 	curs_set(0);
 	timeout(0);
 	while (tolower(key = getch()) != 'x') {
-		move_player(pos, facing, &translation, key);
+		move_player(pos, facing, &translation, &turn_duration, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents.num, ents_sprites(&ents));
