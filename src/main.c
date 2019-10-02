@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 		move_player(pos, facing, &translation, &turn_duration, key);
 		map_check_walls(map, pos, CAM_RADIUS);
 		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, ents.num, ents_sprites(&ents));
+		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
 		ents_tick(&ents);
 		move_ents(&ents, map, pos);
