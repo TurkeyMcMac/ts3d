@@ -134,13 +134,15 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		nd->kind = JN_MAP;
 		table_init(&nd->d.map, 8);
 		for (;;) {
-			char *key;
+			char *key = NULL;
 			struct json_node *entry = xmalloc(sizeof(*entry));
 			parse_node(rdr, entry, &key);
 			if (entry->kind == JN_END_) {
 				free(entry);
 				break;
 			} else if (entry->kind == JN_ERROR) {
+				free(key);
+				free(entry);
 				table_each(&nd->d.map, free_json_pair);
 				table_free(&nd->d.map);
 				nd->kind = JN_ERROR;
@@ -160,7 +162,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		nd->d.list.n_vals = 0;
 		nd->d.list.vals = xmalloc(cap * sizeof(*nd->d.list.vals));
 		for (;;) {
-			char *key;
+			char *key = NULL;
 			struct json_node *entry = GROWE(nd->d.list.vals,
 				nd->d.list.n_vals, cap);
 			parse_node(rdr, entry, &key);
@@ -168,6 +170,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 				--nd->d.list.n_vals;
 				break;
 			} else if (entry->kind == JN_ERROR) {
+				free(key);
 				for (size_t i = 0; i < nd->d.list.n_vals; ++i) {
 					free_json_tree(&nd->d.list.vals[i]);
 				}
