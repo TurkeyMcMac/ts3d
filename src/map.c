@@ -207,6 +207,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map->walls = NULL;
 	map->blocks = NULL;
 	map->ents = NULL;
+	map->n_ents = 0;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
 		if (jtree.kind != JN_ERROR)
