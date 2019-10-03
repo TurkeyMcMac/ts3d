@@ -116,6 +116,7 @@ struct logger *loader_logger(struct loader *ldr)
 
 void loader_free(struct loader *ldr)
 {
+	d3d_free_texture(ldr->empty_txtr);
 	logger_free(&ldr->log);
 	table_each(&ldr->txtrs, free_txtrs_callback);
 	table_free(&ldr->txtrs);
