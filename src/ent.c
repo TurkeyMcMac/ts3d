@@ -34,7 +34,6 @@ static void parse_frame(struct json_node *node, struct ent_frame *frame,
 	switch (node->kind) {
 	case JN_STRING:
 		txtr_name = node->d.str;
-		node->d.str = NULL;
 		break;
 	case JN_LIST:
 		if (node->d.list.n_vals < 1
