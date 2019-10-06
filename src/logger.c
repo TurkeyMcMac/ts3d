@@ -95,10 +95,10 @@ void logger_printf(struct logger *log, int flags, const char *format, ...)
 	int mode = get_mode(flags);
 	if (!(log->flags & mode)) return;
 	FILE *file = *get_filep(log, mode);
-	const char *color;
+	const char *color = get_color(log, mode);
 	bool colored = !(log->flags & LOGGER_NO_COLOR)
 	            && ((log->flags & LOGGER_COLOR) || isatty(fileno(file)))
-	            && *(color = get_color(log, mode)) != '\0';
+	            && *color != '\0';
 	if (colored) {
 		fprintf(file, "%s", color);
 	}
