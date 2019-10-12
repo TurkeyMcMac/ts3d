@@ -4,6 +4,7 @@
 #include "d3d.h"
 #include "loader.h"
 #include "ent.h"
+#include "team.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -11,6 +12,7 @@
 struct map_ent_start {
 	d3d_vec_s pos;
 	struct ent_type *type;
+	enum team team;
 	size_t frame;
 };
 

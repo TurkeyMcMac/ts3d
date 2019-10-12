@@ -152,17 +152,27 @@ static int parse_ent_start(struct map_ent_start *start, struct loader *ldr,
 	start->frame = 0;
 	if ((got = json_map_get(root, "kind", JN_STRING))) {
 		struct ent_type *kind = load_ent_type(ldr, got->str);
-		if (!kind) goto error;
+		if (!kind) goto error_kind;
 		start->type = kind;
 	} else {
-		goto error;
+		goto error_kind;
+	}
+	start->team = TEAM_UNALIGNED;
+	if ((got = json_map_get(root, "team", JN_STRING))) {
+		enum team team = team_from_str(got->str);
+		if (team == TEAM_INVALID) {
+			logger_printf(loader_logger(ldr), LOGGER_WARNING,
+				"Invalid entity team: \"%s\"\n", got->str);
+		} else {
+			start->team = team;
+		}
 	}
 	start->pos.x = start->pos.y = 0;
 	if ((got = json_map_get(root, "pos", JN_LIST)))
 		parse_json_vec(&start->pos, &got->list);
 	return 0;
 
-error:
+error_kind:
 	logger_printf(loader_logger(ldr), LOGGER_ERROR,
 		"Entity start specification has no \"kind\" attribute\n");
 	return -1;
