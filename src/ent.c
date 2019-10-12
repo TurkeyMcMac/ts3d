@@ -25,6 +25,8 @@ struct ent {
 	size_t frame;
 	// The remaining duration of the current frame.
 	long frame_duration;
+	// The health remaining.
+	double health;
 };
 
 
@@ -159,6 +161,7 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->type = type;
 	ent->team = team;
 	ent->lifetime = type->lifetime;
+	ent->health = 1.0;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
 	sprite->txtr = type->frames[0].txtr;
@@ -168,9 +171,16 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	sprite->scale.y = type->height;
 }
 
+static bool ent_is_dead(const struct ent *ent)
+{
+	return (ent->type->lifetime >= 0 && ent->lifetime < 0)
+	    || ent->health <= 0;
+}
+
 static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 {
-	if (ent->type->lifetime < 0 || --ent->lifetime > 0) {
+	--ent->lifetime;
+	if (!ent_is_dead(ent)) {
 		if (--ent->frame_duration <= 0) {
 			if (++ent->frame >= ent->type->n_frames) ent->frame = 0;
 			ent->frame_duration =
@@ -183,11 +193,6 @@ static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 	} else {
 		ent->lifetime = -1;
 	}
-}
-
-static bool ent_is_dead(const struct ent *ent)
-{
-	return ent->type->lifetime >= 0 && ent->lifetime < 0;
 }
 
 void ents_init(struct ents *ents, size_t cap)
@@ -256,7 +261,7 @@ bool ents_is_dead(struct ents *ents, ent_id eid)
 
 void ents_kill(struct ents *ents, ent_id eid)
 {
-	ents->ents[eid].lifetime = 0;
+	ents->ents[eid].health = 0;
 }
 
 void ents_clean_up_dead(struct ents *ents)

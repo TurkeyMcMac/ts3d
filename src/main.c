@@ -136,7 +136,13 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		}
 		d3d_vec_s move = *epos;
 		map_check_walls(map, &move, CAM_RADIUS);
-		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
+		if (type->wall_block
+		 && teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
+		 && fabs(cam_pos->x - epos->x) < CAM_RADIUS * 2
+		 && fabs(cam_pos->y - epos->y) < CAM_RADIUS * 2) {
+			ents_kill(ents, e);
+		}
+		else if (type->wall_die && (move.x != epos->x || move.y != epos->y))
 		{
 			ents_kill(ents, e);
 		} else if (type->wall_block) {
@@ -225,8 +231,8 @@ int main(int argc, char *argv[])
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
-		ents_tick(&ents);
 		move_ents(&ents, map, pos);
+		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
 		--reload;
 		if ((isupper(key) || key == ' ') && reload < 0) {
