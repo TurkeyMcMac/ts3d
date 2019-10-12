@@ -142,43 +142,6 @@ end:
 	return ent;
 }
 
-char *ent_type_to_string(const struct ent_type *ent)
-{
-	char fmt_buf[128];
-	size_t cap = 64;
-	struct string str;
-	string_init(&str, cap);
-	string_pushz(&str, &cap, "ent_type { name = \"");
-	string_pushz(&str, &cap, ent->name);
-	string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf, sizeof(fmt_buf),
-		"\", width = %f, height = %f", ent->width, ent->height));
-	if (ent->transparent >= 0) {
-		string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
-			sizeof(fmt_buf),
-			", transparent = '%c'", ent->transparent));
-	}
-	string_pushz(&str, &cap, ", frames = ");
-	if (ent->n_frames > 0) {
-		const char *before = "[ ";
-		for (size_t i = 0; i < ent->n_frames; ++i) {
-			const d3d_texture *txtr = ent->frames[i].txtr;
-			string_pushn(&str, &cap, before, 2);
-			string_pushn(&str, &cap, fmt_buf, sbprintf(fmt_buf,
-				sizeof(fmt_buf),
-				"texture { width = %zu, height = %zu }",
-				d3d_texture_width(txtr),
-				d3d_texture_height(txtr)));
-			before = ", ";
-		}
-		string_pushn(&str, &cap, " ]", 2);
-	} else {
-		string_pushn(&str, &cap, "[]", 2);
-	}
-	string_pushn(&str, &cap, " }", 3);
-	string_shrink_to_fit(&str);
-	return str.text;
-}
-
 void ent_type_free(struct ent_type *ent)
 {
 	if (!ent) return;

@@ -315,14 +315,6 @@ end:
 	return map;
 }
 
-char *map_to_string(const struct map *map)
-{
-	char *str = xmalloc(128);
-	snprintf(str, 128, "map { width = %zu, height = %zu }",
-		d3d_board_width(map->board), d3d_board_height(map->board));
-	return str;
-}
-
 void map_free(struct map *map)
 {
 	if (!map) return;

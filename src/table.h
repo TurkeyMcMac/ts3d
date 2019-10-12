@@ -38,8 +38,4 @@ int table_each(table *tbl, int (*item)(const char *, void **));
 // Free all memory allocated for a table.
 void table_free(table *tbl);
 
-// Convert a table to an allocated string for debugging. The passed function
-// takes one argument: the value. All values are visited using this function.
-char *table_to_string(const table *tbl, char *(*item)(void *));
-
 #endif /* TABLE_H_ */

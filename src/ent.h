@@ -51,9 +51,6 @@ struct ent_type {
 // Allocate the entity.
 struct ent_type *load_ent_type(struct loader *ldr, const char *name);
 
-// Allocate a string representation for debugging.
-char *ent_type_to_string(const struct ent_type *ent);
-
 // Free a loaded entity type. Does nothing when given NULL.
 void ent_type_free(struct ent_type *ent);
 

@@ -47,9 +47,6 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius);
 // Load a map with the name or use one previously loaded. Allocate the map.
 struct map *load_map(struct loader *ldr, const char *name);
 
-// Convert a map to an allocated string for debugging.
-char *map_to_string(const struct map *map);
-
 // Free a loaded map. Does nothing when given NULL.
 void map_free(struct map *map);
 

@@ -82,31 +82,6 @@ void table_free(table *tbl)
 	free(tbl->items);
 }
 
-char *table_to_string(const table *tbl, char *(*item)(void *))
-{
-	size_t str_cap = 64;
-	struct string str;
-	str.text = xmalloc(str_cap);
-	str.len = 1;
-	memcpy(str.text, "{", str.len);
-	for (size_t i = 0; i < tbl->len; ++i) {
-		char *val = item(tbl->items[i].val);
-		if (!val) goto error_item;
-		size_t key_len = strlen(tbl->items[i].key);
-		size_t val_len = strlen(val);
-		size_t len = key_len + val_len + 5;
-		snprintf(string_grow(&str, &str_cap, len), len + 1,
-			"\n\t%s: %s,", tbl->items[i].key, val);
-		free(val);
-	}
-	memcpy(string_grow(&str, &str_cap, 3), "\n}", 3);
-	return str.text;
-
-error_item:
-	free(str.text);
-	return NULL;
-}
-
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
