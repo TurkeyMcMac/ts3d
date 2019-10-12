@@ -17,6 +17,8 @@ struct ent {
 	d3d_vec_s vel;
 	// The type of this entity.
 	struct ent_type *type;
+	// The entity's team.
+	enum team team;
 	// The remaining lifetime of this entity in ticks.
 	long lifetime;
 	// The frame index into the array help by the type.
@@ -150,11 +152,12 @@ void ent_type_free(struct ent_type *ent)
 	free(ent);
 }
 
-static void ent_init(struct ent *ent, struct ent_type *type,
+static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	d3d_sprite_s *sprite, const d3d_vec_s *pos)
 {
 	ent->vel.x = ent->vel.y = 0;
 	ent->type = type;
+	ent->team = team;
 	ent->lifetime = type->lifetime;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
@@ -175,7 +178,7 @@ static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 			sprite->txtr = ent->type->frames[ent->frame].txtr;
 		}
 	} else if (ent->type->death_spawn) {
-		ent_init(ent, ent->type->death_spawn, sprite,
+		ent_init(ent, ent->type->death_spawn, ent->team, sprite,
 			&sprite->pos);
 	} else {
 		ent->lifetime = -1;
@@ -205,7 +208,8 @@ d3d_sprite_s *ents_sprites(struct ents *ents)
 	return ents->sprites;
 }
 
-ent_id ents_add(struct ents *ents, struct ent_type *type, const d3d_vec_s *pos)
+ent_id ents_add(struct ents *ents, struct ent_type *type, enum team team,
+	const d3d_vec_s *pos)
 {
 	size_t old_num = ents->num;
 	size_t old_cap = ents->cap;
@@ -214,7 +218,7 @@ ent_id ents_add(struct ents *ents, struct ent_type *type, const d3d_vec_s *pos)
 		ents->sprites = xrealloc(ents->sprites, ents->cap
 			* sizeof(*ents->sprites));
 	}
-	ent_init(ent, type, &ents->sprites[old_num], pos);
+	ent_init(ent, type, team, &ents->sprites[old_num], pos);
 	return ents->num - 1;
 }
 
@@ -238,6 +242,11 @@ d3d_vec_s *ents_vel(struct ents *ents, ent_id eid)
 struct ent_type *ents_type(struct ents *ents, ent_id eid)
 {
 	return ents->ents[eid].type;
+}
+
+enum team ents_team(struct ents *ents, ent_id eid)
+{
+	return ents->ents[eid].team;
 }
 
 bool ents_is_dead(struct ents *ents, ent_id eid)

@@ -58,7 +58,8 @@ void init_entities(struct ents *ents, struct map *map)
 {
 	ents_init(ents, map->n_ents * 2);
 	for (size_t i = 0; i < map->n_ents; ++i) {
-		ents_add(ents, map->ents[i].type, &map->ents[i].pos);
+		ents_add(ents, map->ents[i].type, map->ents[i].team,
+			&map->ents[i].pos);
 	}
 }
 
@@ -156,7 +157,8 @@ d3d_camera *make_camera(void)
 
 void shoot_player_bullet(const d3d_vec_s *pos, double facing, struct ents *ents)
 {
-	ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, pos);
+	ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, TEAM_ALLY,
+		pos);
 	d3d_vec_s *bvel = ents_vel(ents, bullet);
 	bvel->x = 2 * FORWARD_COEFF * cos(facing);
 	bvel->y = 2 * FORWARD_COEFF * sin(facing);
@@ -168,7 +170,7 @@ void shoot_bullets(struct ents *ents)
 		struct ent_type *type = ents_type(ents, e);
 		if (type->bullet && type->shoot_chance > rand()) {
 			ent_id bullet = ents_add(ents, type->bullet,
-				ents_pos(ents, e));
+				ents_team(ents, e), ents_pos(ents, e));
 			d3d_vec_s *bvel = ents_vel(ents, bullet);
 			*bvel = *ents_vel(ents, e);
 			double speed = hypot(bvel->x, bvel->y) /

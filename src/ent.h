@@ -4,6 +4,7 @@
 #include "d3d.h"
 #include "loader.h"
 #include "table.h"
+#include "team.h"
 #include <stdbool.h>
 
 struct ent_frame {
@@ -83,7 +84,8 @@ d3d_sprite_s *ents_sprites(struct ents *ents);
 
 // Add an entity to the set with the given type and position. Its id, valid
 // until ents_clean_up_dead is called, is returned.
-ent_id ents_add(struct ents *ents, struct ent_type *type, const d3d_vec_s *pos);
+ent_id ents_add(struct ents *ents, struct ent_type *type, enum team team,
+	const d3d_vec_s *pos);
 
 // A loop header to go through each entity id in ents. A variable var is created
 // and updated with an ID for each iteration. Don't call ents_clean_up_dead
@@ -107,6 +109,9 @@ d3d_vec_s *ents_vel(struct ents *ents, ent_id eid);
 // Get a pointer to the desired entity's type, valid until ents_clean_up_dead is
 // called.
 struct ent_type *ents_type(struct ents *ents, ent_id eid);
+
+// Get the team of the desired entity.
+enum team ents_team(struct ents *ents, ent_id eid);
 
 // Kill an entity so that it will be removed when ent_clean_up_dead is called.
 void ents_kill(struct ents *ents, ent_id eid);
