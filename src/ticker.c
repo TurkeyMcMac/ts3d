@@ -52,7 +52,7 @@ void tick(struct ticker *tkr)
 #	include <assert.h>
 #	include <sys/time.h>
 
-CTF_TEST(ts3d_tick_is_right_length,
+CTF_TEST(tick_is_right_length,
 	struct ticker tkr;
 	struct timeval before, after;
 	struct timespec sleep = { .tv_sec = 0, .tv_nsec = 51000000 };

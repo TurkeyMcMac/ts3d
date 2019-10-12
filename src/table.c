@@ -122,14 +122,14 @@ static void set_up_table(table *tab, int val0, int val1, int val2)
 	assert(table_add(tab, "foo", (void *)(intptr_t)12345));
 }
 
-CTF_TEST(ts3d_table_add,
+CTF_TEST(table_adds,
 	table tab;
 	set_up_table(&tab, 0, 0, 0);
 	assert(table_count(&tab) == 3);
 	table_free(&tab);
 )
 
-CTF_TEST(ts3d_table_get,
+CTF_TEST(table_gets,
 	table tab;
 	set_up_table(&tab, 2, 3, 5);
 	int product = 1;
@@ -140,7 +140,7 @@ CTF_TEST(ts3d_table_get,
 	table_free(&tab);
 )
 
-CTF_TEST(ts3d_table_get_freeze,
+CTF_TEST(table_get_freeze,
 	table tab;
 	set_up_table(&tab, 2, 3, 5);
 	table_freeze(&tab);
@@ -167,7 +167,7 @@ static int set_value_for_key(const char *key, void **item_)
 	return 0;
 }
 
-CTF_TEST(ts3d_table_each_visits_all,
+CTF_TEST(table_each_visits_all,
 	table tab;
 	set_up_table(&tab, 0, 0, 0);
 	int product = 1;
@@ -185,7 +185,7 @@ static int set_value_for_key_return_1(const char *key, void **item)
 	return 1;
 }
 
-CTF_TEST(ts3d_table_each_returns_right,
+CTF_TEST(table_each_returns_right,
 	table tab;
 	set_up_table(&tab, 0, 0, 0);
 	assert(!table_each(&tab, set_value_for_key));

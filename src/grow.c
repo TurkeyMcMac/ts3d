@@ -26,7 +26,7 @@ char *growc(char **bufp, size_t *lenp, size_t *capp, size_t num)
 #	include "libctf.h"
 #	include <assert.h>
 
-CTF_TEST(ts3d_growe_from_null,
+CTF_TEST(growe_from_null,
 	size_t len = 0, cap = 0;
 	int *buf = NULL;
 	int *item0 = GROWE(buf, len, cap);
@@ -35,7 +35,7 @@ CTF_TEST(ts3d_growe_from_null,
 	assert(cap >= 1);
 )
 
-CTF_TEST(ts3d_growe_realloc,
+CTF_TEST(growe_realloc,
 	size_t len = 0, cap = 2;
 	int *buf = malloc(cap * sizeof(*buf));
 	int *item;

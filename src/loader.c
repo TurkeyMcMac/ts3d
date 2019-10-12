@@ -134,7 +134,7 @@ void loader_free(struct loader *ldr)
 #	include "libctf.h"
 #	include <assert.h>
 
-CTF_TEST(ts3d_loader_loads_only_once,
+CTF_TEST(loader_loads_only_once,
 	FILE *file;
 	struct loader ldr;
 	loader_init(&ldr, "data");
@@ -145,7 +145,7 @@ CTF_TEST(ts3d_loader_loads_only_once,
 	loader_free(&ldr);
 )
 
-CTF_TEST(ts3d_loader_nonexistent_gives_null,
+CTF_TEST(loader_nonexistent_gives_null,
 	FILE *file;
 	struct loader ldr;
 	loader_init(&ldr, "data");

@@ -72,7 +72,7 @@ static void dump_line(const struct string *lines, size_t i)
 		i + 1, lines[i].len, (int)lines[i].len, lines[i].text);
 }
 
-CTF_TEST(ts3d_read_lines_final_newline,
+CTF_TEST(read_lines_final_newline,
 	char str[] = "a\nb\nc\n";
 	FILE *source = fmemopen(str, 6, "r");
 	size_t nlines;
@@ -85,7 +85,7 @@ CTF_TEST(ts3d_read_lines_final_newline,
 	}
 )
 
-CTF_TEST(ts3d_read_lines_no_final_newline,
+CTF_TEST(read_lines_no_final_newline,
 	char str[] = "a\nb\nc";
 	FILE *source = fmemopen(str, 5, "r");
 	size_t nlines;
@@ -98,7 +98,7 @@ CTF_TEST(ts3d_read_lines_no_final_newline,
 	}
 )
 
-CTF_TEST(ts3d_read_lines_empty,
+CTF_TEST(read_lines_empty,
 	// Use a pipe since fmemopen doesn't support size zero.
 	int pipefds[2];
 	assert(!pipe(pipefds));
@@ -109,7 +109,7 @@ CTF_TEST(ts3d_read_lines_empty,
 	assert(nlines == 0);
 )
 
-CTF_TEST(ts3d_read_lines_just_newline,
+CTF_TEST(read_lines_just_newline,
 	char str[] = "\n";
 	FILE *source = fmemopen(str, 1, "r");
 	size_t nlines;

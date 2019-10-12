@@ -272,13 +272,13 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 		parse_json_tree("(memory)", source, &logger, &root); \
 	} while (0)
 
-CTF_TEST(ts3d_printed_json_error,
+CTF_TEST(printed_json_error,
 	SOURCE("{\"a\":1,\"b\":2");
 	assert(root.kind == JN_ERROR);
 	free_json_tree(&root);
 )
 
-CTF_TEST(ts3d_json_vec,
+CTF_TEST(json_vec,
 	d3d_vec_s vec;
 	SOURCE("[1,2]");
 	assert(root.kind == JN_LIST);
@@ -288,14 +288,14 @@ CTF_TEST(ts3d_json_vec,
 	free_json_tree(&root);
 )
 
-CTF_TEST(ts3d_json_tree_map,
+CTF_TEST(json_tree_map,
 	SOURCE("{\"a\":1,\"b\":2}");
 	assert(json_map_get(&root, "a", JN_NUMBER)->num == 1);
 	assert(json_map_get(&root, "b", JN_NUMBER)->num == 2);
 	free_json_tree(&root);
 )
 
-CTF_TEST(ts3d_json_tree_list,
+CTF_TEST(json_tree_list,
 	SOURCE("[1,2]");
 	assert(root.kind == JN_LIST);
 	assert(root.d.list.n_vals == 2);
@@ -304,7 +304,7 @@ CTF_TEST(ts3d_json_tree_list,
 	free_json_tree(&root);
 )
 
-CTF_TEST(ts3d_json_tree_nested,
+CTF_TEST(json_tree_nested,
 	SOURCE("{\"a\":1,\"b\":[2,3]}");
 	assert(json_map_get(&root, "a", JN_NUMBER)->num == 1);
 	union json_node_data *list = json_map_get(&root, "b", JN_LIST);
