@@ -125,7 +125,8 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		epos->y += evel->y;
 		d3d_vec_s disp;
 		double dist;
-		if (type->turn_chance > rand()) {
+		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
+		 && type->turn_chance > rand()) {
 			disp.x = epos->x - cam_pos->x;
 			disp.y = epos->y - cam_pos->y;
 			dist = hypot(disp.x, disp.y) / -type->speed;
