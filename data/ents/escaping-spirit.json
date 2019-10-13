@@ -3,6 +3,7 @@
  "width": 0.1,
  "height": 0.2,
  "wall_block": false,
+ "team_override": "ghost",
  "lifetime": 58,
  "frames": [
   ["escaping-spirit-01", 5],

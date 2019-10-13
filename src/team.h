@@ -9,6 +9,8 @@ enum team {
 	// This is not a team. It is returned when team_from_str could not
 	// figure out which team to return.
 	TEAM_INVALID = -1,
+	// The team of entities which don't interact with anything.
+	TEAM_GHOST,
 	// Unaligned entities collide with everything except pickups.
 	TEAM_UNALIGNED,
 	// This is solely the team of the player. Players can collide with

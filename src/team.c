@@ -3,7 +3,9 @@
 
 enum team team_from_str(const char *str)
 {
-	if (!strcasecmp(str, "UNALIGNED")) {
+	if (!strcasecmp(str, "GHOST")) {
+		return TEAM_GHOST;
+	} else if (!strcasecmp(str, "UNALIGNED")) {
 		return TEAM_UNALIGNED;
 	} else if (!strcasecmp(str, "PLAYER")) {
 		return TEAM_PLAYER;
@@ -21,12 +23,13 @@ enum team team_from_str(const char *str)
 bool teams_can_collide(enum team a, enum team b)
 {
 	static const bool collision_table[N_TEAMS][N_TEAMS] = {
-	                /* UNALIGNED PLAYER    ALLY      ENEMY     PICKUP  */
-	/* UNALIGNED */ {  true,     true,     true,      true,    false   },
-	/*    PLAYER */ {  true,     false,    false,     true,    true    },
-	/*      ALLY */ {  true,     false,    false,     true,    false   },
-	/*     ENEMY */ {  true,     true,     true,      false,   false   },
-	/*    PICKUP */ {  false,    true,     false,     false,   false   },
+	                /* GHOST  UNALIGNED PLAYER ALLY   ENEMY  PICKUP  */
+	/*     GHOST */ {  false, false,    false, false, false, false   },
+	/* UNALIGNED */ {  false, true,     true,  true,  true,  false   },
+	/*    PLAYER */ {  false, true,     false, false, true,  true    },
+	/*      ALLY */ {  false, true,     false, false, true,  false   },
+	/*     ENEMY */ {  false, true,     true,  true,  false, false   },
+	/*    PICKUP */ {  false, false,    true,  false, false, false   },
 	};
 	return collision_table[a][b];
 }

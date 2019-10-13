@@ -136,8 +136,7 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		}
 		d3d_vec_s move = *epos;
 		map_check_walls(map, &move, CAM_RADIUS);
-		if (type->wall_block
-		 && teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
+		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
 		 && fabs(cam_pos->x - epos->x) < CAM_RADIUS * 2
 		 && fabs(cam_pos->y - epos->y) < CAM_RADIUS * 2) {
 			ents_kill(ents, e);

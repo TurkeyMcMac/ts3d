@@ -76,6 +76,7 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->lifetime = -1;
 	ent->wall_block = true;
 	ent->wall_die = false;
+	ent->team_override = TEAM_INVALID;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
 		if (jtree.kind != JN_ERROR)
@@ -135,6 +136,10 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "wall_die", JN_BOOLEAN))
 	 && got->boolean)
 		ent->wall_die = true;
+	if ((got = json_map_get(&jtree, "team_override", JN_STRING))
+	 && (ent->team_override = team_from_str(got->str)) == TEAM_INVALID)
+		logger_printf(log, LOGGER_WARNING,
+			"Invalid team override: \"%s\"\n", got->str);
 end:
 	if (ent->n_frames == 0) {
 		ent->frames = xrealloc(ent->frames, sizeof(*ent->frames));
@@ -159,7 +164,8 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 {
 	ent->vel.x = ent->vel.y = 0;
 	ent->type = type;
-	ent->team = team;
+	ent->team = type->team_override == TEAM_INVALID ?
+		team : type->team_override;
 	ent->lifetime = type->lifetime;
 	ent->health = 1.0;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;

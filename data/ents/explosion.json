@@ -3,6 +3,7 @@
  "width": 0.3,
  "height": 0.2,
  "wall_block": false,
+ "team_override": "ghost",
  "lifetime": 22,
  "frames": [
   ["explosion-1", 1],

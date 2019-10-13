@@ -46,6 +46,8 @@ struct ent_type {
 	bool wall_block;
 	// Whether the entity dies when it hits a wall.
 	bool wall_die;
+	// Team of this entity overriding the team in a map's entity start.
+	enum team team_override;
 };
 
 // Load an entity with the name or use one previously loaded.
