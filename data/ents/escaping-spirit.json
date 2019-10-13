@@ -3,7 +3,7 @@
  "width": 0.1,
  "height": 0.2,
  "wall_block": false,
- "lifetime": 59,
+ "lifetime": 58,
  "frames": [
   ["escaping-spirit-01", 5],
   ["escaping-spirit-02", 4],
