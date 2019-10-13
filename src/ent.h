@@ -94,6 +94,13 @@ ent_id ents_add(struct ents *ents, struct ent_type *type, enum team team,
 // while looping.
 #define ENTS_FOR_EACH(ents, var) for (ent_id var = 0; var < ents->num; ++var)
 
+// A loop header to go through each possible pair of entities in ents. The loop
+// variables var1 and var2 are defined for each iteration as the two ids. Since
+// this uses nested loop magic, don't use break or continue inside it.
+#define ENTS_FOR_EACH_PAIR(ents, var1, var2) \
+	for (ent_id var1 = 0; var1 < ents->num; ++var1) \
+		for (ent_id var2 = var1 + 1; var2 < ents->num; ++var2)
+
 // Perform lifecycle stuff for each entity. Kills old entities. Doesn't move
 // anything.
 void ents_tick(struct ents *ents);
