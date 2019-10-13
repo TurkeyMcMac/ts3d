@@ -136,12 +136,7 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		}
 		d3d_vec_s move = *epos;
 		map_check_walls(map, &move, CAM_RADIUS);
-		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
-		 && fabs(cam_pos->x - epos->x) < CAM_RADIUS * 2
-		 && fabs(cam_pos->y - epos->y) < CAM_RADIUS * 2) {
-			ents_kill(ents, e);
-		}
-		else if (type->wall_die && (move.x != epos->x || move.y != epos->y))
+		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
 		{
 			ents_kill(ents, e);
 		} else if (type->wall_block) {
@@ -150,6 +145,28 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 			*epos = move;
 			if (disp.x != 0.0) evel->x = disp.x;
 			if (disp.y != 0.0) evel->y = disp.y;
+		}
+	}
+}
+
+bool touching(const d3d_vec_s *a, const d3d_vec_s *b)
+{
+	return fabs(a->x - b->x) < CAM_RADIUS * 2
+	    && fabs(a->y - b->y) < CAM_RADIUS * 2;
+}
+
+void hit_ents(struct ents *ents, d3d_vec_s *cam_pos)
+{
+	ENTS_FOR_EACH(ents, e) {
+		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
+		 && touching(cam_pos, ents_pos(ents, e)))
+			ents_kill(ents, e);
+	}
+	ENTS_FOR_EACH_PAIR(ents, ea, eb) {
+		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb))
+		 && touching(ents_pos(ents, ea), ents_pos(ents, eb))) {
+			ents_kill(ents, ea);
+			ents_kill(ents, eb);
 		}
 	}
 }
@@ -231,6 +248,7 @@ int main(int argc, char *argv[])
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
 		move_ents(&ents, map, pos);
+		hit_ents(&ents, pos);
 		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
 		--reload;
