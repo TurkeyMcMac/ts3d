@@ -83,6 +83,7 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 			logger_printf(log, LOGGER_WARNING,
 				"Entity type \"%s\" is not a JSON dictionary\n",
 				name);
+		*entp = ent;
 		goto end;
 	}
 	union json_node_data *got;
@@ -147,7 +148,6 @@ end:
 		ent->frames[0].duration = 0;
 	}
 	free_json_tree(&jtree);
-	*entp = ent;
 	return ent;
 }
 

@@ -28,15 +28,13 @@ struct map {
 	// The blocks used in the board. These refer to textures in the table
 	// passed to load_map(s).
 	d3d_block_s *blocks;
-	// The starting position of the player on the board (in blocks).
-	d3d_vec_s player_pos;
-	// The starting direction of the player on the board (in radians).
-	double player_facing;
 	// The starting number of entities.
 	size_t n_ents;
 	// The list of entity types and corresponding starting positions. This
 	// refers to data in the ents table passed to load_map(s).
 	struct map_ent_start *ents;
+	// The starting information of the player in the map.
+	struct map_ent_start player;
 };
 
 // Move an object's position so as not to conflict with the map's walls. The

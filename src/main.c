@@ -178,13 +178,15 @@ d3d_camera *make_camera(void)
 		COLS, LINES);
 }
 
-void shoot_player_bullet(const d3d_vec_s *pos, double facing, struct ents *ents)
+void shoot_player_bullet(const d3d_vec_s *pos, double facing, struct ents *ents,
+	struct ent_type *bullet_type)
 {
-	ent_id bullet = ents_add(ents, ents_type(ents, 0)->bullet, TEAM_ALLY,
-		pos);
-	d3d_vec_s *bvel = ents_vel(ents, bullet);
-	bvel->x = 2 * FORWARD_COEFF * cos(facing);
-	bvel->y = 2 * FORWARD_COEFF * sin(facing);
+	if (bullet_type) {
+		ent_id bullet = ents_add(ents, bullet_type, TEAM_ALLY, pos);
+		d3d_vec_s *bvel = ents_vel(ents, bullet);
+		bvel->x = 2 * FORWARD_COEFF * cos(facing);
+		bvel->y = 2 * FORWARD_COEFF * sin(facing);
+	}
 }
 
 void shoot_bullets(struct ents *ents)
@@ -230,7 +232,7 @@ int main(int argc, char *argv[])
 	atexit(end_win);
 	d3d_camera *cam = make_camera();
 	d3d_vec_s *pos = d3d_camera_position(cam);
-	*pos = map->player_pos;
+	*pos = map->player.pos;
 	set_up_colors();
 	struct ticker timer;
 	ticker_init(&timer, 30);
@@ -254,7 +256,8 @@ int main(int argc, char *argv[])
 		ents_clean_up_dead(&ents);
 		--reload;
 		if ((isupper(key) || key == ' ') && reload < 0) {
-			shoot_player_bullet(pos, *facing, &ents);
+			shoot_player_bullet(pos, *facing, &ents,
+				map->player.type->bullet);
 			reload = RELOAD;
 		}
 		shoot_bullets(&ents);

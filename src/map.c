@@ -218,12 +218,25 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map->blocks = NULL;
 	map->ents = NULL;
 	map->n_ents = 0;
-	if (parse_json_tree(name, file, log, &jtree)) return NULL;
+	if (parse_json_tree(name, file, log, &jtree)) goto parse_error;
 	if (jtree.kind != JN_MAP) {
 		if (jtree.kind != JN_ERROR)
-			logger_printf(log, LOGGER_WARNING,
+			logger_printf(log, LOGGER_ERROR,
 				"Map \"%s\" is not a JSON dictionary\n", name);
-		goto end;
+		goto format_error;
+	}
+	void **player_nodep;
+	if ((player_nodep = table_get(&jtree.d.map, "player"))) {
+		if (parse_ent_start(&map->player, ldr, *player_nodep)) {
+			logger_printf(log, LOGGER_ERROR,
+				"Map \"%s\" has invalid \"player\" attribute\n",
+				name);
+			goto format_error;
+		}
+	} else {
+		logger_printf(log, LOGGER_ERROR,
+			"Map \"%s\" has no \"player\" attribute\n", name);
+		goto format_error;
 	}
 	union json_node_data *got;
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
@@ -287,15 +300,9 @@ struct map *load_map(struct loader *ldr, const char *name)
 		map->walls = xcalloc(1, 1);
 	}
 	free(walls);
-	map->player_pos.x = map->player_pos.y = 0;
-	if ((got = json_map_get(&jtree, "player_pos", JN_LIST)))
-		parse_json_vec(&map->player_pos, &got->list);
-	map->player_pos.x = CLAMP(map->player_pos.x, 0, width - 0.01);
+	map->player.pos.x = CLAMP(map->player.pos.x, 0, width - 0.01);
 	// See DIRECTION NOTE:
-	map->player_pos.y = height - CLAMP(map->player_pos.y, 0.01, height);
-	map->player_facing = 0;
-	if ((got = json_map_get(&jtree, "player_facing", JN_NUMBER)))
-		map->player_facing = got->num;
+	map->player.pos.y = height - CLAMP(map->player.pos.y, 0.01, height);
 	map->n_ents = 0;
 	if ((got = json_map_get(&jtree, "ents", JN_LIST))) {
 		map->ents = xmalloc(got->list.n_vals * sizeof(*map->ents));
@@ -308,11 +315,15 @@ struct map *load_map(struct loader *ldr, const char *name)
 			}
 		}
 	}
-end:
 	if (!map->board) map->board = d3d_new_board(0, 0);
 	free_json_tree(&jtree);
 	*mapp = map;
 	return map;
+
+format_error:
+	free_json_tree(&jtree);
+parse_error:
+	return NULL;
 }
 
 void map_free(struct map *map)

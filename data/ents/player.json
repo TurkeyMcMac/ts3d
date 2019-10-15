@@ -1,0 +1,10 @@
+{
+ "name": "Player",
+ "width": 0.3,
+ "height": 0.15,
+ "team_override": "player",
+ "speed": 0.025,
+ "turn_chance": 1,
+ "shoot_chance": 1,
+ "bullet": "bullet"
+}
