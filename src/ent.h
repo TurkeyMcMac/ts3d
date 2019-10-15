@@ -48,6 +48,10 @@ struct ent_type {
 	bool wall_die;
 	// Team of this entity overriding the team in a map's entity start.
 	enum team team_override;
+	// The starting health for entities of this type.
+	double health;
+	// The damage to others on contact for entities of this type.
+	double damage;
 };
 
 // Load an entity with the name or use one previously loaded.

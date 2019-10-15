@@ -225,8 +225,8 @@ int main(int argc, char *argv[])
 	d3d_camera *cam = make_camera();
 	struct body body;
 	body.pos = map->player.pos;
-	body.health = 999;
-	body.damage = 1;
+	body.health = map->player.type->health;
+	body.damage = map->player.type->damage;
 	body.radius = CAM_RADIUS;
 	set_up_colors();
 	struct ticker timer;

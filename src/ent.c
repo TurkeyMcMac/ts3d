@@ -78,6 +78,8 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->wall_block = true;
 	ent->wall_die = false;
 	ent->team_override = TEAM_INVALID;
+	ent->health = 1.0;
+	ent->damage = 0;
 	if (parse_json_tree(name, file, log, &jtree)) return NULL;
 	if (jtree.kind != JN_MAP) {
 		if (jtree.kind != JN_ERROR)
@@ -142,6 +144,10 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	 && (ent->team_override = team_from_str(got->str)) == TEAM_INVALID)
 		logger_printf(log, LOGGER_WARNING,
 			"Invalid team override: \"%s\"\n", got->str);
+	if ((got = json_map_get(&jtree, "health", JN_NUMBER)))
+		ent->health = got->num;
+	if ((got = json_map_get(&jtree, "damage", JN_NUMBER)))
+		ent->damage = got->num;
 end:
 	if (ent->n_frames == 0) {
 		ent->frames = xrealloc(ent->frames, sizeof(*ent->frames));
@@ -172,8 +178,8 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->frame_duration = type->frames[0].duration;
 	ent->body.pos = *pos;
 	ent->body.radius = type->width / 2;
-	ent->body.health = 1.0; // TODO: Parameterize
-	ent->body.damage = 0.1; // TODO: Parameterize
+	ent->body.health = type->health;
+	ent->body.damage = type->damage;
 	sprite->txtr = type->frames[0].txtr;
 	sprite->transparent = type->transparent;
 	sprite->scale.x = type->width;
