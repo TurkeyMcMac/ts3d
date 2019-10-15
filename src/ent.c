@@ -1,4 +1,5 @@
 #include "ent.h"
+#include "body.h"
 #include "grow.h"
 #include "json.h"
 #include "json-util.h"
@@ -25,8 +26,8 @@ struct ent {
 	size_t frame;
 	// The remaining duration of the current frame.
 	long frame_duration;
-	// The health remaining.
-	double health;
+	// The bodily information of the entity.
+	struct body body;
 };
 
 
@@ -167,12 +168,14 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->team = type->team_override == TEAM_INVALID ?
 		team : type->team_override;
 	ent->lifetime = type->lifetime;
-	ent->health = 1.0;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
+	ent->body.pos = *pos;
+	ent->body.radius = type->width;
+	ent->body.health = 1.0; // TODO: Parameterize
+	ent->body.damage = 0.1; // TODO: Parameterize
 	sprite->txtr = type->frames[0].txtr;
 	sprite->transparent = type->transparent;
-	sprite->pos = *pos;
 	sprite->scale.x = type->width;
 	sprite->scale.y = type->height;
 }
@@ -180,7 +183,7 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 static bool ent_is_dead(const struct ent *ent)
 {
 	return (ent->type->lifetime >= 0 && ent->lifetime < 0)
-	    || ent->health <= 0;
+	    || ent->body.health <= 0;
 }
 
 static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
@@ -216,6 +219,9 @@ size_t ents_num(const struct ents *ents)
 
 d3d_sprite_s *ents_sprites(struct ents *ents)
 {
+	for (size_t i = 0; i < ents->num; ++i) {
+		ents->sprites[i].pos = ents->ents[i].body.pos;
+	}
 	return ents->sprites;
 }
 
@@ -242,7 +248,12 @@ void ents_tick(struct ents *ents)
 
 d3d_vec_s *ents_pos(struct ents *ents, ent_id eid)
 {
-	return &ents->sprites[eid].pos;
+	return &ents->ents[eid].body.pos;
+}
+
+struct body *ents_body(struct ents *ents, ent_id eid)
+{
+	return &ents->ents[eid].body;
 }
 
 d3d_vec_s *ents_vel(struct ents *ents, ent_id eid)
@@ -267,7 +278,7 @@ bool ents_is_dead(struct ents *ents, ent_id eid)
 
 void ents_kill(struct ents *ents, ent_id eid)
 {
-	ents->ents[eid].health = 0;
+	ents->ents[eid].body.health = 0;
 }
 
 void ents_clean_up_dead(struct ents *ents)

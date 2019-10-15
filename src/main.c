@@ -1,3 +1,4 @@
+#include "body.h"
 #include "load-texture.h"
 #include "d3d.h"
 #include "json-util.h"
@@ -136,7 +137,7 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 			disp.x = disp.y = 0;
 		}
 		d3d_vec_s move = *epos;
-		map_check_walls(map, &move, CAM_RADIUS);
+		map_check_walls(map, &move, ents_body(ents, e)->radius);
 		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
 		{
 			ents_kill(ents, e);
@@ -150,25 +151,16 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 	}
 }
 
-bool touching(const d3d_vec_s *a, const d3d_vec_s *b)
-{
-	return fabs(a->x - b->x) < CAM_RADIUS * 2
-	    && fabs(a->y - b->y) < CAM_RADIUS * 2;
-}
-
-void hit_ents(struct ents *ents, d3d_vec_s *cam_pos)
+void hit_ents(struct ents *ents, struct body *body)
 {
 	ENTS_FOR_EACH(ents, e) {
-		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
-		 && touching(cam_pos, ents_pos(ents, e)))
-			ents_kill(ents, e);
+		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e)))
+			bodies_collide(body, ents_body(ents, e));
 	}
 	ENTS_FOR_EACH_PAIR(ents, ea, eb) {
-		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb))
-		 && touching(ents_pos(ents, ea), ents_pos(ents, eb))) {
-			ents_kill(ents, ea);
-			ents_kill(ents, eb);
-		}
+		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb)))
+			bodies_collide(ents_body(ents, ea),
+				ents_body(ents, eb));
 	}
 }
 
@@ -231,8 +223,11 @@ int main(int argc, char *argv[])
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = make_camera();
-	d3d_vec_s *pos = d3d_camera_position(cam);
-	*pos = map->player.pos;
+	struct body body;
+	body.pos = map->player.pos;
+	body.health = 999;
+	body.damage = 1;
+	body.radius = CAM_RADIUS;
 	set_up_colors();
 	struct ticker timer;
 	ticker_init(&timer, 30);
@@ -245,18 +240,20 @@ int main(int argc, char *argv[])
 	curs_set(0);
 	timeout(0);
 	while (tolower(key = getch()) != 'x') {
-		move_player(pos, facing, &translation, &turn_duration, key);
-		map_check_walls(map, pos, CAM_RADIUS);
+		move_player(&body.pos, facing,
+			&translation, &turn_duration, key);
+		map_check_walls(map, &body.pos, body.radius);
+		*d3d_camera_position(cam) = body.pos;
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
-		move_ents(&ents, map, pos);
-		hit_ents(&ents, pos);
+		move_ents(&ents, map, &body.pos);
+		hit_ents(&ents, &body);
 		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
 		--reload;
 		if ((isupper(key) || key == ' ') && reload < 0) {
-			shoot_player_bullet(pos, *facing, &ents,
+			shoot_player_bullet(&body.pos, *facing, &ents,
 				map->player.type->bullet);
 			reload = RELOAD;
 		}

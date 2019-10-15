@@ -109,8 +109,13 @@ void ents_tick(struct ents *ents);
 bool ents_is_dead(struct ents *ents, ent_id eid);
 
 // Gets a pointer to entity position of entity with ID eid. Valid until ents_add
-// or any function that modifies all entities is called.
+// or any function that modifies all entities is called. This is an alias for
+// &ents_body(ents, eid)->pos
 d3d_vec_s *ents_pos(struct ents *ents, ent_id eid);
+
+// Gets a pointer to entity body of entity with ID eid. Valid until ents_add or
+// any function that modifies all entities is called.
+struct body *ents_body(struct ents *ents, ent_id eid);
 
 // Same as ents_pos, but for velocity.
 d3d_vec_s *ents_vel(struct ents *ents, ent_id eid);
