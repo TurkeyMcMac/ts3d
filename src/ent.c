@@ -171,7 +171,7 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
 	ent->body.pos = *pos;
-	ent->body.radius = type->width;
+	ent->body.radius = type->width / 2;
 	ent->body.health = 1.0; // TODO: Parameterize
 	ent->body.damage = 0.1; // TODO: Parameterize
 	sprite->txtr = type->frames[0].txtr;
