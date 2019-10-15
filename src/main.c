@@ -24,7 +24,7 @@
 #define FOV_X 2.0
 #define TURN_DURATION 5
 
-void set_up_colors(void)
+static void set_up_colors(void)
 {
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
@@ -34,7 +34,7 @@ void set_up_colors(void)
 	}
 }
 
-void display_frame(d3d_camera *cam)
+static void display_frame(d3d_camera *cam)
 {
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
@@ -47,7 +47,7 @@ void display_frame(d3d_camera *cam)
 	refresh();
 }
 
-void init_entities(struct ents *ents, struct map *map)
+static void init_entities(struct ents *ents, struct map *map)
 {
 	ents_init(ents, map->n_ents * 2);
 	for (size_t i = 0; i < map->n_ents; ++i) {
@@ -56,9 +56,9 @@ void init_entities(struct ents *ents, struct map *map)
 	}
 }
 
-void end_win(void) { endwin(); }
+static void end_win(void) { endwin(); }
 
-void move_player(struct player *player,
+static void move_player(struct player *player,
 	int *translation, int *turn_duration, int key)
 {
 	key = tolower(key);
@@ -101,7 +101,7 @@ void move_player(struct player *player,
 	}
 }
 
-void move_ents(struct ents *ents, struct map *map, struct player *player)
+static void move_ents(struct ents *ents, struct map *map, struct player *player)
 {
 	map_check_walls(map, &player->body.pos, player->body.radius);
 	ENTS_FOR_EACH(ents, e) {
@@ -136,7 +136,7 @@ void move_ents(struct ents *ents, struct map *map, struct player *player)
 	}
 }
 
-void hit_ents(struct ents *ents)
+static void hit_ents(struct ents *ents)
 {
 	ENTS_FOR_EACH_PAIR(ents, ea, eb) {
 		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb)))
@@ -145,13 +145,13 @@ void hit_ents(struct ents *ents)
 	}
 }
 
-d3d_camera *make_camera(void)
+static d3d_camera *make_camera(void)
 {
 	return d3d_new_camera(FOV_X, LINES * FOV_X / COLS / PIXEL_ASPECT,
 		COLS, LINES);
 }
 
-void shoot_bullets(struct ents *ents)
+static void shoot_bullets(struct ents *ents)
 {
 	ENTS_FOR_EACH(ents, e) {
 		struct ent_type *type = ents_type(ents, e);
