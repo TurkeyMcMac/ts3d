@@ -20,17 +20,8 @@
 #ifndef M_PI
 #	define M_PI 3.14159265358979323846
 #endif
-
-#define CAM_RADIUS 0.1
-
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
-
-#define FORWARD_COEFF 0.025
-#define BACKWARD_COEFF 0.015
-#define TURN_COEFF 0.038
-#define SIDEWAYS_COEFF 0.02
-#define RELOAD 50
 #define TURN_DURATION 5
 
 void set_up_colors(void)
@@ -158,17 +149,6 @@ d3d_camera *make_camera(void)
 {
 	return d3d_new_camera(FOV_X, LINES * FOV_X / COLS / PIXEL_ASPECT,
 		COLS, LINES);
-}
-
-void shoot_player_bullet(const d3d_vec_s *pos, double facing, struct ents *ents,
-	struct ent_type *bullet_type)
-{
-	if (bullet_type) {
-		ent_id bullet = ents_add(ents, bullet_type, TEAM_ALLY, pos);
-		d3d_vec_s *bvel = ents_vel(ents, bullet);
-		bvel->x = 2 * FORWARD_COEFF * cos(facing);
-		bvel->y = 2 * FORWARD_COEFF * sin(facing);
-	}
 }
 
 void shoot_bullets(struct ents *ents)
