@@ -1,5 +1,6 @@
 #include "body.h"
 #include "load-texture.h"
+#include "player.h"
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
@@ -66,8 +67,8 @@ void init_entities(struct ents *ents, struct map *map)
 
 void end_win(void) { endwin(); }
 
-void move_player(d3d_vec_s *pos, double *facing, int *translation,
-	int *turn_duration, int key)
+void move_player(struct player *player,
+	int *translation, int *turn_duration, int key)
 {
 	key = tolower(key);
 	switch (key) {
@@ -85,39 +86,33 @@ void move_player(d3d_vec_s *pos, double *facing, int *translation,
 		break;
 	}
 	switch (*translation) {
-		double sideway;
 	case 'w': // Forward
-		pos->x += FORWARD_COEFF * cos(*facing);
-		pos->y += FORWARD_COEFF * sin(*facing);
+		player_walk(player, 0);
 		break;
 	case 's': // Backward
-		pos->x -= FORWARD_COEFF * cos(*facing);
-		pos->y -= FORWARD_COEFF * sin(*facing);
+		player_walk(player, M_PI);
 		break;
 	case 'a': // Left
-		sideway = *facing + M_PI / 2;
-		pos->x += FORWARD_COEFF * cos(sideway);
-		pos->y += FORWARD_COEFF * sin(sideway);
+		player_walk(player, M_PI / 2);
 		break;
 	case 'd': // Right
-		sideway = *facing - M_PI / 2;
-		pos->x += FORWARD_COEFF * cos(sideway);
-		pos->y += FORWARD_COEFF * sin(sideway);
+		player_walk(player, -M_PI / 2);
 		break;
 	default:
 		break;
 	}
 	if (*turn_duration > 0) {
-		*facing += TURN_COEFF;
+		player_turn_ccw(player);
 		--*turn_duration;
 	} else if (*turn_duration < 0) {
-		*facing -= TURN_COEFF;
+		player_turn_cw(player);
 		++*turn_duration;
 	}
 }
 
-void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
+void move_ents(struct ents *ents, struct map *map, struct player *player)
 {
+	map_check_walls(map, &player->body.pos, player->body.radius);
 	ENTS_FOR_EACH(ents, e) {
 		const struct ent_type *type = ents_type(ents, e);
 		d3d_vec_s *epos = ents_pos(ents, e);
@@ -126,10 +121,9 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 		epos->y += evel->y;
 		d3d_vec_s disp;
 		double dist;
-		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e))
-		 && type->turn_chance > rand()) {
-			disp.x = epos->x - cam_pos->x;
-			disp.y = epos->y - cam_pos->y;
+		if (type->turn_chance > rand()) {
+			disp.x = epos->x - player->body.pos.x;
+			disp.y = epos->y - player->body.pos.y;
 			dist = hypot(disp.x, disp.y) / -type->speed;
 			disp.x /= dist;
 			disp.y /= dist;
@@ -151,12 +145,8 @@ void move_ents(struct ents *ents, struct map *map, d3d_vec_s *cam_pos)
 	}
 }
 
-void hit_ents(struct ents *ents, struct body *body)
+void hit_ents(struct ents *ents)
 {
-	ENTS_FOR_EACH(ents, e) {
-		if (teams_can_collide(TEAM_PLAYER, ents_team(ents, e)))
-			bodies_collide(body, ents_body(ents, e));
-	}
 	ENTS_FOR_EACH_PAIR(ents, ea, eb) {
 		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb)))
 			bodies_collide(ents_body(ents, ea),
@@ -223,41 +213,32 @@ int main(int argc, char *argv[])
 	initscr();
 	atexit(end_win);
 	d3d_camera *cam = make_camera();
-	struct body body;
-	body.pos = map->player.pos;
-	body.health = map->player.type->health;
-	body.damage = map->player.type->damage;
-	body.radius = CAM_RADIUS;
+	struct player player;
+	player_init(&player, map);
 	set_up_colors();
 	struct ticker timer;
 	ticker_init(&timer, 30);
-	double *facing = d3d_camera_facing(cam);
-	int reload = 0;
 	int translation = '\0';
 	int turn_duration = 0;
 	int key;
-	*facing = M_PI / 2;
 	curs_set(0);
 	timeout(0);
 	while (tolower(key = getch()) != 'x') {
-		move_player(&body.pos, facing,
+		move_player(&player,
 			&translation, &turn_duration, key);
-		map_check_walls(map, &body.pos, body.radius);
-		*d3d_camera_position(cam) = body.pos;
+		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
-		move_ents(&ents, map, &body.pos);
-		hit_ents(&ents, &body);
+		move_ents(&ents, map, &player);
+		player_collide(&player, &ents);
+		hit_ents(&ents);
+		if (isupper(key) || key == ' ')
+			player_try_shoot(&player, &ents);
+		shoot_bullets(&ents);
+		player_tick(&player);
 		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
-		--reload;
-		if ((isupper(key) || key == ' ') && reload < 0) {
-			shoot_player_bullet(&body.pos, *facing, &ents,
-				map->player.type->bullet);
-			reload = RELOAD;
-		}
-		shoot_bullets(&ents);
 		tick(&timer);
 	}
 	d3d_free_camera(cam);
