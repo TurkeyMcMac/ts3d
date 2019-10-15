@@ -8,11 +8,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Not yet used.
+// A specification of where some entity should begin.
 struct map_ent_start {
+	// The starting position.
 	d3d_vec_s pos;
+	// The type of the entitiy.
 	struct ent_type *type;
+	// The team of the entity.
 	enum team team;
+	// The starting frame of the entity.
 	size_t frame;
 };
 
