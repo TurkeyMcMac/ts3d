@@ -11,7 +11,7 @@
 
 // get a pointer to a coordinate in a grid. A grid is any structure with members
 // 'width' and 'height' and another member 'member' which is a buffer containing
-// all items in row-major organization. Parameters may be evaluated multiple
+// all items in column-major organization. Parameters may be evaluated multiple
 // times. If either coordinate is outside the range, NULL is returned.
 #define GET(grid, member, x, y) ((size_t)(x) < (grid)->width && (size_t)(y) < \
 		(grid)->height ? \

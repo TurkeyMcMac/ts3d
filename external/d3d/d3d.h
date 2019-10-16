@@ -2,14 +2,13 @@
 #define D3D_H_
 
 #include <stddef.h>
-#include <stdint.h>
 
 /* COMPILE-TIME OPTIONS
  * --------------------
  *  - D3D_PIXEL_TYPE: Pixels can be any integer type you want, but you MUST
- *    compile both your code and this library with the same D3D_PIXEL_TYPE. You
- *    can define D3D_PIXEL_TYPE as one of the integer types from stdint.h.
- *    Pixels are uint8_t by default.
+ *    compile both your code and this library with the same D3D_PIXEL_TYPE. The
+ *    types from stdint.h are not automatically available. Pixels are
+ *    unsigned char by default.
  *  - D3D_UNINITIALIZED_ALLOCATOR: Don't automatically initialize d3d_malloc,
  *    d3d_realloc, and d3d_realloc to the standard library equivalents. If this
  *    symbol is defined, the library user must set the variables themselves
@@ -30,7 +29,7 @@
  *    compiling d3d.c, not the client code. */
 
 #ifndef D3D_PIXEL_TYPE
-#	define D3D_PIXEL_TYPE uint8_t
+#	define D3D_PIXEL_TYPE unsigned char
 #endif
 
 /* Custom allocator routines. These have the same contract of behaviour as the
@@ -204,7 +203,7 @@ void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp);
 #define D3D_SIZED_TEXTURE(name, arr_size) struct name { \
 	/* Width and height in pixels */ \
 	size_t width, height; \
-	/* Row-major pixels */ \
+	/* Column-major pixels */ \
 	d3d_pixel pixels arr_size; \
 }
 
@@ -253,7 +252,7 @@ struct d3d_camera_s {
 	// first wall in that direction. This is calculated when drawing columns
 	// and is used when drawing sprites.
 	double *dists;
-	// The pixels of the screen in row-major order.
+	// The pixels of the screen in column-major order.
 	d3d_pixel pixels[];
 };
 
