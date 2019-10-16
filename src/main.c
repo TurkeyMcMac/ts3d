@@ -112,7 +112,7 @@ static void move_ents(struct ents *ents, struct map *map, struct player *player)
 		epos->y += evel->y;
 		d3d_vec_s disp;
 		double dist;
-		if (type->turn_chance > rand()) {
+		if (chance_decide(type->turn_chance)) {
 			disp.x = epos->x - player->body.pos.x;
 			disp.y = epos->y - player->body.pos.y;
 			dist = hypot(disp.x, disp.y) / -type->speed;
@@ -155,7 +155,7 @@ static void shoot_bullets(struct ents *ents)
 {
 	ENTS_FOR_EACH(ents, e) {
 		struct ent_type *type = ents_type(ents, e);
-		if (type->bullet && type->shoot_chance > rand()) {
+		if (type->bullet && chance_decide(type->shoot_chance)) {
 			ent_id bullet = ents_add(ents, type->bullet,
 				ents_team(ents, e), ents_pos(ents, e));
 			d3d_vec_s *bvel = ents_vel(ents, bullet);

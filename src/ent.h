@@ -1,6 +1,7 @@
 #ifndef ENTITY_H_
 #define ENTITY_H_
 
+#include "chance.h"
 #include "d3d.h"
 #include "loader.h"
 #include "table.h"
@@ -35,11 +36,10 @@ struct ent_type {
 	long lifetime;
 	// Whether or not the animation should start at a random frame.
 	bool random_start_frame;
-	// Chance out of RAND_MAX that the entity will turn toward the player in
-	// any given tick.
-	int turn_chance;
-	// Chance out of RAND_MAX that the entity will shoot in any given tick.
-	int shoot_chance;
+	// Chance that the entity will turn toward the player in any given tick.
+	chance turn_chance;
+	// Chance that the entity will shoot in any given tick.
+	chance shoot_chance;
 	// Movement speed (in blocks/tick).
 	double speed;
 	// Whether the entity is blocked by walls.

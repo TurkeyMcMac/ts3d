@@ -70,8 +70,8 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	ent->name = str_dup(name);
 	ent->frames = NULL;
 	ent->n_frames = 0;
-	ent->turn_chance = 0;
-	ent->shoot_chance = 0;
+	ent->turn_chance = CHANCE_NEVER;
+	ent->shoot_chance = CHANCE_NEVER;
 	ent->death_spawn = NULL;
 	ent->bullet = NULL;
 	ent->lifetime = -1;
@@ -108,10 +108,9 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "speed", JN_NUMBER)))
 		ent->speed = got->num;
 	if ((got = json_map_get(&jtree, "turn_chance", JN_NUMBER)))
-		// Convert from percent to an equivalent portion of RAND_MAX.
-		ent->turn_chance = got->num * (RAND_MAX / 100.0);
+		ent->turn_chance = chance_from_percent(got->num);
 	if ((got = json_map_get(&jtree, "shoot_chance", JN_NUMBER)))
-		ent->shoot_chance = got->num * (RAND_MAX / 100.0);
+		ent->shoot_chance = chance_from_percent(got->num);
 	ent->transparent = EMPTY_PIXEL;
 	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
 			&& *got->str)

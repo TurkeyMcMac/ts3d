@@ -11,10 +11,10 @@ void player_init(struct player *player, struct map *map)
 	player->body.radius = player->start->type->width / 2;
 	player->body.health = player->start->type->health;
 	player->body.damage = player->start->type->damage;
-	// TODO: convert from chances better here:
-	player->turn_speed = player->start->type->turn_chance * 3.0 / RAND_MAX;
+	player->turn_speed =
+		2.5 * chance_to_fraction(player->start->type->turn_chance);
 	player->reload_ready =
-		RAND_MAX / player->start->type->shoot_chance;
+		1.0 / chance_to_fraction(player->start->type->shoot_chance);
 	player->reload = player->reload_ready;
 	player->facing = 0;
 }
