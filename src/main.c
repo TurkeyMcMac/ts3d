@@ -163,8 +163,10 @@ static void shoot_bullets(struct ents *ents)
 			*bvel = *ents_vel(ents, e);
 			double speed = hypot(bvel->x, bvel->y) /
 				ents_type(ents, bullet)->speed;
-			bvel->x += bvel->x / speed;
-			bvel->y += bvel->y / speed;
+			if (!isnan(speed)) {
+				bvel->x += bvel->x / speed;
+				bvel->y += bvel->y / speed;
+			}
 		}
 	}
 }
