@@ -29,7 +29,7 @@ static void set_up_colors(void)
 	start_color();
 	for (int fg = 0; fg < 8; ++fg) {
 		for (int bg = 0; bg < 8; ++bg) {
-			init_pair((fg << 3 | bg) + 1, fg, bg);
+			init_pair(pixel_pair(pixel(fg, bg)), fg, bg);
 		}
 	}
 }
@@ -39,7 +39,7 @@ static void display_frame(d3d_camera *cam)
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			mvaddch(y, x, COLOR_PAIR(pix + 1) | '#');
+			mvaddch(y, x, pixel_style(pix) | '#');
 		}
 	}
 }
