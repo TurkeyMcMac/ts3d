@@ -44,7 +44,6 @@ static void display_frame(d3d_camera *cam)
 			mvaddch(y, x, cell);
 		}
 	}
-	refresh();
 }
 
 static void init_entities(struct ents *ents, struct map *map)
@@ -204,12 +203,17 @@ int main(int argc, char *argv[])
 	curs_set(0);
 	timeout(0);
 	while (tolower(key = getch()) != 'x') {
-		move_player(&player,
-			&translation, &turn_duration, key);
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
+		if (player_is_dead(&player)) {
+			mvaddstr(LINES / 2, COLS / 2 - 2, "DEAD");
+		} else {
+			move_player(&player,
+				&translation, &turn_duration, key);
+		}
+		refresh();
 		move_ents(&ents, map, &player);
 		player_collide(&player, &ents);
 		hit_ents(&ents);

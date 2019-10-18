@@ -30,7 +30,8 @@ double player_reload_fraction(const struct player *player)
 static bool player_can_shoot(struct player *player)
 {
 	return player->start->type->bullet
-	    && player->reload >= player->reload_ready;
+	    && player->reload >= player->reload_ready
+	    && !player_is_dead(player);
 }
 
 void player_tick(struct player *player)
@@ -57,7 +58,7 @@ void player_turn_cw(struct player *player)
 
 bool player_is_dead(const struct player *player)
 {
-	return player->body.health < 0;
+	return player->body.health <= 0;
 }
 
 bool player_try_shoot(struct player *player, struct ents *ents)
@@ -74,6 +75,7 @@ bool player_try_shoot(struct player *player, struct ents *ents)
 
 void player_collide(struct player *player, struct ents *ents)
 {
+	if (player_is_dead(player)) return;
 	ENTS_FOR_EACH(ents, e) {
 		if (teams_can_collide(player->start->team, ents_team(ents, e)))
 			bodies_collide(&player->body, ents_body(ents, e));
