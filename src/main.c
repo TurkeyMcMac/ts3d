@@ -39,9 +39,7 @@ static void display_frame(d3d_camera *cam)
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			int cell = COLOR_PAIR(pix + 1) | '#';
-			if (pixel_is_bold(pix)) cell |= A_BOLD;
-			mvaddch(y, x, cell);
+			mvaddch(y, x, COLOR_PAIR(pix + 1) | '#');
 		}
 	}
 }
