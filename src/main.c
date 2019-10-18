@@ -4,6 +4,7 @@
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
+#include "meter.h"
 #include "ent.h"
 #include "pixel.h"
 #include "ticker.h"
@@ -149,7 +150,7 @@ static void hit_ents(struct ents *ents)
 static d3d_camera *make_camera(void)
 {
 	return d3d_new_camera(FOV_X, LINES * FOV_X / COLS / PIXEL_ASPECT,
-		COLS, LINES);
+		COLS, LINES - 1);
 }
 
 static void shoot_bullets(struct ents *ents)
@@ -195,6 +196,20 @@ int main(int argc, char *argv[])
 	d3d_board *board = map->board;
 	initscr();
 	atexit(end_win);
+	struct meter health_meter = {
+		.label = "HEALTH",
+		.style = A_BOLD | pixel_style(pixel(PC_BLACK, PC_GREEN)),
+		.x = 0,
+		.y = LINES - 1,
+		.width = COLS / 2,
+	};
+	struct meter reload_meter = {
+		.label = "RELOAD",
+		.style = A_BOLD | pixel_style(pixel(PC_BLACK, PC_RED)),
+		.x = health_meter.width,
+		.y = LINES - 1,
+		.width = COLS - health_meter.width,
+	};
 	d3d_camera *cam = make_camera();
 	struct player player;
 	player_init(&player, map);
@@ -212,6 +227,8 @@ int main(int argc, char *argv[])
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam);
+		meter_draw(&health_meter, player_health_fraction(&player));
+		meter_draw(&reload_meter, player_reload_fraction(&player));
 		if (player_is_dead(&player)) {
 			mvaddstr(LINES / 2, COLS / 2 - 2, "DEAD");
 		} else {
