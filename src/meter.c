@@ -4,7 +4,6 @@
 void meter_draw(const struct meter *meter, double fraction)
 {
 	int full = meter->width * (fraction + 0.001);
-	fprintf(stderr, "%d >= %d\n", meter->width, full);
 	int i;
 	for (i = 0; meter->label[i] && i < full; ++i) {
 		mvaddch(meter->y, meter->x + i, meter->style | meter->label[i]);
