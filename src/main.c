@@ -205,6 +205,7 @@ int main(int argc, char *argv[])
 	int turn_duration = 0;
 	int key;
 	curs_set(0);
+	noecho();
 	timeout(0);
 	while (tolower(key = getch()) != 'x') {
 		player_move_camera(&player, cam);
