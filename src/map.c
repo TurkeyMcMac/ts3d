@@ -158,7 +158,9 @@ static int parse_ent_start(struct map_ent_start *start, struct loader *ldr,
 		goto error_kind;
 	}
 	start->team = TEAM_UNALIGNED;
-	if ((got = json_map_get(root, "team", JN_STRING))) {
+	if (start->type->team_override != TEAM_INVALID) {
+		start->team = start->type->team_override;
+	} else if ((got = json_map_get(root, "team", JN_STRING))) {
 		enum team team = team_from_str(got->str);
 		if (team == TEAM_INVALID) {
 			logger_printf(loader_logger(ldr), LOGGER_WARNING,

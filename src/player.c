@@ -5,8 +5,6 @@
 void player_init(struct player *player, struct map *map)
 {
 	player->start = &map->player;
-	enum team type_team = player->start->type->team_override;
-	if (type_team != TEAM_INVALID) player->start->team = type_team;
 	player->body.pos = player->start->pos;
 	player->body.radius = player->start->type->width / 2;
 	player->body.health = player->start->type->health;
