@@ -136,9 +136,13 @@ static void move_ents(struct ents *ents, struct map *map, struct player *player)
 static void hit_ents(struct ents *ents)
 {
 	ENTS_FOR_EACH_PAIR(ents, ea, eb) {
-		if (teams_can_collide(ents_team(ents, ea), ents_team(ents, eb)))
-			bodies_collide(ents_body(ents, ea),
-				ents_body(ents, eb));
+		enum team ta = ents_team(ents, ea), tb = ents_team(ents, eb);
+		if (teams_can_collide(ta, tb)) {
+			if (bodies_collide(ents_body(ents, ea),
+				ents_body(ents, eb))
+			 && (ta == TEAM_ALLY || tb == TEAM_ALLY))
+				beep();
+		}
 	}
 }
 
