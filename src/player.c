@@ -68,8 +68,8 @@ bool player_try_shoot(struct player *player, struct ents *ents)
 	ent_id bullet = ents_add(ents, player->start->type->bullet, TEAM_ALLY,
 		&player->body.pos);
 	d3d_vec_s *bvel = ents_vel(ents, bullet);
-	bvel->x = 2 * player->start->type->speed * cos(player->facing);
-	bvel->y = 2 * player->start->type->speed * sin(player->facing);
+	bvel->x = player->start->type->bullet->speed * cos(player->facing);
+	bvel->y = player->start->type->bullet->speed * sin(player->facing);
 	return true;
 }
 
