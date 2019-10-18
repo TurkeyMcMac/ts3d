@@ -80,6 +80,8 @@ void player_collide(struct player *player, struct ents *ents)
 		if (teams_can_collide(player->start->team, ents_team(ents, e)))
 			bodies_collide(&player->body, ents_body(ents, e));
 	}
+	if (player->body.health > player->start->type->health)
+		player->body.health = player->start->type->health;
 }
 
 void player_move_camera(struct player *player, d3d_camera *cam)
