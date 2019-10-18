@@ -2,6 +2,7 @@
 #define BODY_H_
 
 #include "d3d.h"
+#include <stdbool.h>
 
 // A physical representation of an entity.
 struct body {
@@ -16,6 +17,7 @@ struct body {
 };
 
 // Collide two bodies. If they are touching, each will damage the other.
-void bodies_collide(struct body *a, struct body *b);
+// Returned is whether a collision did occur.
+bool bodies_collide(struct body *a, struct body *b);
 
 #endif /* BODY_H_ */
