@@ -15,10 +15,11 @@ void meter_draw(const struct meter *meter, double fraction)
 	} else {
 		for (; meter->label[i]; ++i) {
 			mvaddch(meter->y, meter->x + i,
-				A_REVERSE ^ meter->style | meter->label[i]);
+				(A_REVERSE ^ meter->style) | meter->label[i]);
 		}
 	}
 	for (; i < meter->width; ++i) {
-		mvaddch(meter->y, meter->x + i, A_REVERSE ^ meter->style | ' ');
+		mvaddch(meter->y, meter->x + i,
+			(A_REVERSE ^ meter->style) | ' ');
 	}
 }
