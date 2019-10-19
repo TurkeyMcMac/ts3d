@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
 	curs_set(0);
 	noecho();
 	timeout(0);
+	keypad(stdscr, TRUE);
 	while (tolower(key = getch()) != 'x') {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
