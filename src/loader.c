@@ -8,6 +8,7 @@
 
 void loader_init(struct loader *ldr, const char *root)
 {
+	ldr->menu_file = mid_cat(root, '/', "menu.json");
 	ldr->txtrs_dir = mid_cat(root, '/', "textures");
 	table_init(&ldr->txtrs, 16);
 	ldr->ents_dir = mid_cat(root, '/', "ents");
@@ -79,6 +80,11 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 	return ldr->empty_txtr;
 }
 
+FILE *loader_menu_file(struct loader *ldr)
+{
+	return fopen(ldr->menu_file, "r");
+}
+
 static int free_txtrs_callback(const char *key, void **val)
 {
 	free((char *)key);
@@ -116,6 +122,7 @@ struct logger *loader_logger(struct loader *ldr)
 
 void loader_free(struct loader *ldr)
 {
+	free(ldr->menu_file);
 	d3d_free_texture(ldr->empty_txtr);
 	logger_free(&ldr->log);
 	table_each(&ldr->txtrs, free_txtrs_callback);
