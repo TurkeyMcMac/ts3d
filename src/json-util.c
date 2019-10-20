@@ -216,7 +216,7 @@ int parse_json_tree(const char *name, FILE *file, struct logger *log,
 	parse_node(&rdr, root, &key);
 	json_free(&rdr);
 	fclose(file);
-	return 0;
+	return root->kind == JN_ERROR ? -1 : 0;
 }
 
 void free_json_tree(struct json_node *nd)
