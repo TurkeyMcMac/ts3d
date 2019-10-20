@@ -66,13 +66,6 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 	} else {
 		item->kind = ITEM_INERT;
 	}
-	/*	ITEM_INERT,
-	ITEM_LINKS,
-	ITEM_TEXT,
-	ITEM_LEVEL,
-	ITEM_QUIT
-
-	 * */
 	item->place = 0;
 	item->parent = parent;
 	return 0;
