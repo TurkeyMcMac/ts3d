@@ -8,7 +8,7 @@
 
 static bool has_items(const struct menu_item *item)
 {
-	return item->items && item->n_items >= 0;
+	return item->items && item->n_items > 0;
 }
 
 static void destroy_item(struct menu_item *item)
