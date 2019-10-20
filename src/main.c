@@ -5,6 +5,7 @@
 #include "json-util.h"
 #include "map.h"
 #include "meter.h"
+#include "menu.h"
 #include "ent.h"
 #include "pixel.h"
 #include "ticker.h"
@@ -219,10 +220,75 @@ int main(int argc, char *argv[])
 	int translation = '\0';
 	int turn_duration = 0;
 	int key;
+	struct menu menu;
 	curs_set(0);
 	noecho();
-	timeout(0);
 	keypad(stdscr, TRUE);
+	if (menu_init(&menu, "data", stdscr, loader_logger(&ldr))) {
+		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
+			"Failed to load menu\n");
+		exit(EXIT_FAILURE);
+	}
+	menu_set_message(&menu, "Arrow keys to navigate");
+	menu_draw(&menu);
+	while ((key = getch()) != 'x') {
+		const char *map_name;
+		menu_clear_message(&menu);
+		switch (key) {
+		case 'd':
+		case '\n':
+		case KEY_ENTER:
+		case KEY_RIGHT:
+			switch (menu_enter(&menu, &map_name)) {
+			case ACTION_BLOCKED:
+				beep();
+				break;
+			case ACTION_WENT:
+				break;
+			case ACTION_MAP:
+				menu_set_message(&menu, map_name);
+				break;
+			case ACTION_QUIT:
+				goto end;
+			}
+			break;
+		case 'a':
+		case '\033':
+		case KEY_LEFT:
+			if (!menu_escape(&menu)) beep();
+			break;
+		case 'w':
+		case KEY_UP:
+		case KEY_BACKSPACE:
+		case KEY_SR:
+			if (!menu_scroll(&menu, -1)) beep();
+			break;
+		case 's':
+		case ' ':
+		case KEY_DOWN:
+		case KEY_SF:
+			if (!menu_scroll(&menu, 1)) beep();
+			break;
+		case 'g':
+			menu_scroll(&menu, -999);
+			break;
+		case 'G':
+			menu_scroll(&menu, 999);
+			break;
+		default:
+			if (isdigit(key)) {
+				int to = key - '0' - 1;
+				menu_scroll(&menu, -999);
+				if (menu_scroll(&menu, to) != to) beep();
+			}
+			break;
+		}
+		menu_draw(&menu);
+	}
+end:
+	menu_destroy(&menu);
+	return 0;
+	timeout(0);
 	while (tolower(key = getch()) != 'x') {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
