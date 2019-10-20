@@ -6,13 +6,21 @@
 #include "read-lines.h"
 #include "xalloc.h"
 
+static bool has_items(const struct menu_item *item)
+{
+	return item->items && item->n_items >= 0;
+}
+
 static void destroy_item(struct menu_item *item)
 {
-	for (size_t i = 0; i < item->n_items; ++i) {
-		destroy_item(&item->items[i]);
+	if (has_items(item)) {
+		for (size_t i = 0; i < item->n_items; ++i) {
+			destroy_item(&item->items[i]);
+		}
 	}
 	free(item->items);
 	free(item->title);
+	free(item->data_src);
 }
 
 static int construct(struct menu_item *item, struct menu_item *parent,
@@ -32,6 +40,8 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 			"Menu item has no or invalid \"title\" attribute\n");
 		goto error_title;
 	}
+	item->data_src = NULL;
+	item->items = NULL;
 	if ((got = json_map_get(json, "items", JN_LIST))) {
 		item->kind = ITEM_LINKS;
 		struct json_node_data_list *list = &got->list;
@@ -129,8 +139,7 @@ static void enter(struct menu *menu, struct menu_item *into)
 enum menu_action menu_enter(struct menu *menu, const char **mapp)
 {
 	struct menu_item *current = menu->current;
-	if (current->n_items <= 0 || current->kind == ITEM_TEXT)
-		return ACTION_BLOCKED;
+	if (!has_items(current)) return ACTION_BLOCKED;
 	struct menu_item *into = &current->items[current->place];
 	switch (into->kind) {
 		FILE *txtfile;
@@ -226,4 +235,15 @@ void menu_set_message(struct menu *menu, const char *msg)
 void menu_clear_message(struct menu *menu)
 {
 	menu->msg = "";
+}
+
+void menu_destroy(struct menu *menu)
+{
+	destroy_item(menu->root);
+	free(menu->root);
+	if (menu->lines) {
+		for (size_t i = 0; i < menu->n_lines; ++i) {
+			free(menu->lines[i].text);
+		}
+	}
 }

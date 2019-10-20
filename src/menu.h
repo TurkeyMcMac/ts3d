@@ -54,4 +54,6 @@ void menu_set_message(struct menu *menu, const char *msg);
 
 void menu_clear_message(struct menu *menu);
 
+void menu_destroy(struct menu *menu);
+
 #endif /* MENU_H_ */
