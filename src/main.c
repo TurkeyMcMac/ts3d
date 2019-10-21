@@ -4,6 +4,7 @@
 #include "d3d.h"
 #include "json-util.h"
 #include "map.h"
+#include "menu.h"
 #include "meter.h"
 #include "ent.h"
 #include "pixel.h"
@@ -35,12 +36,12 @@ static void set_up_colors(void)
 	}
 }
 
-static void display_frame(d3d_camera *cam)
+static void display_frame(d3d_camera *cam, WINDOW *win)
 {
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			mvaddch(y, x, pixel_style(pix) | '#');
+			mvwaddch(win, y, x, pixel_style(pix) | '#');
 		}
 	}
 }
@@ -172,24 +173,19 @@ static void shoot_bullets(struct ents *ents)
 	}
 }
 
-int main(int argc, char *argv[])
+static int play_level(const char *root_dir, const char *map_name,
+	struct ticker *timer)
 {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s map\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	d3d_malloc = xmalloc;
-	d3d_realloc = xrealloc;
+	int ret = 0;
 	struct loader ldr;
-	loader_init(&ldr, "data");
-	struct map *map = load_map(&ldr, argv[1]);
+	loader_init(&ldr, root_dir);
+	struct map *map = load_map(&ldr, map_name);
 	if (!map) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
-			"Failed to load map \"%s\"\n", argv[1]);
+			"Failed to load map \"%s\"\n", map_name);
 		loader_free(&ldr);
-		exit(EXIT_FAILURE);
+		return -1;
 	}
-	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
 	init_entities(&ents, map);
@@ -213,21 +209,17 @@ int main(int argc, char *argv[])
 	d3d_camera *cam = make_camera();
 	struct player player;
 	player_init(&player, map);
-	set_up_colors();
-	struct ticker timer;
-	ticker_init(&timer, 30);
-	int translation = '\0';
-	int turn_duration = 0;
-	int key;
-	curs_set(0);
-	noecho();
+	touchwin(stdscr);
 	timeout(0);
 	keypad(stdscr, TRUE);
+	int translation = '\0';
+	int turn_duration = 0;
+ 	int key;
 	while (tolower(key = getch()) != 'x') {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
-		display_frame(cam);
+		display_frame(cam, stdscr);
 		meter_draw(&health_meter, player_health_fraction(&player));
 		meter_draw(&reload_meter, player_reload_fraction(&player));
 		if (player_is_dead(&player)) {
@@ -236,7 +228,6 @@ int main(int argc, char *argv[])
 			move_player(&player,
 				&translation, &turn_duration, key);
 		}
-		refresh();
 		move_ents(&ents, map, &player);
 		player_collide(&player, &ents);
 		hit_ents(&ents);
@@ -246,9 +237,152 @@ int main(int argc, char *argv[])
 		player_tick(&player);
 		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
-		tick(&timer);
+		tick(timer);
 	}
+	refresh();
 	d3d_free_camera(cam);
-	ents_destroy(&ents);
+	loader_free(&ldr);
+	return 0;
+}
+
+static void title_cam_pos(d3d_camera *cam, const d3d_board *board)
+{
+	d3d_vec_s *pos = d3d_camera_position(cam);
+	double theta = *d3d_camera_facing(cam) + 1.0;
+	pos->x = cos(M_PI * cos(theta)) + d3d_board_width(board) / 2.0;
+	pos->y = sin(M_PI * sin(theta)) + d3d_board_height(board) / 2.0;
+}
+
+static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
+	struct loader *ldr)
+{
+	struct map *map = load_map(ldr, "title-screen");
+	if (!map) return -1;
+	int width, height;
+	getmaxyx(win, height, width);
+	*cam = d3d_new_camera(2.0, 3.0 * height / width, width, height);
+	*board = map->board;
+	title_cam_pos(*cam, *board);
+	return 0;
+}
+
+static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
+{
+	d3d_draw_walls(cam, board);
+	display_frame(cam, win);
+	wrefresh(win);
+	title_cam_pos(cam, board);
+	*d3d_camera_facing(cam) -= 0.01;
+}
+
+int main(int argc, char *argv[])
+{
+	const char *data_dir = "data";
+	initscr();
+	atexit(end_win);
+	set_up_colors();
+	struct loader ldr;
+	loader_init(&ldr, data_dir);
+	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
+	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
+	struct menu menu;
+	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
+		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
+			"Failed to load menu\n");
+		exit(EXIT_FAILURE);
+	}
+	d3d_malloc = xmalloc;
+	d3d_realloc = xrealloc;
+	d3d_camera *title_cam;
+	d3d_board *title_board;
+	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {
+		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
+			"Failed to load title screensaver\n");
+		exit(EXIT_FAILURE);
+	}
+	loader_print_summary(&ldr);
+	curs_set(0);
+	noecho();
+	wtimeout(menuwin, 0);
+	keypad(menuwin, TRUE);
+	struct ticker timer;
+	ticker_init(&timer, 30);
+	int key;
+	for (;;) {
+		const char *map_name;
+		tick_title(title_cam, title_board, titlewin);
+		menu_draw(&menu);
+		wrefresh(menuwin);
+		menu_draw(&menu);
+		tick(&timer);
+		switch (key = wgetch(menuwin)) {
+		case 'd':
+		case '\n':
+		case KEY_ENTER:
+		case KEY_RIGHT:
+			switch (menu_enter(&menu, &map_name)) {
+			case ACTION_BLOCKED:
+				beep();
+				break;
+			case ACTION_WENT:
+				menu_clear_message(&menu);
+				break;
+			case ACTION_MAP:
+				if (play_level(data_dir, map_name, &timer)) {
+					menu_set_message(&menu,
+						"Map not found");
+				} else {
+					touchwin(menuwin);
+					touchwin(titlewin);
+				}
+				break;
+			case ACTION_QUIT:
+				goto end;
+			}
+			break;
+		case 'a':
+		case '\033':
+		case KEY_LEFT:
+			if (menu_escape(&menu)) {
+				menu_clear_message(&menu);
+			} else {
+				beep();
+			}
+			break;
+		case 'w':
+		case KEY_UP:
+		case KEY_BACKSPACE:
+		case KEY_SR:
+			if (!menu_scroll(&menu, -1)) beep();
+			break;
+		case 's':
+		case ' ':
+		case KEY_DOWN:
+		case KEY_SF:
+			if (!menu_scroll(&menu, 1)) beep();
+			break;
+		case 'g':
+			menu_scroll(&menu, -999);
+			break;
+		case 'G':
+			menu_scroll(&menu, 999);
+			break;
+		case KEY_HOME:
+			while (menu_escape(&menu)) {
+				menu_clear_message(&menu);
+			}
+			break;
+		default:
+			if (isdigit(key)) {
+				int to = key - '0' - 1;
+				menu_scroll(&menu, -999);
+				if (menu_scroll(&menu, to) != to) beep();
+				break;
+			}
+			break;
+		}
+	}
+end:
+	d3d_free_camera(title_cam);
 	loader_free(&ldr);
 }
