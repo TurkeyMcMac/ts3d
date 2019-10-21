@@ -208,7 +208,7 @@ static int play_level(const char *root_dir, const char *map_name,
 	d3d_camera *cam = make_camera();
 	struct player player;
 	player_init(&player, map);
-	touchwin(stdscr);
+	redrawwin(stdscr);
 	timeout(0);
 	keypad(stdscr, TRUE);
 	int translation = '\0';
