@@ -238,5 +238,6 @@ void menu_destroy(struct menu *menu)
 		for (size_t i = 0; i < menu->n_lines; ++i) {
 			free(menu->lines[i].text);
 		}
+		free(menu->lines);
 	}
 }
