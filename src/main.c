@@ -176,7 +176,6 @@ static void shoot_bullets(struct ents *ents)
 static int play_level(const char *root_dir, const char *map_name,
 	struct ticker *timer)
 {
-	int ret = 0;
 	struct loader ldr;
 	loader_init(&ldr, root_dir);
 	struct map *map = load_map(&ldr, map_name);
@@ -275,7 +274,7 @@ static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 	*d3d_camera_facing(cam) -= 0.01;
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	const char *data_dir = "data";
 	initscr();
