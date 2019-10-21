@@ -5,6 +5,15 @@
     {"title": "Columns",
      "map": "columns"}
    ]},
+  {"title": "Help",
+   "items": [
+    {"title": "Overview",
+     "text": "help/Overview"},
+    {"title": "Controls",
+     "text": "help/Controls"},
+    {"title": "Gameplay",
+     "text": "help/Gameplay"}
+   ]},
   {"title": "Quit",
    "quit": true}
  ]}
