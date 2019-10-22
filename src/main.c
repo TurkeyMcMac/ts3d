@@ -259,7 +259,13 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 	if (!map) return -1;
 	int width, height;
 	getmaxyx(win, height, width);
-	*cam = d3d_new_camera(2.0, 3.0 * height / width, width, height);
+	if (width <= 0) width = 1;
+	if (height <= 0) height = 1;
+	if (width >= height) {
+		*cam = d3d_new_camera(2.0, 3.0 * height / width, width, height);
+	} else {
+		*cam = d3d_new_camera(2.0 * width / height, 3.0, width, height);
+	}
 	*board = map->board;
 	title_cam_pos(*cam, *board);
 	return 0;
