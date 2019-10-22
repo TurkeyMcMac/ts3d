@@ -277,7 +277,7 @@ static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 	display_frame(cam, win);
 	wrefresh(win);
 	title_cam_pos(cam, board);
-	*d3d_camera_facing(cam) -= 0.01;
+	*d3d_camera_facing(cam) -= 0.003;
 }
 
 int main(void)
