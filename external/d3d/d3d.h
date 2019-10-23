@@ -15,12 +15,6 @@
  *    before calling other functions. You NEED NOT compile the client code as
  *    well with this option, although you may need to change your client code
  *    depending on whether this option is set.
- *  - D3D_DONT_OPTIMIZE_SAME_SPRITES: Define this to disable optimization when
- *    the same sprites are passed the d3d_draw_sprites twice in a row. In the
- *    default case, when this happens, sprites are assumed not to move much
- *    between frames, which can hurt performance if that is seldom true. You
- *    NEED NOT compile the client code with this option, since the interface is
- *    the same either way.
  *  - D3D_USE_INTERNAL_STRUCTS: Define this to have access to unstable internal
  *    structure layouts of opaque types used by the library. You NEED NOT
  *    compile d3d.c and your code with the same setting of this option.
@@ -197,6 +191,10 @@ void d3d_draw_sprites(
  * probably want d3d_draw_sprites. */
 void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp);
 
+/* This is the same as d3d_draw_sprite above, but it uses a distance  already
+ * calculated. This must be the distance from the camera to the sprite. */
+void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist);
+
 /* Complete structure definitions. */
 #ifdef D3D_USE_INTERNAL_STRUCTS
 
@@ -239,11 +237,6 @@ struct d3d_camera_s {
 	struct d3d_sprite_order *order;
 	// The capacity (allocation size) of the field above.
 	size_t order_buf_cap;
-#ifndef D3D_DONT_OPTIMIZE_SAME_SPRITES
-	// The last sprite list passed to d3d_draw_sprites. If this is the same
-	// the next time, some optimizations are enabled.
-	const d3d_sprite_s *last_sprites;
-#endif
 	// For each row of the screen, the tangent of the angle of that row
 	// relative to the center of the screen, in radians
 	// For example, the 0th item is tan(fov.y / 2)
