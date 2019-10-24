@@ -5,10 +5,10 @@
 #include "json-util.h"
 #include "map.h"
 #include "menu.h"
-#include "meter.h"
 #include "ent.h"
 #include "pixel.h"
 #include "ticker.h"
+#include "ui-util.h"
 #include "util.h"
 #include "xalloc.h"
 #include <ctype.h>

@@ -1,5 +1,5 @@
-#ifndef METER_H_
-#define METER_H_
+#ifndef UI_UTIL_H_
+#define UI_UTIL_H_
 
 #include <curses.h>
 
@@ -22,4 +22,4 @@ struct meter {
 // Draw the meter.
 void meter_draw(const struct meter *meter);
 
-#endif /* METER_H_ */
+#endif /* UI_UTIL_H_ */

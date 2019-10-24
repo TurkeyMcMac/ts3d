@@ -1,4 +1,4 @@
-#include "meter.h"
+#include "ui-util.h"
 
 void meter_draw(const struct meter *meter)
 {
