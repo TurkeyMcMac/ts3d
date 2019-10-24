@@ -335,7 +335,7 @@ int main(void)
 			case ACTION_MAP:
 				if (play_level(data_dir, map_name, &timer))
 					menu_set_message(&menu,
-						"Map not found");
+						"Error loading map");
 				redrawwin(menuwin);
 				redrawwin(titlewin);
 				break;
