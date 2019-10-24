@@ -5,6 +5,24 @@
 #  - view <file>: Print the colorized texture from the given file.
 #  - table: Print out characters next to the colors they produce.
 
+sub print_help {
+    my ($file) = @_;
+    print $file <<HELP;
+TS3D texture utilities.
+Usage: $0 <sub-command> [arguments]
+Sub-commands:
+  help        Print this help.
+  table       Print a table of characters corresponding to texture pixel colors.
+  view <file> Print a colorized version of the texture file given.
+HELP
+}
+
+sub error {
+    my ($msg) = @_;
+    say STDERR "$msg";
+    exit 1;
+}
+
 sub colorize_pix {
     my ($pix) = @_;
     my $code = ord($pix) - ord(' ') - 1;
@@ -19,8 +37,11 @@ sub colorize_pix {
 
 my $subcmd = @ARGV[0];
 if ( $subcmd eq 'view' ) {
+    if ($#ARGV < 1) {
+        &error("Usage: $0 view <texture-file>");
+    }
     open( my $file, "<", @ARGV[1] )
-      or die "Can't open file @ARGV[1]";
+        or &error("$0: Can't open file @ARGV[1]");
     while ( defined( my $pix = getc($file) ) ) {
         print &colorize_pix($pix);
     }
@@ -35,6 +56,11 @@ elsif ( $subcmd eq 'table' ) {
         print "\n";
     }
 }
+elsif ( $subcmd eq 'help' ) {
+    &print_help(STDOUT);
+}
 else {
-    die "Unknown sub-command $subcmd";
+    say STDERR "$0: Invalid sub-command";
+    &print_help(STDERR);
+    exit 1;
 }
