@@ -333,13 +333,11 @@ int main(void)
 				menu_clear_message(&menu);
 				break;
 			case ACTION_MAP:
-				if (play_level(data_dir, map_name, &timer)) {
+				if (play_level(data_dir, map_name, &timer))
 					menu_set_message(&menu,
 						"Map not found");
-				} else {
-					touchwin(menuwin);
-					touchwin(titlewin);
-				}
+				redrawwin(menuwin);
+				redrawwin(titlewin);
 				break;
 			case ACTION_QUIT:
 				goto end;
