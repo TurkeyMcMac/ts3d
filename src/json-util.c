@@ -148,7 +148,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 				nd->kind = JN_ERROR;
 				return;
 			}
-			if (table_add(&nd->d.map, key, entry)) {
+			if (key && table_add(&nd->d.map, key, entry)) {
 				// With duplicate keys, the first is kept
 				free_json_tree(entry);
 				free(entry);
