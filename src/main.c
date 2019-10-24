@@ -197,6 +197,7 @@ static int play_level(const char *root_dir, const char *map_name,
 		.x = 0,
 		.y = LINES - 1,
 		.width = COLS / 2,
+		.win = stdscr,
 	};
 	struct meter reload_meter = {
 		.label = "RELOAD",
@@ -204,6 +205,7 @@ static int play_level(const char *root_dir, const char *map_name,
 		.x = health_meter.width,
 		.y = LINES - 1,
 		.width = COLS - health_meter.width,
+		.win = stdscr,
 	};
 	d3d_camera *cam = make_camera();
 	struct player player;
@@ -219,8 +221,10 @@ static int play_level(const char *root_dir, const char *map_name,
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
 		display_frame(cam, stdscr);
-		meter_draw(&health_meter, player_health_fraction(&player));
-		meter_draw(&reload_meter, player_reload_fraction(&player));
+		health_meter.fraction = player_health_fraction(&player);
+		meter_draw(&health_meter);
+		reload_meter.fraction = player_reload_fraction(&player);
+		meter_draw(&reload_meter);
 		if (player_is_dead(&player)) {
 			mvaddstr(LINES / 2, COLS / 2 - 2, "DEAD");
 		} else {
