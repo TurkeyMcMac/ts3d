@@ -193,14 +193,14 @@ static int play_level(const char *root_dir, const char *map_name,
 	atexit(end_win);
 	struct meter health_meter = {
 		.label = "HEALTH",
-		.style = A_BOLD | pixel_style(pixel(PC_BLACK, PC_GREEN)),
+		.style = pixel_style(pixel(PC_BLACK, PC_GREEN)),
 		.x = 0,
 		.y = LINES - 1,
 		.width = COLS / 2,
 	};
 	struct meter reload_meter = {
 		.label = "RELOAD",
-		.style = A_BOLD | pixel_style(pixel(PC_BLACK, PC_RED)),
+		.style = pixel_style(pixel(PC_BLACK, PC_RED)),
 		.x = health_meter.width,
 		.y = LINES - 1,
 		.width = COLS - health_meter.width,
