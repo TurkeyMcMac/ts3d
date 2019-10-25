@@ -235,6 +235,17 @@ static int play_level(const char *root_dir, const char *map_name,
 			if (lowkey == 'y') goto quit;
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
+		} else if (lowkey == 'p') {
+			WINDOW *pause_popup = popup_window(
+				"Game paused.\n"
+				"Press P to resume.");
+			touchwin(pause_popup);
+			wrefresh(pause_popup);
+			delwin(pause_popup);
+			int p;
+			while ((p = tolower(getch())) != 'p') {
+				tick(timer);
+			}
 		} else if (lowkey == 'x' || key == ESC) {
 			WINDOW *quit_popup = popup_window(
 				"Are you sure you want to quit?\n"
