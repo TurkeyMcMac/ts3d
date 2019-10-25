@@ -20,6 +20,8 @@ struct ent {
 	struct ent_type *type;
 	// The entity's team.
 	enum team team;
+	// The worthiness of killing the enemy. See ents_worth.
+	int worth;
 	// The remaining lifetime of this entity in ticks.
 	long lifetime;
 	// The frame index into the array help by the type.
@@ -172,6 +174,7 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->type = type;
 	ent->team = type->team_override == TEAM_INVALID ?
 		team : type->team_override;
+	ent->worth = 0;
 	ent->lifetime = type->lifetime;
 	ent->frame = type->random_start_frame ? rand() % type->n_frames : 0;
 	ent->frame_duration = type->frames[0].duration;
@@ -284,6 +287,11 @@ bool ents_is_dead(struct ents *ents, ent_id eid)
 void ents_kill(struct ents *ents, ent_id eid)
 {
 	ents->ents[eid].body.health = 0;
+}
+
+int *ents_worth(struct ents *ents, ent_id eid)
+{
+	return &ents->ents[eid].worth;
 }
 
 void ents_clean_up_dead(struct ents *ents)

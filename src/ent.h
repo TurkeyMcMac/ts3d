@@ -134,6 +134,13 @@ enum team ents_team(struct ents *ents, ent_id eid);
 // Kill an entity so that it will be removed when ent_clean_up_dead is called.
 void ents_kill(struct ents *ents, ent_id eid);
 
+// Get a pointer to the worth of the enemy. Valid until ents_add or any function
+// that modifies all entities is called. The worth is higher if it is more
+// important that the enemy be killed. The scale is up to the user. The only two
+// worths currently used are 1 if the entity must die for the level to be done
+// or 0 otherwise.
+int *ents_worth(struct ents *ents, ent_id eid);
+
 // Remove memory for dead entities. May shuffle entity IDs.
 void ents_clean_up_dead(struct ents *ents);
 

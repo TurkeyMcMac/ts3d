@@ -51,8 +51,9 @@ static void init_entities(struct ents *ents, struct map *map)
 {
 	ents_init(ents, map->n_ents * 2);
 	for (size_t i = 0; i < map->n_ents; ++i) {
-		ents_add(ents, map->ents[i].type, map->ents[i].team,
+		ent_id e = ents_add(ents, map->ents[i].type, map->ents[i].team,
 			&map->ents[i].pos);
+		*ents_worth(ents, e) = map->ents[i].team == TEAM_ENEMY;
 	}
 }
 
@@ -174,6 +175,15 @@ static void shoot_bullets(struct ents *ents)
 	}
 }
 
+static int get_remaining(struct ents *ents)
+{
+	int remaining = 0;
+	ENTS_FOR_EACH(ents, e) {
+		remaining += *ents_worth(ents, e);
+	}
+	return remaining;
+}
+
 static bool prompt_quit_popup(struct ticker *timer)
 {
 	WINDOW *quit_popup = popup_window(
@@ -269,10 +279,20 @@ static int play_level(const char *root_dir, const char *map_name,
 		meter_draw(&health_meter);
 		reload_meter.fraction = player_reload_fraction(&player);
 		meter_draw(&reload_meter);
+		int remaining = get_remaining(&ents);
+		attron(A_BOLD);
+		if (remaining > 0) {
+			mvprintw(0, 0, "TARGETS LEFT: %d", remaining);
+		} else {
+			mvaddstr(0, 0, "YOU WIN! Press Y to return to menu.");
+		}
+		attroff(A_BOLD);
 		int key = getch();
 		int lowkey = tolower(key);
 		refresh();
-		if (player_is_dead(&player)) {
+		if (remaining == 0 && lowkey == 'y') {
+			goto quit;
+		} else if (player_is_dead(&player) && remaining > 0) {
 			if (lowkey == 'y') goto quit;
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
