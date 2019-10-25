@@ -3,7 +3,9 @@
   {"title": "Levels",
    "items": [
     {"title": "Columns",
-     "map": "columns"}
+     "map": "columns"},
+    {"title": "Halls",
+     "map": "halls"}
    ]},
   {"title": "Help",
    "items": [
