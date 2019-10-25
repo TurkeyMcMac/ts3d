@@ -400,6 +400,8 @@ int main(void)
 				menu_clear_message(&menu);
 			}
 			break;
+		case 'x':
+			goto end;
 		default:
 			if (isdigit(key)) {
 				int to = key - '0' - 1;
