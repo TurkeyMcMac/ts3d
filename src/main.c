@@ -208,9 +208,6 @@ static int play_level(const char *root_dir, const char *map_name,
 		.width = COLS - health_meter.width,
 		.win = stdscr,
 	};
-	WINDOW *quit_popup = popup_window(
-		"Are you sure you want to quit?\n"
-		"Press Y to confirm or N to cancel.");
 	WINDOW *dead_popup = popup_window(
 		"You died.\n"
 		"Press Y to return to the menu.");
@@ -239,8 +236,12 @@ static int play_level(const char *root_dir, const char *map_name,
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
 		} else if (lowkey == 'x' || key == ESC) {
+			WINDOW *quit_popup = popup_window(
+				"Are you sure you want to quit?\n"
+				"Press Y to confirm or N to cancel.");
 			touchwin(quit_popup);
 			wrefresh(quit_popup);
+			delwin(quit_popup);
 			int yn;
 			while ((yn = tolower(getch())) != 'n') {
 				if (yn == 'y') goto quit;
@@ -264,7 +265,6 @@ static int play_level(const char *root_dir, const char *map_name,
 quit:
 	refresh();
 	delwin(dead_popup);
-	delwin(quit_popup);
 	d3d_free_camera(cam);
 	loader_free(&ldr);
 	return 0;
