@@ -138,6 +138,7 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 		FILE *txtfile;
 		char *fname;
 		size_t lines;
+		int maxy, maxx;
 	case ITEM_INERT:
 		return ACTION_BLOCKED;
 	case ITEM_LINKS:
@@ -152,7 +153,9 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 			return ACTION_BLOCKED;
 		}
 		free(fname);
-		lines = (size_t)getmaxy(menu->win) - 2;
+		getmaxyx(menu->win, maxy, maxx);
+		lines = (size_t)maxy - 2;
+		maxy = maxx; // Suppress unused warning.
 		if (menu->n_lines > lines) {
 			into->n_items = menu->n_lines - lines;
 		} else {
@@ -192,6 +195,7 @@ void menu_draw(struct menu *menu)
 	mvwaddstr(menu->win, 0, 0, current->title);
 	wattroff(menu->win, A_UNDERLINE);
 	switch (current->kind) {
+		int maxy, maxx;
 	case ITEM_LINKS:
 		for (i = 0; i < (int)current->n_items; ++i) {
 			int n = i + 1;
@@ -203,13 +207,15 @@ void menu_draw(struct menu *menu)
 		}
 		break;
 	case ITEM_TEXT:
-		for (int maxy = getmaxy(menu->win), l = current->place;
+		getmaxyx(menu->win, maxy, maxx);
+		for (int l = current->place;
 		     l < (int)menu->n_lines && ++i < maxy; ++l) {
 			struct string *line = &menu->lines[l];
 			wmove(menu->win, i, 0);
 			waddnstr(menu->win, line->text, line->len);
 			wclrtoeol(menu->win);
 		}
+		maxy = maxx; // Suppress unused warning.
 		wclrtobot(menu->win);
 		break;
 	default:
