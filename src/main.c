@@ -174,6 +174,47 @@ static void shoot_bullets(struct ents *ents)
 	}
 }
 
+static bool prompt_quit_popup(struct ticker *timer)
+{
+	WINDOW *quit_popup = popup_window(
+		"Are you sure you want to quit?\n"
+		"Press Y to confirm or N to cancel.");
+	touchwin(quit_popup);
+	wrefresh(quit_popup);
+	delwin(quit_popup);
+	int key;
+	while ((key = tolower(getch())) != 'n') {
+		if (key == 'y') return true;
+		tick(timer);
+	}
+	return false;
+}
+
+static bool do_pause_popup(struct ticker *timer)
+{
+	WINDOW *pause_popup = popup_window("Game paused.\nPress P to resume.");
+	touchwin(pause_popup);
+	wrefresh(pause_popup);
+	int key;
+	while ((key = tolower(getch())) != 'p') {
+		if (key == 'x' || key == ESC) {
+			touchwin(stdscr);
+			refresh();
+			if (prompt_quit_popup(timer)) {
+				delwin(pause_popup);
+				return true;
+			}
+			touchwin(stdscr);
+			refresh();
+			touchwin(pause_popup);
+			wrefresh(pause_popup);
+		}
+		tick(timer);
+	}
+	delwin(pause_popup);
+	return false;
+}
+
 static int play_level(const char *root_dir, const char *map_name,
 	struct ticker *timer)
 {
@@ -236,28 +277,9 @@ static int play_level(const char *root_dir, const char *map_name,
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
 		} else if (lowkey == 'p') {
-			WINDOW *pause_popup = popup_window(
-				"Game paused.\n"
-				"Press P to resume.");
-			touchwin(pause_popup);
-			wrefresh(pause_popup);
-			delwin(pause_popup);
-			int p;
-			while ((p = tolower(getch())) != 'p') {
-				tick(timer);
-			}
+			if (do_pause_popup(timer)) goto quit;
 		} else if (lowkey == 'x' || key == ESC) {
-			WINDOW *quit_popup = popup_window(
-				"Are you sure you want to quit?\n"
-				"Press Y to confirm or N to cancel.");
-			touchwin(quit_popup);
-			wrefresh(quit_popup);
-			delwin(quit_popup);
-			int yn;
-			while ((yn = tolower(getch())) != 'n') {
-				if (yn == 'y') goto quit;
-				tick(timer);
-			}
+			if (prompt_quit_popup(timer)) goto quit;
 		} else {
 			move_player(&player,
 				&translation, &turn_duration, key);
