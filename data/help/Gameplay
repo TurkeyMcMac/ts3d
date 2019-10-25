@@ -17,6 +17,12 @@ your speed,  which I think  makes things
 easier. When your  bullet hits an enemy,
 you may hear a noise as feedback.
 
+As you kill the enemies you need to kill
+to finish the  level, the "TARGETS LEFT"
+at the top left  will decrease. When you
+kill everything,  you will be  told that
+you have completed the level.
+
 If you see a green arrow facing up, that
 is  a  health  boost.  By  running  into
 it, you  can regain some  health. Health
