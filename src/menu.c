@@ -113,9 +113,23 @@ error_fopen:
 	return -1;
 }
 
+static void text_n_items(struct menu *menu, struct menu_item *text)
+{
+	int maxy, maxx;
+	getmaxyx(menu->win, maxy, maxx);
+	size_t lines = (size_t)maxy - 2;
+	maxy = maxx; // Suppress unused warning.
+	if (menu->n_lines > lines) {
+		text->n_items = menu->n_lines - lines;
+	} else {
+		text->n_items = 1;
+	}
+}
+
 int menu_scroll(struct menu *menu, int amount)
 {
 	struct menu_item *current = menu->current;
+	if (current->kind == ITEM_TEXT) text_n_items(menu, current);
 	if (current->n_items <= 0) return 0;
 	int last_place = current->place;
 	current->place =
@@ -137,8 +151,6 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 	switch (into->kind) {
 		FILE *txtfile;
 		char *fname;
-		size_t lines;
-		int maxy, maxx;
 	case ITEM_INERT:
 		return ACTION_BLOCKED;
 	case ITEM_LINKS:
@@ -153,14 +165,7 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 			return ACTION_BLOCKED;
 		}
 		free(fname);
-		getmaxyx(menu->win, maxy, maxx);
-		lines = (size_t)maxy - 2;
-		maxy = maxx; // Suppress unused warning.
-		if (menu->n_lines > lines) {
-			into->n_items = menu->n_lines - lines;
-		} else {
-			into->n_items = 1;
-		}
+		text_n_items(menu, into);
 		enter(menu, into);
 		return ACTION_WENT;
 	case ITEM_LEVEL:
