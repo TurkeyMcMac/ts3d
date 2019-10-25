@@ -207,6 +207,12 @@ static int play_level(const char *root_dir, const char *map_name,
 		.width = COLS - health_meter.width,
 		.win = stdscr,
 	};
+	WINDOW *quit_popup = popup_window(
+		"Are you sure you want to quit?\n"
+		"Press Y to confirm or N to cancel.");
+	WINDOW *dead_popup = popup_window(
+		"You died.\n"
+		"Press Y to return to the menu.");
 	d3d_camera *cam = make_camera();
 	struct player player;
 	player_init(&player, map);
@@ -215,8 +221,7 @@ static int play_level(const char *root_dir, const char *map_name,
 	keypad(stdscr, TRUE);
 	int translation = '\0';
 	int turn_duration = 0;
- 	int key;
-	while (tolower(key = getch()) != 'x') {
+	for (;;) {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
 		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
@@ -225,8 +230,21 @@ static int play_level(const char *root_dir, const char *map_name,
 		meter_draw(&health_meter);
 		reload_meter.fraction = player_reload_fraction(&player);
 		meter_draw(&reload_meter);
+		int key = getch();
+		int lowkey = tolower(key);
+		refresh();
 		if (player_is_dead(&player)) {
-			mvaddstr(LINES / 2, COLS / 2 - 2, "DEAD");
+			if (lowkey == 'y') goto quit;
+			touchwin(dead_popup);
+			wrefresh(dead_popup);
+		} else if (lowkey == 'x') {
+			touchwin(quit_popup);
+			wrefresh(quit_popup);
+			int yn;
+			while ((yn = tolower(getch())) != 'n') {
+				if (yn == 'y') goto quit;
+				tick(timer);
+			}
 		} else {
 			move_player(&player,
 				&translation, &turn_duration, key);
@@ -242,7 +260,10 @@ static int play_level(const char *root_dir, const char *map_name,
 		ents_clean_up_dead(&ents);
 		tick(timer);
 	}
+quit:
 	refresh();
+	delwin(dead_popup);
+	delwin(quit_popup);
 	d3d_free_camera(cam);
 	loader_free(&ldr);
 	return 0;
