@@ -25,6 +25,7 @@
 #define PIXEL_ASPECT 0.625
 #define FOV_X 2.0
 #define TURN_DURATION 5
+#define ESC '\033'
 
 static void set_up_colors(void)
 {
@@ -237,7 +238,7 @@ static int play_level(const char *root_dir, const char *map_name,
 			if (lowkey == 'y') goto quit;
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
-		} else if (lowkey == 'x') {
+		} else if (lowkey == 'x' || key == ESC) {
 			touchwin(quit_popup);
 			wrefresh(quit_popup);
 			int yn;
@@ -369,7 +370,7 @@ int main(void)
 			}
 			break;
 		case 'a':
-		case '\033':
+		case ESC:
 		case KEY_LEFT:
 			if (menu_escape(&menu)) {
 				menu_clear_message(&menu);
