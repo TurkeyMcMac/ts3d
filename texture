@@ -37,11 +37,11 @@ sub colorize_pix {
 
 my $subcmd = @ARGV[0];
 if ( $subcmd eq 'view' ) {
-    if ($#ARGV < 1) {
+    if ( $#ARGV < 1 ) {
         &error("Usage: $0 view <texture-file>");
     }
     open( my $file, "<", @ARGV[1] )
-        or &error("$0: Can't open file @ARGV[1]");
+      or &error("$0: Can't open file @ARGV[1]");
     while ( defined( my $pix = getc($file) ) ) {
         print &colorize_pix($pix);
     }
