@@ -150,10 +150,17 @@ static void hit_ents(struct ents *ents)
 	}
 }
 
-static d3d_camera *make_camera(void)
+static d3d_camera *camera_with_dims(int width, int height)
 {
-	return d3d_new_camera(FOV_X, LINES * FOV_X / COLS / PIXEL_ASPECT,
-		COLS, LINES - 1);
+	if (width <= 0) width = 1;
+	if (height <= 0) height = 1;
+	if (width >= height) {
+		return d3d_new_camera(FOV_X,
+			FOV_X / PIXEL_ASPECT * height / width, width, height);
+	} else {
+		return d3d_new_camera(FOV_X * width / height,
+			FOV_X / PIXEL_ASPECT, width, height);
+	}
 }
 
 static void shoot_bullets(struct ents *ents)
@@ -262,7 +269,7 @@ static int play_level(const char *root_dir, const char *map_name,
 	WINDOW *dead_popup = popup_window(
 		"You died.\n"
 		"Press Y to return to the menu.");
-	d3d_camera *cam = make_camera();
+	d3d_camera *cam = camera_with_dims(COLS, LINES - 1);
 	struct player player;
 	player_init(&player, map);
 	redrawwin(stdscr);
@@ -338,13 +345,7 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 	if (!map) return -1;
 	int width, height;
 	getmaxyx(win, height, width);
-	if (width <= 0) width = 1;
-	if (height <= 0) height = 1;
-	if (width >= height) {
-		*cam = d3d_new_camera(2.0, 3.0 * height / width, width, height);
-	} else {
-		*cam = d3d_new_camera(2.0 * width / height, 3.0, width, height);
-	}
+	*cam = camera_with_dims(width, height);
 	*board = map->board;
 	title_cam_pos(*cam, *board);
 	return 0;
