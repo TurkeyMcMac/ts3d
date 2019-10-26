@@ -114,14 +114,9 @@
    "pos": [9.5, 7.5]
   },
   {
-   "kind": "bat",
+   "kind": "goblin",
    "team": "enemy",
-   "pos": [1.5, 9.5]
-  },
-  {
-   "kind": "bat",
-   "team": "enemy",
-   "pos": [9.5, 9.5]
+   "pos": [6.5, 9.5]
   },
   {
    "kind": "health",
