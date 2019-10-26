@@ -398,7 +398,6 @@ int main(void)
 		tick_title(title_cam, title_board, titlewin);
 		menu_draw(&menu);
 		wrefresh(menuwin);
-		menu_draw(&menu);
 		tick(&timer);
 		switch (key = wgetch(menuwin)) {
 		case 'd':
