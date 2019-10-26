@@ -37,7 +37,7 @@
  },
  "ents": [
   {
-   "kind": "bat",
+   "kind": "goblin",
    "team": "enemy",
    "pos": [2.5, 1.5]
   },
@@ -47,7 +47,7 @@
    "pos": [2.5, 8.5]
   },
   {
-   "kind": "bat",
+   "kind": "goblin",
    "team": "enemy",
    "pos": [1.5, 8.5]
   },

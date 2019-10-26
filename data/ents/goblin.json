@@ -1,0 +1,16 @@
+{
+ "name": "Goblin",
+ "width": 0.3,
+ "height": 0.5,
+ "turn_chance": 0.5,
+ "speed": 0.023,
+ "death_spawn": "escaping-spirit",
+ "health": 5,
+ "damage": 0.05,
+ "random_start_frame": true,
+ "frames": [
+  ["goblin-1", 9],
+  ["goblin-2", 3],
+  ["goblin-3", 9]
+ ]
+}
