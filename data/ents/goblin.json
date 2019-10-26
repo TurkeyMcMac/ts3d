@@ -9,8 +9,9 @@
  "damage": 0.05,
  "random_start_frame": true,
  "frames": [
-  ["goblin-1", 9],
-  ["goblin-2", 3],
-  ["goblin-3", 9]
+  ["goblin-1", 5],
+  ["goblin-2", 2],
+  ["goblin-3", 5],
+  ["goblin-2", 2]
  ]
 }
