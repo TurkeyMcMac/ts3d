@@ -4,7 +4,7 @@
  "height": 0.6,
  "shoot_chance": 1.5,
  "turn_chance": 1.5,
- "speed": 0.01,
+ "speed": 0.019,
  "death_spawn": "flaming-skull",
  "health": 7,
  "damage": 0.02,
@@ -12,26 +12,15 @@
  "random_start_frame": true,
  "frames": [
   ["demon-01", 2],
-  ["demon-02", 2],
   ["demon-03", 1],
-  ["demon-04", 1],
   ["demon-05", 1],
-  ["demon-06", 1],
   ["demon-07", 1],
-  ["demon-08", 1],
   ["demon-09", 1],
-  ["demon-10", 1],
   ["demon-11", 2],
-  ["demon-12", 2],
-  ["demon-11", 2],
-  ["demon-10", 1],
   ["demon-09", 1],
-  ["demon-08", 1],
   ["demon-07", 1],
-  ["demon-06", 1],
   ["demon-05", 1],
-  ["demon-04", 1],
   ["demon-03", 1],
-  ["demon-02", 2]
+  ["demon-02", 1]
  ]
 }
