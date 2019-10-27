@@ -48,8 +48,8 @@ sub colorize_pix {
     my ($pix) = @_;
     my $code = ord($pix) - ord(' ') - 1;
     if ( $code >= 0 && $code < 64 ) {
-        my $fg     = $code >> 3;
-        my $bg     = $code & 0b111;
+        my $fg = $code >> 3;
+        my $bg = $code & 0b111;
         $pix = "\e[3${fg};4${bg}m#\e[0m";
     }
     return $pix;
@@ -97,7 +97,7 @@ sub animate_ent {
                     $file = $frame;
                 }
                 $duration = defined($duration) ? $duration : 1;
-		clear_screen();
+                clear_screen();
                 colorize_txtr( $texture_path . $file );
                 quick_sleep( $duration * 0.03 );
             }
