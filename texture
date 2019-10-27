@@ -25,6 +25,12 @@ sub quick_sleep {
     select undef, undef, undef, $duration;
 }
 
+sub dir_name {
+    local ( $0, $1 );
+    my ($dir) = @_;
+    return $dir =~ m,(.*/)[^/]+/?$, ? $1 : '.';
+}
+
 sub colorize_pix {
     my ($pix) = @_;
     my $code = ord($pix) - ord(' ') - 1;
@@ -56,6 +62,7 @@ sub animate_ent {
         return;
     }
     my ($path) = @_;
+    my $texture_path = dir_name($0) . '/data/textures/';
     if ( open( my $file, "<", $path ) ) {
         my ( $text, $json );
         eval {
@@ -78,7 +85,7 @@ sub animate_ent {
                 }
                 $duration = defined($duration) ? $duration : 1;
                 print "\e[H\e[J";
-                colorize_txtr( "data/textures/" . $file );
+                colorize_txtr( $texture_path . $file );
                 quick_sleep( $duration * 0.03 );
             }
         }
