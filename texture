@@ -1,9 +1,5 @@
 #!/usr/bin/env perl
-#
 # Texture utilities
-# Sub-commands:
-#  - view <file>...: Print the colorized textures from the given files.
-#  - table: Print out characters next to the colors they produce.
 
 sub print_help {
     my ($file) = @_;
@@ -11,10 +7,22 @@ sub print_help {
 TS3D texture utilities.
 Usage: $0 <sub-command> [arguments]
 Sub-commands:
-  help           Print this help.
-  table          Print a table of characters corresponding to texture pixels.
-  view <file>... Print colorized versions of the texture files given.
+  help              Print this help.
+  table             Print a table of characters corresponding to texture pixels.
+  view <file>...    Print colorized versions of the texture files given.
+  animate <file>... Print one cycle of each animation of each entity file given.
 HELP
+}
+
+sub file_text {
+    my ($file) = @_;
+    local $/;
+    return <$file>;
+}
+
+sub quick_sleep {
+    my ($duration) = @_;
+    select undef, undef, undef, $duration;
 }
 
 sub colorize_pix {
@@ -29,18 +37,66 @@ sub colorize_pix {
     return $pix;
 }
 
+sub colorize_txtr {
+    my ($path) = @_;
+    if ( open( my $file, "<", $path ) ) {
+        while ( defined( my $pix = getc($file) ) ) {
+            print colorize_pix($pix);
+        }
+        close($file);
+    }
+    else {
+        say STDERR "$0: Can't open file $path";
+    }
+}
+
+sub animate_ent {
+    if ( !exists(&JSON::decode_json) && !eval('require JSON;') ) {
+        say STDERR "$0: No JSON parser available";
+        return;
+    }
+    my ($path) = @_;
+    if ( open( my $file, "<", $path ) ) {
+        my ( $text, $json );
+        eval {
+            $text = file_text($file);
+            $json = JSON::decode_json($text);
+        } or do {
+            say STDERR "$0: Can't parse file $path as JSON";
+            return;
+        };
+        my $frames = $json->{'frames'};
+        if (@$frames) {
+            foreach my $frame (@$frames) {
+                my ( $file, $duration );
+                if (@$frame) {
+                    $file     = $frame->[0];
+                    $duration = $frame->[1];
+                }
+                else {
+                    $file = $frame;
+                }
+                $duration = defined($duration) ? $duration : 1;
+                print "\e[H\e[J";
+                colorize_txtr( "data/textures/" . $file );
+                quick_sleep( $duration * 0.03 );
+            }
+        }
+    }
+    else {
+        say STDERR "$0: Can't open file $path";
+    }
+}
+
 my $subcmd = @ARGV[0];
 if ( $subcmd eq 'view' ) {
     for ( my $a = 1 ; $a <= $#ARGV ; ++$a ) {
-        if ( open( my $file, "<", @ARGV[$a] ) ) {
-            while ( defined( my $pix = getc($file) ) ) {
-                print colorize_pix($pix);
-            }
-            close($file);
-        }
-        else {
-            say STDERR "$0: Can't open file @ARGV[$a]";
-        }
+        colorize_txtr( @ARGV[$a] );
+    }
+}
+elsif ( $subcmd eq 'animate' ) {
+    for ( my $a = 1 ; $a <= $#ARGV ; ++$a ) {
+        animate_ent( @ARGV[$a] );
     }
 }
 elsif ( $subcmd eq 'table' ) {
