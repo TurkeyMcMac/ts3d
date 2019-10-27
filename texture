@@ -2,7 +2,7 @@
 #
 # Texture utilities
 # Sub-commands:
-#  - view <file>: Print the colorized texture from the given file.
+#  - view <file>...: Print the colorized textures from the given files.
 #  - table: Print out characters next to the colors they produce.
 
 sub print_help {
