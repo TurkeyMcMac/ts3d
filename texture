@@ -46,8 +46,7 @@ sub colorize_pix {
     if ( $code >= 0 && $code < 64 ) {
         my $fg     = $code >> 3;
         my $bg     = $code & 0b111;
-        my $bright = $bg ? '1;' : '';
-        $pix = "\e[${bright}3${fg};4${bg}m#\e[0m";
+        $pix = "\e[3${fg};4${bg}m#\e[0m";
     }
     return $pix;
 }
