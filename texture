@@ -11,6 +11,11 @@ Sub-commands:
   table             Print a table of characters corresponding to texture pixels.
   view <file>...    Print colorized versions of the texture files given.
   animate <file>... Print one cycle of each animation of each entity file given.
+
+Animations only run once, but you can loop them like this:
+
+  yes "<entity file>" | xargs $0 animate
+
 HELP
 }
 
