@@ -245,9 +245,6 @@ struct map *load_map(struct loader *ldr, const char *name)
 		free(map->name);
 		map->name = got->str;
 		got->str = NULL;
-	} else {
-		logger_printf(log, LOGGER_WARNING,
-			"Map \"%s\" has no \"name\" attribute\n", name);
 	}
 	uint8_t *walls = NULL;
 	size_t n_blocks = 0;

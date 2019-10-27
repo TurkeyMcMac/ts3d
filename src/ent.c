@@ -96,9 +96,6 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 		free(ent->name);
 		ent->name = got->str;
 		got->str = NULL;
-	} else {
-		logger_printf(log, LOGGER_WARNING, "Entity type \"%s\" does "
-			"not have a \"name\" attribute\n", name);
 	}
 	ent->width = 1.0;
 	if ((got = json_map_get(&jtree, "width", JN_NUMBER)))
