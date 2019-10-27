@@ -6,7 +6,6 @@
  "death_spawn": "escaping-spirit",
  "health": 0.01,
  "damage": 1,
- "lifetime": 500,
  "turn_chance": 1.5,
  "wall_die": true,
  "frames": [
