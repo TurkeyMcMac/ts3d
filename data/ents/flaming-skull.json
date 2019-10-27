@@ -2,7 +2,7 @@
  "name": "Flaming Skull",
  "width": 0.09,
  "height": 0.15,
- "speed": 0.024,
+ "speed": 0.0252,
  "death_spawn": "escaping-spirit",
  "health": 0.01,
  "damage": 1,
