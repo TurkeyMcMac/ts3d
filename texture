@@ -46,13 +46,13 @@ sub colorize_txtr {
         close($file);
     }
     else {
-        say STDERR "$0: Can't open file $path";
+        warn "$0: Can't open file $path";
     }
 }
 
 sub animate_ent {
     if ( !exists(&JSON::decode_json) && !eval('require JSON;') ) {
-        say STDERR "$0: No JSON parser available";
+        warn "$0: No JSON parser available";
         return;
     }
     my ($path) = @_;
@@ -62,7 +62,7 @@ sub animate_ent {
             $text = file_text($file);
             $json = JSON::decode_json($text);
         } or do {
-            say STDERR "$0: Can't parse file $path as JSON";
+            warn "$0: Can't parse file $path as JSON";
             return;
         };
         my $frames = $json->{'frames'};
@@ -84,7 +84,7 @@ sub animate_ent {
         }
     }
     else {
-        say STDERR "$0: Can't open file $path";
+        warn "$0: Can't open file $path";
     }
 }
 
@@ -113,7 +113,7 @@ elsif ( $subcmd eq 'help' ) {
     print_help(STDOUT);
 }
 else {
-    say STDERR "$0: Invalid sub-command";
+    warn "$0: Invalid sub-command";
     print_help(STDERR);
     exit 1;
 }
