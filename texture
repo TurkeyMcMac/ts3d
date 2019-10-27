@@ -14,6 +14,10 @@ Sub-commands:
 HELP
 }
 
+sub error {
+    say STDERR "$0: @_";
+}
+
 sub file_text {
     my ($file) = @_;
     local $/;
@@ -52,13 +56,13 @@ sub colorize_txtr {
         close($file);
     }
     else {
-        warn "$0: Can't open file $path";
+        error("Can't open file $path");
     }
 }
 
 sub animate_ent {
     if ( !exists(&JSON::decode_json) && !eval('require JSON;') ) {
-        warn "$0: No JSON parser available";
+        error('No JSON parser available');
         return;
     }
     my ($path) = @_;
@@ -69,7 +73,7 @@ sub animate_ent {
             $text = file_text($file);
             $json = JSON::decode_json($text);
         } or do {
-            warn "$0: Can't parse file $path as JSON";
+            error("Can't parse file $path as JSON");
             return;
         };
         my $frames = $json->{'frames'};
@@ -91,7 +95,7 @@ sub animate_ent {
         }
     }
     else {
-        warn "$0: Can't open file $path";
+        error("Can't open file $path");
     }
 }
 
@@ -120,7 +124,7 @@ elsif ( $subcmd eq 'help' ) {
     print_help(STDOUT);
 }
 else {
-    warn "$0: Invalid sub-command";
+    error('Invalid sub-command');
     print_help(STDERR);
     exit 1;
 }
