@@ -2,7 +2,7 @@
  "name": "Demon",
  "width": 0.4,
  "height": 0.6,
- "shoot_chance": 1.2,
+ "shoot_chance": 1.5,
  "turn_chance": 1.5,
  "speed": 0.01,
  "death_spawn": "flaming-skull",
