@@ -5,7 +5,9 @@
     {"title": "Columns",
      "map": "columns"},
     {"title": "Halls",
-     "map": "halls"}
+     "map": "halls"},
+    {"title": "Dancefloor",
+     "map": "dancefloor"}
    ]},
   {"title": "Help",
    "items": [
