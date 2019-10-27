@@ -205,8 +205,10 @@ static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 			sprite->txtr = ent->type->frames[ent->frame].txtr;
 		}
 	} else if (ent->type->death_spawn) {
+		int worth = ent->worth;
 		ent_init(ent, ent->type->death_spawn, ent->team, sprite,
 			&sprite->pos);
+		ent->worth = worth;
 	} else {
 		ent->lifetime = -1;
 	}
