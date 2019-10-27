@@ -287,19 +287,20 @@ static int play_level(const char *root_dir, const char *map_name,
 		reload_meter.fraction = player_reload_fraction(&player);
 		meter_draw(&reload_meter);
 		int remaining = get_remaining(&ents);
+		bool won = remaining <= 0 && !player_is_dead(&player);
 		attron(A_BOLD);
-		if (remaining > 0) {
-			mvprintw(0, 0, "TARGETS LEFT: %d", remaining);
-		} else {
+		if (won) {
 			mvaddstr(0, 0, "YOU WIN! Press Y to return to menu.");
+		} else {
+			mvprintw(0, 0, "TARGETS LEFT: %d", remaining);
 		}
 		attroff(A_BOLD);
 		int key = getch();
 		int lowkey = tolower(key);
 		refresh();
-		if (remaining == 0 && lowkey == 'y') {
+		if (won && lowkey == 'y') {
 			goto quit;
-		} else if (player_is_dead(&player) && remaining > 0) {
+		} else if (player_is_dead(&player)) {
 			if (lowkey == 'y') goto quit;
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
