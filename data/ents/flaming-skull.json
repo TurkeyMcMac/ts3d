@@ -1,0 +1,18 @@
+{
+ "name": "Flaming Skull",
+ "width": 0.09,
+ "height": 0.15,
+ "speed": 0.024,
+ "death_spawn": "escaping-spirit",
+ "health": 0.01,
+ "damage": 1,
+ "lifetime": 500,
+ "turn_chance": 1.5,
+ "wall_die": true,
+ "frames": [
+  ["flaming-skull-1", 3],
+  ["flaming-skull-2", 4],
+  ["flaming-skull-1", 5],
+  ["flaming-skull-2", 2]
+ ]
+}
