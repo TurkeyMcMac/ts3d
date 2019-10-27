@@ -40,6 +40,10 @@ sub dir_name {
     return $dir =~ m,(.*/)[^/]+/?$, ? $1 : '.';
 }
 
+sub clear_screen {
+    print "\e[H\e[J";
+}
+
 sub colorize_pix {
     my ($pix) = @_;
     my $code = ord($pix) - ord(' ') - 1;
@@ -93,7 +97,7 @@ sub animate_ent {
                     $file = $frame;
                 }
                 $duration = defined($duration) ? $duration : 1;
-                print "\e[H\e[J";
+		clear_screen();
                 colorize_txtr( $texture_path . $file );
                 quick_sleep( $duration * 0.03 );
             }
