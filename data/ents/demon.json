@@ -11,16 +11,15 @@
  "bullet": "flaming-skull",
  "random_start_frame": true,
  "frames": [
-  ["demon-01", 2],
-  ["demon-03", 1],
-  ["demon-05", 1],
-  ["demon-07", 1],
-  ["demon-09", 1],
-  ["demon-11", 2],
-  ["demon-09", 1],
-  ["demon-07", 1],
-  ["demon-05", 1],
-  ["demon-03", 1],
-  ["demon-02", 1]
+  ["demon-1", 2],
+  ["demon-2", 1],
+  ["demon-3", 1],
+  ["demon-4", 1],
+  ["demon-5", 1],
+  ["demon-6", 2],
+  ["demon-5", 1],
+  ["demon-4", 1],
+  ["demon-3", 1],
+  ["demon-2", 1]
  ]
 }
