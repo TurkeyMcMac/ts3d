@@ -277,6 +277,7 @@ static int play_level(const char *root_dir, const char *map_name,
 	keypad(stdscr, TRUE);
 	int translation = '\0';
 	int turn_duration = 0;
+	bool won = false;
 	for (;;) {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
@@ -287,7 +288,7 @@ static int play_level(const char *root_dir, const char *map_name,
 		reload_meter.fraction = player_reload_fraction(&player);
 		meter_draw(&reload_meter);
 		int remaining = get_remaining(&ents);
-		bool won = remaining <= 0 && !player_is_dead(&player);
+		won = won || (remaining <= 0 && !player_is_dead(&player));
 		attron(A_BOLD);
 		if (won) {
 			mvaddstr(0, 0, "YOU WIN! Press Y to return to menu.");
@@ -300,7 +301,7 @@ static int play_level(const char *root_dir, const char *map_name,
 		refresh();
 		if (won && lowkey == 'y') {
 			goto quit;
-		} else if (player_is_dead(&player)) {
+		} else if (!won && player_is_dead(&player)) {
 			if (lowkey == 'y') goto quit;
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
