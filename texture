@@ -34,7 +34,7 @@ if ( $subcmd eq 'view' ) {
     for ( my $a = 1 ; $a <= $#ARGV ; ++$a ) {
         if ( open( my $file, "<", @ARGV[$a] ) ) {
             while ( defined( my $pix = getc($file) ) ) {
-                print &colorize_pix($pix);
+                print colorize_pix($pix);
             }
             close($file);
         }
@@ -48,16 +48,16 @@ elsif ( $subcmd eq 'table' ) {
     for ( my $y = 0 ; $y < 8 ; ++$y ) {
         for ( my $x = 0 ; $x < 8 ; ++$x ) {
             $ascii = chr( ord($ascii) + 1 );
-            printf "%s%s   ", $ascii, &colorize_pix($ascii);
+            printf "%s%s   ", $ascii, colorize_pix($ascii);
         }
         print "\n";
     }
 }
 elsif ( $subcmd eq 'help' ) {
-    &print_help(STDOUT);
+    print_help(STDOUT);
 }
 else {
     say STDERR "$0: Invalid sub-command";
-    &print_help(STDERR);
+    print_help(STDERR);
     exit 1;
 }
