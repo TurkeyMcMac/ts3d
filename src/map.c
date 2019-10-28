@@ -68,8 +68,8 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 		{"south" , "south_solid", D3D_DNORTH}, // Ditto
 		{"east"  , "east_solid" , D3D_DEAST },
 		{"west"  , "west_solid" , D3D_DWEST },
-		{"top"   , "" /* N/A */ , D3D_DUP   },
-		{"bottom", "" /* N/A */ , D3D_DDOWN }
+		{"top"   , "" /* N/A */ , D3D_DDOWN },
+		{"bottom", "" /* N/A */ , D3D_DUP   }
 	};
 	for (size_t i = 0; i < ARRSIZE(faces); ++i) {
 		if ((got = json_map_get(nd, faces[i].txtr, JN_STRING))) {
