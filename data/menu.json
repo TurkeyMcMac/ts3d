@@ -2,6 +2,8 @@
  "items": [
   {"title": "Levels",
    "items": [
+    {"title": "Gobstopper",
+     "map": "gobstopper"},
     {"title": "Columns",
      "map": "columns"},
     {"title": "Halls",
