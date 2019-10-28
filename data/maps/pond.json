@@ -21,13 +21,13 @@
   },
   {
    "name": "sand",
-   "top": "sand",
-   "bottom": "sky"
+   "top": "sky",
+   "bottom": "sand"
   },
   {
    "name": "water",
-   "top": "lilypad",
-   "bottom": "sky"
+   "top": "sky",
+   "bottom": "lilypad"
   }
  ],
  "player": {
