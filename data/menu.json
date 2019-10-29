@@ -4,6 +4,8 @@
    "items": [
     {"title": "The Pond",
      "map": "pond"},
+    {"title": "Entrance",
+     "map": "entrance"},
     {"title": "Gobstopper",
      "map": "gobstopper"},
     {"title": "Columns",

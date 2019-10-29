@@ -1,0 +1,99 @@
+{
+ "layout": [
+  [5,5,5,5,5,5,5,5,5,5,5,5],
+  [5,4,4,4,4,4,4,4,4,4,4,5],
+  [5,4,4,4,4,4,4,4,4,5,4,5],
+  [5,3,3,3,3,3,3,3,3,5,4,5],
+  [0,0,0,0,0,0,0,0,0,0,8,5],
+  [0,1,1,1,1,1,1,1,1,7,4,5],
+  [0,1,1,1,1,9,9,9,1,2,4,5],
+  [0,1,1,1,1,9,9,9,6,0,8,5],
+  [0,1,1,1,1,1,9,9,1,0,8,5],
+  [0,0,0,0,0,0,0,0,0,0,5,5]
+ ],
+ "blocks": [
+  {
+   "name": "border",
+   "all": "sand-sky",
+   "all_solid": true
+  },
+  {
+   "name": "sand",
+   "top": "sky",
+   "bottom": "sand"
+  },
+  {
+   "name": "entrance",
+   "north": "sand",
+   "south": "sand",
+   "west": "cave-entrance",
+   "top": "sand",
+   "bottom": "sand"
+  },
+  {
+   "name": "south-wall",
+   "south": "brick-red",
+   "top": "tiles-blue-cyan",
+   "bottom": "tiles-blue-cyan"
+  },
+  {
+   "name": "floor",
+   "top": "tiles-blue-cyan",
+   "bottom": "tiles-blue-cyan"
+  },
+  {
+   "name": "wall",
+   "all_solid": true,
+   "all": "brick-red"
+  },
+  {
+   "name": "south-sand-slope",
+   "east": "sand-slope-sky",
+   "top": "sky",
+   "bottom": "sand"
+  },
+  {
+   "name": "north-sand-slope",
+   "west": "sand-slope-sky",
+   "east": "brick-red",
+   "all_solid": true
+  },
+  {
+   "name": "floor-blocking-west",
+   "west": "brick-red",
+   "top": "tiles-blue-cyan",
+   "bottom": "tiles-blue-cyan"
+  },
+  {
+   "name": "lilypad",
+   "top": "sky",
+   "bottom": "lilypad"
+  }
+ ],
+ "player": {
+  "pos": [1.5, 6.5],
+  "kind": "player"
+ },
+ "ents": [
+  {
+   "kind": "frog",
+   "team": "enemy",
+   "pos": [8, 7]
+  },
+  {
+   "kind": "frog",
+   "team": "enemy",
+   "pos": [7, 7.5]
+  },
+  {
+   "kind": "goblin",
+   "team": "enemy",
+   "pos": [1.5, 1.5]
+  },
+  {
+   "kind": "bat",
+   "team": "enemy",
+   "pos": [2.5, 2.5]
+  }
+ ]
+}
