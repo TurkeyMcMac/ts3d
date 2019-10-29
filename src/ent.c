@@ -67,7 +67,7 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	if (!entp) return NULL;
 	ent = *entp;
 	if (ent) return ent;
-	ent = malloc(sizeof(*ent));
+	ent = rc_xmalloc(sizeof(*ent));
 	struct json_node jtree;
 	ent->name = str_dup(name);
 	ent->frames = NULL;
@@ -161,7 +161,7 @@ void ent_type_free(struct ent_type *ent)
 	if (!ent) return;
 	free(ent->name);
 	free(ent->frames);
-	free(ent);
+	rc_dec_free(ent);
 }
 
 static void ent_init(struct ent *ent, struct ent_type *type, enum team team,

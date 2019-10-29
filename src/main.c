@@ -378,8 +378,9 @@ int main(void)
 			"Failed to load menu\n");
 		exit(EXIT_FAILURE);
 	}
-	d3d_malloc = xmalloc;
-	d3d_realloc = xrealloc;
+	d3d_malloc = rc_xmalloc;
+	d3d_realloc = rc_xrealloc;
+	d3d_free = rc_dec_free;
 	d3d_camera *title_cam;
 	d3d_board *title_board;
 	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {

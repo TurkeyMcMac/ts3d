@@ -44,4 +44,7 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 #define CLAMP(num, min, max) \
 	((num) < (min) ? (min) : ((num) > (max) ? (max) : (num)))
 
+#define container_of(ptr, type, member) \
+	((type *)((char *)(ptr) - offsetof(type, member)))
+
 #endif /* UTIL_H_ */

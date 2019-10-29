@@ -212,7 +212,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	if (!mapp) return NULL;
 	struct map *map = *mapp;
 	if (map) return map;
-	map = malloc(sizeof(*map));
+	map = rc_xmalloc(sizeof(*map));
 	struct json_node jtree;
 	map->name = str_dup(name);
 	map->board = NULL;
@@ -333,5 +333,5 @@ void map_free(struct map *map)
 	free(map->walls);
 	free(map->blocks);
 	free(map->ents);
-	free(map);
+	rc_dec_free(map);
 }
