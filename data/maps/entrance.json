@@ -6,7 +6,7 @@
   [5,3,3,3,3,3,3,3,3,5,4,5],
   [0,0,0,0,0,0,0,0,0,0,8,5],
   [0,1,1,1,1,1,1,1,1,7,4,5],
-  [0,1,1,1,1,9,9,9,1,2,4,5],
+  [0,1,1,1,1,9,9,9,10,2,11],
   [0,1,1,1,1,9,9,9,6,0,8,5],
   [0,1,1,1,1,1,9,9,1,0,8,5],
   [0,0,0,0,0,0,0,0,0,0,5,5]
@@ -23,12 +23,8 @@
    "bottom": "sand"
   },
   {
-   "name": "entrance",
-   "north": "sand",
-   "south": "sand",
-   "west": "cave-entrance",
-   "top": "sand",
-   "bottom": "sand"
+   "name": "passage",
+   "all": "black"
   },
   {
    "name": "south-wall",
@@ -68,6 +64,20 @@
    "name": "lilypad",
    "top": "sky",
    "bottom": "lilypad"
+  },
+  {
+   "name": "outside-entrance",
+   "east": "cave-entrance",
+   "top": "sky",
+   "bottom": "sand"
+  },
+  {
+   "name": "inside-entrance",
+   "east": "brick-red",
+   "west": "cave-entrance",
+   "top": "tiles-blue-cyan",
+   "bottom": "tiles-blue-cyan",
+   "east_solid": true
   }
  ],
  "player": {
