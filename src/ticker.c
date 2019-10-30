@@ -2,13 +2,11 @@
 
 #if __APPLE__
 
-#	include <mach/mach_time.h>
-
 void ticker_init(struct ticker *tkr, int interval)
 {
-	mach_timebase_info_data_t tb;
-	mach_timebase_info(&tb);
-	tkr->interval = interval * 1000000 * tb.denom / tb.numer;
+	mach_timebase_info(&tkr->timebase);
+	tkr->interval = interval * 1000000 * tkr->timebase.denom
+		/ tkr->timebase.numer;
 	tkr->last_tick = mach_continuous_time();
 }
 
@@ -18,9 +16,8 @@ void tick(struct ticker *tkr)
 	uint64_t deadline = tkr->last_tick + tkr->interval;
 	if (now < deadline) {
 		uint64_t delay = deadline - now;
-		mach_timebase_info_data_t tb;
-		mach_timebase_info(&tb);
-		struct timespec ts = {0, delay * tb.numer / tb.denom};
+		struct timespec ts = {0, delay * tkr->timebase.numer
+			/ tkr->timebase.denom};
 		nanosleep(&ts, NULL);
 		tkr->last_tick = deadline;
 	} else {

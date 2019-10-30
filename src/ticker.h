@@ -2,10 +2,12 @@
 #define TICKER_H_
 
 #if __APPLE__ /* Mac OS doesn't support clock_gettime etc. */
+#	include <mach/mach_time.h>
 #	include <time.h>
 #	include <stdint.h>
 
 struct ticker {
+	mach_timebase_info_data_t timebase;
 	uint64_t last_tick;
 	uint64_t interval;
 };
