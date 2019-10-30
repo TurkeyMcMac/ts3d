@@ -13,7 +13,11 @@
     {"title": "Halls",
      "map": "halls"},
     {"title": "Dancefloor",
-     "map": "dancefloor"}
+     "map": "dancefloor"},
+    {"title": "Double Trouble",
+     "map": "double-trouble"},
+    {"title": "Ensemble",
+     "map": "ensemble"}
    ]},
   {"title": "Help",
    "items": [
