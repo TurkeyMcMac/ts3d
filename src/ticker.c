@@ -22,8 +22,10 @@ void tick(struct ticker *tkr)
 		mach_timebase_info(&tb);
 		struct timespec ts = {0, delay * tb.numer / tb.denom};
 		nanosleep(&ts, NULL);
+		tkr->last_tick = deadline;
+	} else {
+		tkr->last_tick = now;
 	}
-	tkr->last_tick = deadline;
 }
 
 #else
@@ -42,6 +44,7 @@ void tick(struct ticker *tkr)
 		++tkr->last_tick.tv_sec;
 	}
 	clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tkr->last_tick, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &tkr->last_tick);
 }
 
 #endif /* !__APPLE__ */
@@ -65,6 +68,22 @@ CTF_TEST(tick_is_right_length,
 		+ 1000000 * (after.tv_sec - before.tv_sec);
 	assert(delay > 450000);
 	assert(delay < 550000);
+)
+
+CTF_TEST(much_missed_tick_time_ignored,
+	struct ticker tkr;
+	struct timeval before, after;
+	struct timespec sleep = { .tv_sec = 0, .tv_nsec = 500000000 };
+	ticker_init(&tkr, 20);
+	nanosleep(&sleep, NULL);
+	gettimeofday(&before, NULL);
+	tick(&tkr);
+	tick(&tkr);
+	gettimeofday(&after, NULL);
+	long delay = after.tv_usec - before.tv_usec
+		+ 1000000 * (after.tv_sec - before.tv_sec);
+	assert(delay > 20000);
+	assert(delay < 23000);
 )
 
 #endif /* CTF_TESTS_ENABLED */
