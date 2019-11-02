@@ -26,6 +26,10 @@ void table_freeze(table *tbl);
 // NULL is returned.
 void **table_get(table *tbl, const char *key);
 
+// Remove an item from the table and return it. If the item does not exist,
+// NULL is returned. There is no way to tell between a NULL item and a
+// nonexistent one.
+void *table_remove(table *tbl, const char *key);
 
 // Count the number of unique keys added to the table.
 size_t table_count(const table *tbl);

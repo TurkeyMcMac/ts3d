@@ -63,6 +63,19 @@ void **table_get(table *tbl, const char *key)
 	return find(tbl, &got, key) ? &got->val : NULL;
 }
 
+void *table_remove(table *tbl, const char *key)
+{
+	struct item *got;
+	if (find(tbl, &got, key)) {
+		void *val = got->val;
+		--tbl->len;
+		memmove(got, got + 1,
+			(tbl->len - (got - tbl->items)) * ITEM_SIZE);
+		return val;
+	}
+	return NULL;
+}
+
 size_t table_count(const table *tbl)
 {
 	return tbl->len;
@@ -112,6 +125,19 @@ CTF_TEST(table_gets,
 	product *= *(intptr_t *)table_get(&tab, "bar");
 	product *= *(intptr_t *)table_get(&tab, "baz");
 	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+CTF_TEST(table_removes,
+	table tab;
+	set_up_table(&tab, 2, 3, 5);
+	int product = 1;
+	product *= (intptr_t)table_remove(&tab, "foo");
+	product *= (intptr_t)table_remove(&tab, "bar");
+	product *= (intptr_t)table_remove(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	assert(table_count(&tab) == 0);
+	assert(table_get(&tab, "foo") == NULL);
 	table_free(&tab);
 )
 
