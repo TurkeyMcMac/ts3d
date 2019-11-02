@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-struct item {
-	const char *key;
-	void *val;
-};
-
 #define ITEM_SIZE sizeof(struct item)
 
 void table_init(table *tbl, size_t size)
@@ -167,6 +162,22 @@ static int set_value_for_key(const char *key, void **item_)
 	}
 	return 0;
 }
+
+CTF_TEST(table_for_visits_all,
+	table tab;
+	set_up_table(&tab, 0, 0, 0);
+	const char *key;
+	void **val;
+	TABLE_FOR_EACH(&tab, key, val) {
+		set_value_for_key(key, val);
+	}
+	int product = 1;
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
 
 CTF_TEST(table_each_visits_all,
 	table tab;
