@@ -65,4 +65,9 @@ void free_json_tree(struct json_node *root);
 // invalid, in which case -1 is returned and unparseable coordinates are zero.
 int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list);
 
+// Escape the text for use in JSON and write the result to the file. 0 is
+// returned on success; -1 is returned on failure. Quotes are not put around the
+// escaped text. The input text is assumed to be UTF-8.
+int escape_text_json(const char *text, FILE *to);
+
 #endif /* JSON_UTIL_H_ */
