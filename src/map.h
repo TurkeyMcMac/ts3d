@@ -23,6 +23,9 @@ struct map_ent_start {
 struct map {
 	// The allocated map name.
 	char *name;
+	// The file name (excluding .json) of the map which must be completed to
+	// allow entry to this one. NULL indicates no prerequisite.
+	char *prereq;
 	// The board of visual blocks from the blocks array.
 	d3d_board *board;
 	// The grid of the same width and height as the board, documenting the

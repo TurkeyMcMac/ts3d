@@ -215,6 +215,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map = malloc(sizeof(*map));
 	struct json_node jtree;
 	map->name = str_dup(name);
+	map->prereq = NULL;
 	map->board = NULL;
 	map->walls = NULL;
 	map->blocks = NULL;
@@ -244,6 +245,10 @@ struct map *load_map(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		free(map->name);
 		map->name = got->str;
+		got->str = NULL;
+	}
+	if ((got = json_map_get(&jtree, "prereq", JN_STRING))) {
+		map->prereq = got->str;
 		got->str = NULL;
 	}
 	uint8_t *walls = NULL;
