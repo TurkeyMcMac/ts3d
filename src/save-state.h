@@ -12,6 +12,8 @@ struct save_states {
 	table saves;
 };
 
+void save_states_empty(struct save_states *saves);
+
 int save_states_init(struct save_states *saves, FILE *from, struct logger *log);
 
 struct save_state *save_states_add(struct save_states *saves, const char *name);
