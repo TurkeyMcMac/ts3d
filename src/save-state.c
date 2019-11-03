@@ -98,7 +98,7 @@ static int save_state_write(const struct save_state *save, FILE *to)
 	if (table_count(&save->complete) > 0) {
 		const char *before = "[";
 		const char *key;
-		void **val;
+		void **val ATTRIBUTE(unused);
 		TABLE_FOR_EACH(&save->complete, key, val) {
 			TRY(fprintf(to, "%s\n    \"", before));
 			TRY(escape_text_json(key, to));
@@ -134,7 +134,7 @@ int save_states_write(struct save_states *saves, FILE *to)
 
 void save_states_destroy(struct save_states *saves)
 {
-	const char *key;
+	const char *key ATTRIBUTE(unused);
 	void **val;
 	TABLE_FOR_EACH(&saves->saves, key, val) {
 		free_save_state(*val);
