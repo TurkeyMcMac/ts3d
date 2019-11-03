@@ -27,7 +27,11 @@ bool save_state_is_complete(const struct save_state *save, const char *name);
 
 void save_state_mark_complete(struct save_state *save, const char *name);
 
+struct save_state *save_states_get(struct save_states *saves, const char *name);
+
 int save_states_remove(struct save_states *saves, const char *name);
+
+int save_states_write(struct save_states *saves, FILE *to);
 
 void save_states_destroy(struct save_states *saves);
 
