@@ -27,6 +27,7 @@
 #define FOV_X 2.0
 #define TURN_DURATION 5
 #define ESC '\033'
+#define ANONYMOUS ""
 
 static void set_up_colors(void)
 {
@@ -391,7 +392,7 @@ int main(int argc, char *argv[])
 	struct loader ldr;
 	loader_init(&ldr, data_dir);
 	struct save_states saves;
-	struct save_state *save = get_save_state(argc > 1 ? argv[1] : "",
+	struct save_state *save = get_save_state(argc > 1 ? argv[1] : ANONYMOUS,
 		&saves, loader_logger(&ldr));
 	initscr();
 	atexit(end_win);
@@ -507,7 +508,7 @@ int main(int argc, char *argv[])
 	}
 end:
 	d3d_free_camera(title_cam);
-	save_states_remove(&saves, "");
+	save_states_remove(&saves, ANONYMOUS);
 	write_save_states(&saves);
 	save_states_destroy(&saves);
 	loader_free(&ldr);
