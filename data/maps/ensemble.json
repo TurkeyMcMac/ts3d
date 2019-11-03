@@ -1,4 +1,5 @@
 {
+ "prereq": "double-trouble",
  "blocks": [
   {
    "name": "wall",
