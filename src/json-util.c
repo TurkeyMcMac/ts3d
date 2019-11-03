@@ -399,4 +399,24 @@ CTF_TEST(escapes_text_json,
 	assert(!memcmp(escaped, expected, n_escaped));
 )
 
+CTF_TEST(scans_json_key,
+	const char text[] = "{\"a\":{\"b\":2},\"b\":1}";
+	json_reader rdr;
+	json_alloc(&rdr, NULL, 2, xmalloc, free, xrealloc);
+	json_source_string(&rdr, text, sizeof(text));
+	struct json_item item;
+	assert(!scan_json_key(&rdr, "b", &item));
+	assert(item.val.num == 1);
+)
+
+CTF_TEST(scans_json_key_array,
+	const char text[] = "[1,2]";
+	json_reader rdr;
+	json_alloc(&rdr, NULL, 2, xmalloc, free, xrealloc);
+	json_source_string(&rdr, text, sizeof(text));
+	struct json_item item;
+	assert(!scan_json_key(&rdr, "b", &item));
+	assert(item.type == JSON_EMPTY);
+)
+
 #endif /* CTF_TESTS_ENABLED */
