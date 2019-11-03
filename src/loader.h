@@ -37,6 +37,10 @@ struct map **loader_map(struct loader *ldr, const char *name, FILE **file);
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file);
 
+// Allocate a NUL-terminated string that is where the loader would search for
+// the map with the given name. This file may or may not exist.
+char *loader_map_path(const struct loader *ldr, const char *name);
+
 // Load an empty (transparent) texture shared per loader.
 const d3d_texture *loader_empty_texture(struct loader *ldr);
 

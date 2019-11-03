@@ -70,4 +70,13 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list);
 // escaped text. The input text is assumed to be UTF-8.
 int escape_text_json(const char *text, FILE *to);
 
+// Look for the key in the reader. Only depth 1 is searched. For example, if the
+// desired key were "b" and the reader were at the value {"a":{"b":2},"b":1},
+// the function would find 1, not 2. The result is placed in the item as with
+// json_read_item. If none was found, an empty item is returned. If one was
+// found, it is returned including an allocated key. If an error occurs, -1 is
+// returned and the item is the error information. If no error occurred, 0 is
+// returned.
+int scan_json_key(json_reader *rdr, const char *key, struct json_item *item);
+
 #endif /* JSON_UTIL_H_ */

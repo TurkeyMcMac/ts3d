@@ -296,6 +296,38 @@ int escape_text_json(const char *text, FILE *to)
 	return 0;
 }
 
+int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
+{
+	long depth = 0;
+	do {
+		if (json_read_item(rdr, item)) return -1;
+		if (depth == 1
+		 && item->key.bytes
+		 && !strcmp(key, item->key.bytes))
+			return 0;
+		switch (item->type) {
+		case JSON_LIST:
+		case JSON_MAP:
+			++depth;
+			break;
+		case JSON_END_LIST:
+		case JSON_END_MAP:
+			--depth;
+			break;
+		case JSON_EMPTY:
+			depth = 0;
+			break;
+		default:
+			break;
+		}
+		free(item->key.bytes);
+	} while (depth > 0);
+	item->type = JSON_EMPTY;
+	item->key.len = 0;
+	item->key.bytes = NULL;
+	return 0;
+}
+
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"

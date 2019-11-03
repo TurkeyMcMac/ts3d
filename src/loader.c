@@ -18,6 +18,19 @@ void loader_init(struct loader *ldr, const char *root)
 	ldr->empty_txtr = NULL;
 }
 
+char *loader_map_path(const struct loader *ldr, const char *name)
+{
+	size_t cap = 10;
+	struct string buf;
+	string_init(&buf, cap);
+	string_pushz(&buf, &cap, ldr->maps_dir);
+	string_pushc(&buf, &cap, '/');
+	string_pushz(&buf, &cap, name);
+	string_pushn(&buf, &cap, ".json", 6);
+	string_shrink_to_fit(&buf);
+	return buf.text;
+}
+
 static void **load(table *tab, const char *root, const char *name, FILE **file,
 	struct logger *log)
 {

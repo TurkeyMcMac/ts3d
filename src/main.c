@@ -245,8 +245,6 @@ static int play_level(const char *root_dir, struct save_state *save,
 		loader_free(&ldr);
 		return -1;
 	}
-	if (map->prereq && !save_state_is_complete(save, map->prereq))
-		return -1;
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
@@ -425,6 +423,7 @@ int main(int argc, char *argv[])
 	int key;
 	for (;;) {
 		const char *map_name;
+		char *prereq;
 		tick_title(title_cam, title_board, titlewin);
 		menu_draw(&menu);
 		wrefresh(menuwin);
@@ -442,7 +441,11 @@ int main(int argc, char *argv[])
 				menu_clear_message(&menu);
 				break;
 			case ACTION_MAP:
-				if (play_level(data_dir, save, map_name,
+				prereq = map_prereq(&ldr, map_name);
+				if (prereq
+				 && !save_state_is_complete(save, prereq)) {
+					menu_set_message(&menu, "Level locked");
+				} else if (play_level(data_dir, save, map_name,
 					&timer))
 				{
 					menu_set_message(&menu,
@@ -450,6 +453,7 @@ int main(int argc, char *argv[])
 				} else {
 					menu_clear_message(&menu);
 				}
+				free(prereq);
 				redrawwin(menuwin);
 				redrawwin(titlewin);
 				break;
