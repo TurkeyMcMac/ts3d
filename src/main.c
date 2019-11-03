@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "ent.h"
 #include "pixel.h"
+#include "save-state.h"
 #include "ticker.h"
 #include "ui-util.h"
 #include "util.h"
@@ -232,8 +233,8 @@ static bool do_pause_popup(struct ticker *timer)
 	return false;
 }
 
-static int play_level(const char *root_dir, const char *map_name,
-	struct ticker *timer)
+static int play_level(const char *root_dir, struct save_state *save,
+	const char *map_name, struct ticker *timer)
 {
 	struct loader ldr;
 	loader_init(&ldr, root_dir);
@@ -244,6 +245,9 @@ static int play_level(const char *root_dir, const char *map_name,
 		loader_free(&ldr);
 		return -1;
 	}
+	if (map->prereq && !save_state_is_complete(save, map->prereq))
+		return -1;
+	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
 	init_entities(&ents, map);
@@ -328,6 +332,7 @@ quit:
 	refresh();
 	delwin(dead_popup);
 	d3d_free_camera(cam);
+	if (won) save_state_mark_complete(save, map_name);
 	loader_free(&ldr);
 	return 0;
 }
@@ -362,14 +367,37 @@ static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 	*d3d_camera_facing(cam) -= 0.003;
 }
 
-int main(void)
+static struct save_state *get_save_state(const char *name,
+	struct save_states *saves, struct logger *log)
+{
+	FILE *from = fopen("state.json", "r");
+	if (from && !save_states_init(saves, from, log)) {
+		struct save_state *save = save_states_get(saves, name);
+		if (save) return save;
+		fclose(from);
+	} else {
+		save_states_empty(saves);
+	}
+	return save_states_add(saves, name);
+}
+
+static void write_save_states(struct save_states *saves)
+{
+	FILE *to = fopen("state.json", "w");
+	if (to) save_states_write(saves, to);
+}
+
+int main(int argc, char *argv[])
 {
 	const char *data_dir = "data";
+	struct loader ldr;
+	loader_init(&ldr, data_dir);
+	struct save_states saves;
+	struct save_state *save = get_save_state(argc > 1 ? argv[1] : "",
+		&saves, loader_logger(&ldr));
 	initscr();
 	atexit(end_win);
 	set_up_colors();
-	struct loader ldr;
-	loader_init(&ldr, data_dir);
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
 	struct menu menu;
@@ -414,9 +442,14 @@ int main(void)
 				menu_clear_message(&menu);
 				break;
 			case ACTION_MAP:
-				if (play_level(data_dir, map_name, &timer))
+				if (play_level(data_dir, save, map_name,
+					&timer))
+				{
 					menu_set_message(&menu,
 						"Error loading map");
+				} else {
+					menu_clear_message(&menu);
+				}
 				redrawwin(menuwin);
 				redrawwin(titlewin);
 				break;
@@ -470,5 +503,8 @@ int main(void)
 	}
 end:
 	d3d_free_camera(title_cam);
+	save_states_remove(&saves, "");
+	write_save_states(&saves);
+	save_states_destroy(&saves);
 	loader_free(&ldr);
 }
