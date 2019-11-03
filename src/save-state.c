@@ -127,7 +127,7 @@ int save_states_write(struct save_states *saves, FILE *to)
 		}
 		TRY(fputs("\n }\n}", to));
 	} else {
-		TRY(fputs("[]\n}", to));
+		TRY(fputs("{}\n}", to));
 	}
 	return 0;
 }
