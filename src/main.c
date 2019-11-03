@@ -446,11 +446,13 @@ int main(int argc, char *argv[])
 				if (prereq
 				 && !save_state_is_complete(save, prereq)) {
 					menu_set_message(&menu, "Level locked");
+					beep();
 				} else if (play_level(data_dir, save, map_name,
 					&timer))
 				{
 					menu_set_message(&menu,
 						"Error loading map");
+					beep();
 				} else {
 					menu_clear_message(&menu);
 				}
