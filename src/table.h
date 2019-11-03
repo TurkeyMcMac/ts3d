@@ -46,9 +46,10 @@ int table_each(table *tbl, int (*item)(const char *, void **));
 // having type void **.
 #define TABLE_FOR_EACH(tbl, k, v) \
 	for (size_t i__ = 0; \
+	i__ < (tbl)->len && ( \
 		k = (tbl)->items[i__].key, \
 		v = &(tbl)->items[i__].val, \
-		i__ < (tbl)->len; \
+		1); \
 	i__++)
 
 // Free all memory allocated for a table.

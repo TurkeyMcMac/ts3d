@@ -93,6 +93,7 @@ void table_free(table *tbl)
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
+#	include "util.h"
 #	include <assert.h>
 #	include <stdint.h>
 
@@ -176,6 +177,18 @@ CTF_TEST(table_for_visits_all,
 	product *= *(intptr_t *)table_get(&tab, "bar");
 	product *= *(intptr_t *)table_get(&tab, "baz");
 	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+CTF_TEST(table_empty_for_visits_all,
+	table tab;
+	table_init(&tab, 0);
+	const char *key ATTRIBUTE(unused);
+	int count = 0;
+	TABLE_FOR_EACH(&tab, key, *(void ***)&count) {
+		++count;
+	}
+	assert(count == 0);
 	table_free(&tab);
 )
 
