@@ -37,7 +37,7 @@ sub quick_sleep {
 sub dir_name {
     local ( $0, $1 );
     my ($dir) = @_;
-    return $dir =~ m,(.*/)[^/]+/?$, ? $1 : '.';
+    return $dir =~ m,(.*/)[^/]+/*$, ? $1 : $dir =~ m,^/, ? '/' : '.';
 }
 
 sub clear_screen {
