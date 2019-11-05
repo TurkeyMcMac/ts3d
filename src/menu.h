@@ -73,8 +73,11 @@ struct menu {
 int menu_init(struct menu *menu, const char *data_dir, WINDOW *win,
 	struct logger *log);
 
+// Get the currently looked-at menu item. This will never be NULL.
 struct menu_item *menu_get_current(struct menu *menu);
 
+// Get the currently selected item within the looked-at item. This is NULL if
+// the looked-at item is not a LINKS.
 struct menu_item *menu_get_selected(struct menu *menu);
 
 // Scroll the viewed menu by the number of lines. Positive means down. The
@@ -83,10 +86,13 @@ struct menu_item *menu_get_selected(struct menu *menu);
 int menu_scroll(struct menu *menu, int lines);
 
 // Enter the currently selected menu. See enum menu_action above for more
-// information. If the action is TAG, *tagp is set to the name of the map to be
-// loaded at the request of the user.
+// information. If the action is TAG, the currently selected menu item (see
+// menu_get_selected) will have a non-NULL tag field.
 enum menu_action menu_enter(struct menu *menu);
 
+// Teleport to the location of the given menu item. The item can be external and
+// manually constructed. It is valid for into to have a parent pointer to some
+// place even if it is not part of the menu tree.
 enum menu_action menu_redirect(struct menu *menu, struct menu_item *into);
 
 // Exit the current menu to the parent. true is returned unless the menu that is
