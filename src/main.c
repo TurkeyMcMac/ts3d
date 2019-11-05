@@ -402,7 +402,6 @@ int main(int argc, char *argv[])
 	struct menu_item *redirect = NULL;
 	struct menu_item new_game = {
 		.kind = ITEM_LINKS,
-		.title = str_dup("New Game"),
 		.items = NULL,
 		.n_items = 0
 	};
@@ -437,11 +436,13 @@ int main(int argc, char *argv[])
 		wrefresh(menuwin);
 		tick(&timer);
 		switch (key = wgetch(menuwin)) {
+		redirect:
+			redirect->title = selected->title;
+			redirect->parent = selected->parent;
 		case 'd':
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
-		redirect:
 			switch (redirect ? menu_redirect(&menu, redirect)
 				: menu_enter(&menu))
 			{
@@ -454,7 +455,6 @@ int main(int argc, char *argv[])
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
 				if (!strcmp(selected->tag, "NEW-GAME")) {
-					new_game.parent = selected->parent;
 					redirect = &new_game;
 					goto redirect;
 				} else if (!strcmp(selected->tag, "QUIT")) {
