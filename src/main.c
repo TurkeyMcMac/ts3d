@@ -399,6 +399,13 @@ int main(int argc, char *argv[])
 	set_up_colors();
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
+	struct menu_item *redirect = NULL;
+	struct menu_item new_game = {
+		.kind = ITEM_LINKS,
+		.title = str_dup("New Game"),
+		.items = NULL,
+		.n_items = 0
+	};
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
@@ -423,7 +430,7 @@ int main(int argc, char *argv[])
 	ticker_init(&timer, 30);
 	int key;
 	for (;;) {
-		const char *map_name;
+		struct menu_item *selected;
 		char *prereq;
 		tick_title(title_cam, title_board, titlewin);
 		menu_draw(&menu);
@@ -434,27 +441,35 @@ int main(int argc, char *argv[])
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
-			switch (menu_enter(&menu, &map_name)) {
+		redirect:
+			switch (redirect ? menu_redirect(&menu, redirect)
+				: menu_enter(&menu))
+			{
 			case ACTION_BLOCKED:
 				beep();
 				break;
 			case ACTION_WENT:
-				menu_clear_message(&menu);
 				break;
 			case ACTION_TAG:
-				if (!strcmp(map_name, "QUIT")) {
+				selected = menu_get_selected(&menu);
+				if (!selected || !selected->tag) break;
+				if (!strcmp(selected->tag, "NEW-GAME")) {
+					new_game.parent = selected->parent;
+					redirect = &new_game;
+					goto redirect;
+				} else if (!strcmp(selected->tag, "QUIT")) {
 					goto end;
-				} else if (isupper(*map_name)) {
+				} else if (isupper(*selected->tag)) {
 					beep();
 					break;
 				}
-				prereq = map_prereq(&ldr, map_name);
+				prereq = map_prereq(&ldr, selected->tag);
 				if (prereq
 				 && !save_state_is_complete(save, prereq)) {
 					menu_set_message(&menu, "Level locked");
 					beep();
-				} else if (play_level(data_dir, save, map_name,
-					&timer))
+				} else if (play_level(data_dir, save,
+					selected->tag, &timer))
 				{
 					menu_set_message(&menu,
 						"Error loading map");
@@ -511,6 +526,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
+		redirect = NULL;
 	}
 end:
 	d3d_free_camera(title_cam);

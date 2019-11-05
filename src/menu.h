@@ -73,6 +73,10 @@ struct menu {
 int menu_init(struct menu *menu, const char *data_dir, WINDOW *win,
 	struct logger *log);
 
+struct menu_item *menu_get_current(struct menu *menu);
+
+struct menu_item *menu_get_selected(struct menu *menu);
+
 // Scroll the viewed menu by the number of lines. Positive means down. The
 // return value is the number of lines actually scrolled, which may be less than
 // the requested if there are no more lines to look at.
@@ -81,7 +85,9 @@ int menu_scroll(struct menu *menu, int lines);
 // Enter the currently selected menu. See enum menu_action above for more
 // information. If the action is TAG, *tagp is set to the name of the map to be
 // loaded at the request of the user.
-enum menu_action menu_enter(struct menu *menu, const char **tagp);
+enum menu_action menu_enter(struct menu *menu);
+
+enum menu_action menu_redirect(struct menu *menu, struct menu_item *into);
 
 // Exit the current menu to the parent. true is returned unless the menu that is
 // currently viewed is the root menu.

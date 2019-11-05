@@ -111,6 +111,20 @@ error_fopen:
 	return -1;
 }
 
+struct menu_item *menu_get_current(struct menu *menu)
+{
+	return menu->current;
+}
+
+struct menu_item *menu_get_selected(struct menu *menu)
+{
+	if (!menu->current
+	 || menu->current->kind != ITEM_LINKS
+	 || (size_t)menu->current->place >= menu->current->n_items)
+		return NULL;
+	return &menu->current->items[menu->current->place];
+}
+
 static void text_n_items(struct menu *menu, struct menu_item *text)
 {
 	int maxy, maxx;
@@ -141,11 +155,16 @@ static void enter(struct menu *menu, struct menu_item *into)
 	werase(menu->win);
 }
 
-enum menu_action menu_enter(struct menu *menu, const char **tagp)
+enum menu_action menu_enter(struct menu *menu)
 {
 	struct menu_item *current = menu->current;
 	if (!has_items(current)) return ACTION_BLOCKED;
 	struct menu_item *into = &current->items[current->place];
+	return menu_redirect(menu, into);
+}
+
+enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
+{
 	switch (into->kind) {
 		FILE *txtfile;
 		char *fname;
@@ -167,7 +186,6 @@ enum menu_action menu_enter(struct menu *menu, const char **tagp)
 		enter(menu, into);
 		return ACTION_WENT;
 	case ITEM_TAG:
-		*tagp = into->tag;
 		return ACTION_TAG;
 	}
 	return ACTION_BLOCKED;
