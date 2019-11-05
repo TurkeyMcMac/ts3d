@@ -20,7 +20,7 @@ static void destroy_item(struct menu_item *item)
 	}
 	free(item->items);
 	free(item->title);
-	free(item->data_src);
+	free(item->tag);
 }
 
 static int construct(struct menu_item *item, struct menu_item *parent,
@@ -40,7 +40,7 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 			"Menu item has no or invalid \"title\" attribute\n");
 		goto error_title;
 	}
-	item->data_src = NULL;
+	item->tag = NULL;
 	item->items = NULL;
 	if ((got = json_map_get(json, "items", JN_LIST))) {
 		item->kind = ITEM_LINKS;
@@ -54,15 +54,13 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 		}
 	} else if ((got = json_map_get(json, "text", JN_STRING))) {
 		item->kind = ITEM_TEXT;
-		item->data_src = got->str;
+		item->tag = got->str;
 		item->n_items = 0;
 		got->str = NULL;
-	} else if ((got = json_map_get(json, "map", JN_STRING))) {
-		item->kind = ITEM_LEVEL;
-		item->data_src = got->str;
+	} else if ((got = json_map_get(json, "tag", JN_STRING))) {
+		item->kind = ITEM_TAG;
+		item->tag = got->str;
 		got->str = NULL;
-	} else if (table_get(&json->d.map, "quit")) {
-		item->kind = ITEM_QUIT;
 	} else {
 		item->kind = ITEM_INERT;
 	}
@@ -143,7 +141,7 @@ static void enter(struct menu *menu, struct menu_item *into)
 	werase(menu->win);
 }
 
-enum menu_action menu_enter(struct menu *menu, const char **mapp)
+enum menu_action menu_enter(struct menu *menu, const char **tagp)
 {
 	struct menu_item *current = menu->current;
 	if (!has_items(current)) return ACTION_BLOCKED;
@@ -157,7 +155,7 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 		enter(menu, into);
 		return ACTION_WENT;
 	case ITEM_TEXT:
-		fname = mid_cat(menu->root_dir, '/', into->data_src);
+		fname = mid_cat(menu->root_dir, '/', into->tag);
 		if (!(txtfile = fopen(fname, "r"))
 		 || !(menu->lines = read_lines(txtfile, &menu->n_lines))) {
 			free(fname);
@@ -168,11 +166,9 @@ enum menu_action menu_enter(struct menu *menu, const char **mapp)
 		text_n_items(menu, into);
 		enter(menu, into);
 		return ACTION_WENT;
-	case ITEM_LEVEL:
-		*mapp = into->data_src;
-		return ACTION_MAP;
-	case ITEM_QUIT:
-		return ACTION_QUIT;
+	case ITEM_TAG:
+		*tagp = into->tag;
+		return ACTION_TAG;
 	}
 	return ACTION_BLOCKED;
 }

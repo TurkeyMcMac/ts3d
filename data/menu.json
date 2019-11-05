@@ -1,23 +1,28 @@
 {"title": "Thing Shooter 3D",
+ "#comment": [
+  "Upper-case tags below denote actions, while lower-case is for maps. This",
+  "rule is inforced in main.c, not menu.c, so it could be changed without too",
+  "much effort. However, while it stands, map names must start with a lower-",
+  "case letter."],
  "items": [
   {"title": "Levels",
    "items": [
     {"title": "The Pond",
-     "map": "pond"},
+     "tag": "pond"},
     {"title": "Entrance",
-     "map": "entrance"},
+     "tag": "entrance"},
     {"title": "Gobstopper",
-     "map": "gobstopper"},
+     "tag": "gobstopper"},
     {"title": "Columns",
-     "map": "columns"},
+     "tag": "columns"},
     {"title": "Halls",
-     "map": "halls"},
+     "tag": "halls"},
     {"title": "Dancefloor",
-     "map": "dancefloor"},
+     "tag": "dancefloor"},
     {"title": "Double Trouble",
-     "map": "double-trouble"},
+     "tag": "double-trouble"},
     {"title": "Ensemble",
-     "map": "ensemble"}
+     "tag": "ensemble"}
    ]},
   {"title": "Help",
    "items": [
@@ -31,5 +36,5 @@
   {"title": "About",
    "text": "About"},
   {"title": "Quit",
-   "quit": true}
+   "tag": "QUIT"}
  ]}

@@ -441,7 +441,13 @@ int main(int argc, char *argv[])
 			case ACTION_WENT:
 				menu_clear_message(&menu);
 				break;
-			case ACTION_MAP:
+			case ACTION_TAG:
+				if (!strcmp(map_name, "QUIT")) {
+					goto end;
+				} else if (isupper(*map_name)) {
+					beep();
+					break;
+				}
 				prereq = map_prereq(&ldr, map_name);
 				if (prereq
 				 && !save_state_is_complete(save, prereq)) {
@@ -460,8 +466,6 @@ int main(int argc, char *argv[])
 				redrawwin(menuwin);
 				redrawwin(titlewin);
 				break;
-			case ACTION_QUIT:
-				goto end;
 			}
 			break;
 		case 'a':
