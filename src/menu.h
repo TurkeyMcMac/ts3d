@@ -47,6 +47,9 @@ struct menu_item {
 	// The place of the cursor in the menu, from 0 to n_items minus 1. This
 	// is only relevant for TEXTs and LINKSs.
 	int place;
+	// The position in a LINKS menu where the user is viewing. This is used
+	// for scrolling so that the selected item at place is always on-screen.
+	int frame;
 };
 
 // An object for traversing a menu tree, holding the relevant state inside.

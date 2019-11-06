@@ -65,6 +65,7 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 		item->kind = ITEM_INERT;
 	}
 	item->place = 0;
+	item->frame = 0;
 	item->parent = parent;
 	return 0;
 
@@ -129,7 +130,7 @@ static void text_n_items(struct menu *menu, struct menu_item *text)
 {
 	int maxy, maxx;
 	getmaxyx(menu->win, maxy, maxx);
-	size_t lines = (size_t)maxy - 2;
+	size_t lines = (size_t)maxy - 3;
 	maxy = maxx; // Suppress unused warning.
 	if (menu->n_lines > lines) {
 		text->n_items = menu->n_lines - lines;
@@ -146,6 +147,18 @@ int menu_scroll(struct menu *menu, int amount)
 	int last_place = current->place;
 	current->place =
 		CLAMP(current->place + amount, 0, (int)current->n_items - 1);
+	if (current->kind == ITEM_LINKS) {
+		int maxy, maxx;
+		getmaxyx(menu->win, maxy, maxx);
+		maxy -= 2;
+		if ((int)current->n_items < maxy) {
+			current->frame = 0;
+		} else {
+			current->frame = CLAMP(current->frame,
+				current->place - maxy + 1, current->place);
+		}
+		maxy = maxx; // Suppress unused warning.
+	}
 	return current->place - last_place;
 }
 
@@ -213,20 +226,23 @@ void menu_draw(struct menu *menu)
 	wattron(menu->win, A_UNDERLINE);
 	mvwaddstr(menu->win, 0, 0, current->title);
 	wattroff(menu->win, A_UNDERLINE);
+	int maxy, maxx;
+	getmaxyx(menu->win, maxy, maxx);
+	--maxy;
 	switch (current->kind) {
-		int maxy, maxx;
 	case ITEM_LINKS:
-		for (i = 0; i < (int)current->n_items; ++i) {
-			int n = i + 1;
-			int reverse = i == current->place;
+		for (int l = current->frame;
+		     l < (int)current->n_items && ++i < maxy; ++l) {
+			int reverse = l == current->place;
+			wmove(menu->win, i, 0);
 			if (reverse) wattron(menu->win, A_REVERSE);
-			mvwprintw(menu->win, n, 0,
-				"%2d. %s ", n, current->items[i].title);
+			wprintw(menu->win,  "%2d. %s ",
+				l + 1, current->items[l].title);
 			if (reverse) wattroff(menu->win, A_REVERSE);
+			wclrtoeol(menu->win);
 		}
 		break;
 	case ITEM_TEXT:
-		getmaxyx(menu->win, maxy, maxx);
 		for (int l = current->place;
 		     l < (int)menu->n_lines && ++i < maxy; ++l) {
 			struct string *line = &menu->lines[l];
@@ -234,15 +250,14 @@ void menu_draw(struct menu *menu)
 			waddnstr(menu->win, line->text, line->len);
 			wclrtoeol(menu->win);
 		}
-		maxy = maxx; // Suppress unused warning.
-		wclrtobot(menu->win);
 		break;
 	default:
 		break;
 	}
-	wmove(menu->win, i + 1, 0);
-	wclrtoeol(menu->win);
-	waddstr(menu->win, menu->msg);
+	wclrtobot(menu->win);
+	if (++i >= maxy) i = maxy;
+	mvwaddstr(menu->win, i, 0, menu->msg);
+	maxy = maxx; // Suppress unused warning.
 }
 
 void menu_set_message(struct menu *menu, const char *msg)
