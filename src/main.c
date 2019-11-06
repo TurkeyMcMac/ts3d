@@ -2,6 +2,7 @@
 #include "load-texture.h"
 #include "player.h"
 #include "d3d.h"
+#include "grow.h"
 #include "json-util.h"
 #include "map.h"
 #include "menu.h"
@@ -380,6 +381,25 @@ static struct save_state *get_save_state(const char *name,
 	return save_states_add(saves, name);
 }
 
+static void make_save_links(struct menu_item **items, size_t *num,
+	struct save_states *from)
+{
+	size_t cap = 5;
+	*items = xmalloc(cap * sizeof(**items));
+	*num = 0;
+	const char *key;
+	void **val;
+	SAVE_STATES_FOR_EACH(from, key, val) {
+		if (strcmp(key, ANONYMOUS)) {
+			struct menu_item *item = GROWE(*items, *num, cap);
+			item->parent = NULL;
+			item->kind = ITEM_TAG;
+			item->tag = mid_cat("", 'P', key);
+			item->title = item->tag + 1;
+		}
+	}
+}
+
 static void write_save_states(struct save_states *saves)
 {
 	FILE *to = fopen("state.json", "w");
@@ -405,6 +425,7 @@ int main(int argc, char *argv[])
 		.items = NULL,
 		.n_items = 0
 	};
+	make_save_links(&new_game.items, &new_game.n_items, &saves);
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
@@ -455,6 +476,12 @@ int main(int argc, char *argv[])
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
 				if (!strcmp(selected->tag, "NEW-GAME")) {
+					redirect = &new_game;
+					goto redirect;
+				} else if (!strcmp(selected->tag,
+						"DELETE-GAME")) {
+					menu_set_message(&menu,
+						"Select twice to delete");
 					redirect = &new_game;
 					goto redirect;
 				} else if (!strcmp(selected->tag, "QUIT")) {
