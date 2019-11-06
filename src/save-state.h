@@ -18,8 +18,8 @@ int save_states_init(struct save_states *saves, FILE *from, struct logger *log);
 
 struct save_state *save_states_add(struct save_states *saves, const char *name);
 
-#define SAVE_STATES_FOR_EACH(saves, name, save) \
-	TABLE_FOR_EACH(&(saves)->saves, name, save)
+#define SAVE_STATES_FOR_EACH(savesp, name, save) \
+	TABLE_FOR_EACH(&(savesp)->saves, name, save)
 
 const char *save_state_name(const struct save_state *save);
 
