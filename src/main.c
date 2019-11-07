@@ -475,7 +475,7 @@ int main(int argc, char *argv[])
 		.n_items = 0
 	};
 	add_save_links(&game_list.items, &game_list.n_items, &saves);
-	char name_buf[16];
+	char name_buf[16] = {'\0'};
 	char msg_buf[64];
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 	enum {
 		SWITCHING,
 		DELETING
-	} save_managing;
+	} save_managing = SWITCHING;
 	for (;;) {
 		struct menu_item *selected;
 		char *prereq;
