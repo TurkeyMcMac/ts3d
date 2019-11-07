@@ -21,7 +21,7 @@ static void destroy_item(struct menu_item *item)
 	}
 	free(item->items);
 	free(item->title);
-	free(item->tag);
+	if (item->kind != ITEM_INPUT) free(item->tag);
 }
 
 static int construct(struct menu_item *item, struct menu_item *parent,
@@ -58,6 +58,11 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 		item->tag = got->str;
 		item->n_items = 0;
 		got->str = NULL;
+	} else if ((got = json_map_get(json, "input", JN_BOOLEAN))
+			&& got->boolean) {
+		item->kind = ITEM_INPUT;
+		item->n_items = 0;
+		item->tag = "";
 	} else if ((got = json_map_get(json, "tag", JN_STRING))) {
 		item->kind = ITEM_TAG;
 		item->tag = got->str;
@@ -143,6 +148,7 @@ static void text_n_items(struct menu *menu, struct menu_item *text)
 int menu_scroll(struct menu *menu, int amount)
 {
 	struct menu_item *current = menu->current;
+	if (current->kind == ITEM_INPUT) return 0;
 	if (current->kind == ITEM_TEXT) text_n_items(menu, current);
 	if (current->n_items <= 0) return 0;
 	int last_place = current->place;
@@ -167,6 +173,15 @@ static void enter(struct menu *menu, struct menu_item *into)
 {
 	menu->current = into;
 	werase(menu->win);
+}
+
+bool menu_set_input(struct menu *menu, char *buf, size_t size)
+{
+	struct menu_item *current = menu->current;
+	if (current->kind != ITEM_INPUT) return false;
+	current->tag = buf;
+	current->n_items = size;
+	return true;
 }
 
 enum menu_action menu_enter(struct menu *menu)
@@ -199,6 +214,9 @@ enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
 		text_n_items(menu, into);
 		enter(menu, into);
 		return ACTION_WENT;
+	case ITEM_INPUT:
+		enter(menu, into);
+		return ACTION_INPUT;
 	case ITEM_TAG:
 		return ACTION_TAG;
 	}
@@ -265,6 +283,14 @@ void menu_draw(struct menu *menu)
 			waddnstr(menu->win, line->text, line->len);
 			wclrtoeol(menu->win);
 		}
+		break;
+	case ITEM_INPUT:
+		wattron(menu->win, A_UNDERLINE);
+		mvwprintw(menu->win, 2, 1, "%*.*s",
+			-(int)current->n_items, (int)current->n_items,
+			current->tag);
+		wattroff(menu->win, A_UNDERLINE);
+		i = 2;
 		break;
 	default:
 		break;

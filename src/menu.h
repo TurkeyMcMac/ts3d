@@ -10,6 +10,7 @@ enum menu_action {
 	ACTION_BLOCKED,
 	// The item was entered to reveal a submenu.
 	ACTION_WENT,
+	ACTION_INPUT,
 	// The item had a tag.
 	ACTION_TAG
 };
@@ -22,6 +23,8 @@ enum menu_kind {
 	ITEM_LINKS,
 	// An item which displays text from a file.
 	ITEM_TEXT,
+	// An item which has a string tag.
+	ITEM_INPUT,
 	// An item which has a string tag.
 	ITEM_TAG
 };
