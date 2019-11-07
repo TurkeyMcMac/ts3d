@@ -387,7 +387,7 @@ static void add_save_links(struct menu_item **items, size_t *num,
 	size_t cap = *num;
 	size_t head = 0;
 	const char *key;
-	void **val;
+	void **val ATTRIBUTE(unused);
 	SAVE_STATES_FOR_EACH(from, key, val) {
 		if (!strcmp(key, ANONYMOUS)) continue;
 		struct menu_item *item = (*items) + head;
@@ -480,6 +480,7 @@ int main(int argc, char *argv[])
 		redirect:
 			redirect->title = selected->title;
 			redirect->parent = selected->parent;
+			/* FALLTHROUGH */
 		case 'd':
 		case '\n':
 		case KEY_ENTER:
