@@ -434,12 +434,13 @@ int main(int argc, char *argv[])
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
 	struct menu_item *redirect = NULL;
-	struct menu_item new_game = {
+	struct menu_item game_list = {
 		.kind = ITEM_LINKS,
 		.items = NULL,
 		.n_items = 0
 	};
-	add_save_links(&new_game.items, &new_game.n_items, &saves);
+	add_save_links(&game_list.items, &game_list.n_items, &saves);
+	char msg_buf[64];
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
@@ -464,7 +465,10 @@ int main(int argc, char *argv[])
 	ticker_init(&timer, 30);
 	int key;
 	const char *delete_save = NULL;
-	bool deleting = false;
+	enum {
+		SWITCHING,
+		DELETING
+	} save_managing;
 	for (;;) {
 		struct menu_item *selected;
 		char *prereq;
@@ -491,35 +495,52 @@ int main(int argc, char *argv[])
 			case ACTION_TAG:
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
-				if (!strcmp(selected->tag, "NEW-GAME")) {
-					deleting = false;
-					redirect = &new_game;
+				if (!strcmp(selected->tag, "RESUME-GAME")) {
+					const char *name =
+						save_state_name(save);
+					if (strcmp(name, ANONYMOUS)) {
+						snprintf(msg_buf,
+							sizeof(msg_buf),
+							"Playing as %s", name);
+						menu_set_message(&menu,
+							msg_buf);
+					}
+					save_managing = SWITCHING;
+					redirect = &game_list;
 					goto redirect;
 				} else if (!strcmp(selected->tag,
 						"DELETE-GAME")) {
 					menu_set_message(&menu,
 						"Select twice to delete");
-					deleting = true;
+					save_managing = DELETING;
 					delete_save = NULL;
-					redirect = &new_game;
+					redirect = &game_list;
 					goto redirect;
 				} else if (!strcmp(selected->tag, "QUIT")) {
 					goto end;
 				} else if (*selected->tag == '/') {
-					if (deleting) {
-						const char *del = selected->tag
-							+ 1;
-						if (delete_save && !strcmp(del,
+					const char *name = selected->tag + 1;
+					if (save_managing == DELETING) {
+						if (delete_save && !strcmp(name,
 								delete_save)) {
+							if (!strcmp(name, save_state_name(save)))
+								save = save_states_get(&saves, ANONYMOUS);
 							delete_save_link(
 								&menu, &saves);
 						} else {
-							delete_save = del;
+							delete_save = name;
 						}
-					} else {
-						break;
+						continue;
+					} else if (save_managing == SWITCHING) {
+						save = save_states_get(&saves,
+							name);
+						snprintf(msg_buf,
+							sizeof(msg_buf),
+							"Switched to %s", name);
+						menu_set_message(&menu,
+							msg_buf);
 					}
-					continue;
+					break;
 				} else if (isupper(*selected->tag)) {
 					beep();
 					break;
