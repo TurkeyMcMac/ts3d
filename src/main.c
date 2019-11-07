@@ -398,8 +398,8 @@ static void add_save_links(struct menu_item **items, size_t *num,
 				* sizeof(*item));
 			item->parent = NULL;
 			item->kind = ITEM_TAG;
-			item->tag = mid_cat("", '/', key);
-			item->title = item->tag + 1;
+			item->tag = mid_cat("save", '/', key);
+			item->title = item->tag + 5;
 		}
 		++head;
 	}
@@ -409,7 +409,7 @@ static void delete_save_link(struct menu *menu, struct save_states *saves)
 {
 	struct menu_item freed;
 	if (menu_delete_selected(menu, &freed)) {
-		save_states_remove(saves, freed.tag + 1);
+		save_states_remove(saves, freed.tag + 5);
 		free(freed.tag);
 	}
 }
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
 			case ACTION_TAG:
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
-				if (!strcmp(selected->tag, "RESUME-GAME")) {
+				if (!strcmp(selected->tag, "act/resume-game")) {
 					const char *name =
 						save_state_name(save);
 					if (strcmp(name, ANONYMOUS)) {
@@ -505,22 +505,25 @@ int main(int argc, char *argv[])
 							"Playing as %s", name);
 						menu_set_message(&menu,
 							msg_buf);
+					} else {
+						menu_set_message(&menu,
+							"Playing anonymously");
 					}
 					save_managing = SWITCHING;
 					redirect = &game_list;
 					goto redirect;
 				} else if (!strcmp(selected->tag,
-						"DELETE-GAME")) {
+						"act/delete-game")) {
 					menu_set_message(&menu,
 						"Select twice to delete");
 					save_managing = DELETING;
 					delete_save = NULL;
 					redirect = &game_list;
 					goto redirect;
-				} else if (!strcmp(selected->tag, "QUIT")) {
+				} else if (!strcmp(selected->tag, "act/quit")) {
 					goto end;
-				} else if (*selected->tag == '/') {
-					const char *name = selected->tag + 1;
+				} else if (!strncmp(selected->tag, "save/", 5)){
+					const char *name = selected->tag + 5;
 					if (save_managing == DELETING) {
 						if (delete_save && !strcmp(name,
 								delete_save)) {
@@ -541,9 +544,6 @@ int main(int argc, char *argv[])
 						menu_set_message(&menu,
 							msg_buf);
 					}
-					break;
-				} else if (isupper(*selected->tag)) {
-					beep();
 					break;
 				}
 				prereq = map_prereq(&ldr, selected->tag);
