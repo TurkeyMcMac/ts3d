@@ -29,6 +29,9 @@
 #define TURN_DURATION 5
 #define ESC '\033'
 #define ANONYMOUS ""
+#define SAVE_PFX_NO_SLASH "save"
+#define SAVE_PFX SAVE_PFX_NO_SLASH "/"
+#define SAVE_PFX_LEN 5
 
 static void set_up_colors(void)
 {
@@ -398,8 +401,8 @@ static void add_save_links(struct menu_item **items, size_t *num,
 				* sizeof(*item));
 			item->parent = NULL;
 			item->kind = ITEM_TAG;
-			item->tag = mid_cat("save", '/', key);
-			item->title = item->tag + 5;
+			item->tag = mid_cat(SAVE_PFX_NO_SLASH, '/', key);
+			item->title = item->tag + SAVE_PFX_LEN;
 		}
 		++head;
 	}
@@ -409,7 +412,7 @@ static void delete_save_link(struct menu *menu, struct save_states *saves)
 {
 	struct menu_item freed;
 	if (menu_delete_selected(menu, &freed)) {
-		save_states_remove(saves, freed.tag + 5);
+		save_states_remove(saves, freed.tag + SAVE_PFX_LEN);
 		free(freed.tag);
 	}
 }
@@ -592,9 +595,11 @@ int main(int argc, char *argv[])
 					goto redirect;
 				} else if (!strcmp(selected->tag, "act/quit")) {
 					goto end;
-				} else if (!strncmp(selected->tag, "save/", 5))
+				} else if (!strncmp(selected->tag, SAVE_PFX,
+						SAVE_PFX_LEN))
 				{
-					const char *name = selected->tag + 5;
+					const char *name = selected->tag
+						+ SAVE_PFX_LEN;
 					if (save_managing == DELETING) {
 						if (delete_save && !strcmp(name,
 								delete_save)) {
