@@ -420,6 +420,36 @@ static void write_save_states(struct save_states *saves)
 	if (to) save_states_write(saves, to);
 }
 
+static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
+	d3d_camera *title_cam, d3d_board *title_board, WINDOW *title_win,
+	struct ticker *timer)
+{
+	int key;
+	menu_set_input(menu, name_buf, buf_size);
+	for (;;) {
+		key = wgetch(menu->win);
+		if (key == KEY_ENTER || key == '\n') break;
+		if (key == ESC || key == KEY_LEFT) {
+			*name_buf = '\0';
+			return;
+		}
+		menu_draw(menu);
+		wrefresh(menu->win);
+		tick_title(title_cam, title_board, title_win);
+		tick(timer);
+		size_t len = strnlen(name_buf, buf_size);
+		if (key == KEY_BACKSPACE) {
+			if (len > 0)
+				name_buf[len - 1] = '\0';
+		} else if (key == ERR || !isprint(key)){
+			continue;
+		} else {
+			name_buf[len] = key;
+			name_buf[len + 1] = '\0';
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	const char *data_dir = "data";
@@ -445,7 +475,7 @@ int main(int argc, char *argv[])
 		.n_items = 0
 	};
 	add_save_links(&game_list.items, &game_list.n_items, &saves);
-	char name_buf[20];
+	char name_buf[16];
 	char msg_buf[64];
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
@@ -501,49 +531,31 @@ int main(int argc, char *argv[])
 				break;
 			case ACTION_INPUT:
 				menu_clear_message(&menu);
-			retry_name_input:
-				menu_set_input(&menu, name_buf, sizeof(name_buf)
-					- 1);
-				strcpy(msg_buf, "Save creation cancelled");
 				for (;;) {
-					key = wgetch(menuwin);
-					if (key == KEY_ENTER || key == '\n')
-						break;
-					if (key == ESC || key == KEY_LEFT)
-						goto cancel_new;
-					menu_draw(&menu);
-					wrefresh(menuwin);
-					tick_title(title_cam, title_board,
-						titlewin);
-					tick(&timer);
-					size_t len = strnlen(name_buf,
-						sizeof(name_buf) - 1);
-					if (key == KEY_BACKSPACE) {
-						if (len > 0)
-							name_buf[len-1] = '\0';
-					} else if (key == ERR || !isprint(key)){
-						continue;
+					get_input(name_buf, sizeof(name_buf),
+						&menu, title_cam, title_board,
+						titlewin, &timer);
+					if (*name_buf
+					 && save_states_get(&saves, name_buf)) {
+						menu_set_message(&menu,
+							"Name already taken");
 					} else {
-						name_buf[len] = key;
-						name_buf[len + 1] = '\0';
+						break;
 					}
 				}
-				if (!strcmp(name_buf, ANONYMOUS))
-					goto cancel_new;
-				struct save_state *new = save_states_add(&saves,
-					name_buf);
-				if (!new) {
-					menu_set_message(&menu,
-						"Name already taken");
-					goto retry_name_input;
+				if (*name_buf) {
+					save = save_states_add(&saves,
+						name_buf);
+					snprintf(msg_buf, sizeof(msg_buf),
+						"Switched to new save %s",
+						name_buf);
+					add_save_links(&game_list.items,
+						&game_list.n_items, &saves);
+					name_buf[0] = '\0';
+				} else {
+					strcpy(msg_buf, "Save creation"
+							" cancelled");
 				}
-				snprintf(msg_buf, sizeof(msg_buf),
-					"Switched to new save %s", name_buf);
-				save = new;
-				add_save_links(&game_list.items,
-					&game_list.n_items, &saves);
-				name_buf[0] = '\0';
-			cancel_new:
 				menu_escape(&menu);
 				menu_set_message(&menu, msg_buf);
 				break;
