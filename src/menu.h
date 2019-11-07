@@ -10,6 +10,8 @@ enum menu_action {
 	ACTION_BLOCKED,
 	// The item was entered to reveal a submenu.
 	ACTION_WENT,
+	// An input element was entered. This is the same as WENT except that
+	// the entered item is always an INPUT.
 	ACTION_INPUT,
 	// The item had a tag.
 	ACTION_TAG
@@ -23,7 +25,7 @@ enum menu_kind {
 	ITEM_LINKS,
 	// An item which displays text from a file.
 	ITEM_TEXT,
-	// An item which has a string tag.
+	// An item for user text input.
 	ITEM_INPUT,
 	// An item which has a string tag.
 	ITEM_TAG
@@ -39,13 +41,16 @@ struct menu_item {
 	enum menu_kind kind;
 	// Some item-specific data. For TAGs, this is the tag string. For TEXTs,
 	// it is the path of a text file relative to the data directory. For
-	// other kinds, it is NULL.
+	// inputs, it is the pointer to the current text buffer, For other
+	// kinds, it is NULL. This pointer is allocated or NULL unless the item
+	// is an INPUT.
 	char *tag;
 	// Sub-items for LINKSs. For other kinds, this is NULL.
 	struct menu_item *items;
 	// The number of sub-items for LINKSs. For TEXTs, this is set to the
 	// number of scrollable lines in the file when it is loaded, or 0 before
-	// it has ever been loaded. For other kinds, this is 0.
+	// it has ever been loaded. For INPUTs, this is the space in characters
+	// of the current input buffer. For other kinds, this is 0.
 	size_t n_items;
 	// The place of the cursor in the menu, from 0 to n_items minus 1. This
 	// is only relevant for TEXTs and LINKSs.
@@ -111,6 +116,12 @@ bool menu_escape(struct menu *menu);
 // move_to is set to the removed item, which is not freed or modified. move_to
 // must be freed manually.
 bool menu_delete_selected(struct menu *menu, struct menu_item *move_to);
+
+// Set the input buffer with the given size. This only applies to INPUTS, and
+// returns true and does stuff only if the current item is an INPUT. The buffer
+// can later be modified and changes will show up when the menu is redrawn. The
+// text of the buffer must ALWAYS BE NUL TERMINATED.
+bool menu_set_input(struct menu *menu, char *buf, size_t size);
 
 // Draw the viewed menu on menu->win.
 void menu_draw(struct menu *menu);
