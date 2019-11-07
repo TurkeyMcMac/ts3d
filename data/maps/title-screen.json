@@ -39,7 +39,7 @@
   }
  ],
  "player": {
-  "kind": "player",
-  "pos": [2.5, 2.5]
+  "#comment": "Something with only one frame; less loading needed.",
+  "kind": "health"
  }
 }
