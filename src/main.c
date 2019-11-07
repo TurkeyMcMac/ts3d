@@ -501,6 +501,7 @@ int main(int argc, char *argv[])
 				break;
 			case ACTION_INPUT:
 				menu_clear_message(&menu);
+			retry_name_input:
 				menu_set_input(&menu, name_buf, sizeof(name_buf)
 					- 1);
 				strcpy(msg_buf, "Save creation cancelled");
@@ -529,15 +530,18 @@ int main(int argc, char *argv[])
 				}
 				if (!strcmp(name_buf, ANONYMOUS))
 					goto cancel_new;
-				snprintf(msg_buf, sizeof(msg_buf),
-					"Switched to new save %s", name_buf);
 				struct save_state *new = save_states_add(&saves,
 					name_buf);
-				if (new) {
-					save = new;
-					add_save_links(&game_list.items,
-						&game_list.n_items, &saves);
+				if (!new) {
+					menu_set_message(&menu,
+						"Name already taken");
+					goto retry_name_input;
 				}
+				snprintf(msg_buf, sizeof(msg_buf),
+					"Switched to new save %s", name_buf);
+				save = new;
+				add_save_links(&game_list.items,
+					&game_list.n_items, &saves);
 				name_buf[0] = '\0';
 			cancel_new:
 				menu_escape(&menu);
