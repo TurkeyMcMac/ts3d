@@ -289,8 +289,13 @@ void menu_draw(struct menu *menu)
 		mvwprintw(menu->win, 2, 1, "%*.*s",
 			-(int)current->n_items, (int)current->n_items,
 			current->tag);
+		size_t last = strnlen(current->tag, current->n_items);
+		if (last < current->n_items) {
+			mvwaddch(menu->win, 2, (int)last + 1, A_REVERSE | ' ');
+		}
 		wattroff(menu->win, A_UNDERLINE);
-		i = 2;
+		mvwaddstr(menu->win, 3, 1, "Enter text");
+		i = 3;
 		break;
 	default:
 		break;
