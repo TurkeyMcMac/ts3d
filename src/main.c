@@ -381,22 +381,27 @@ static struct save_state *get_save_state(const char *name,
 	return save_states_add(saves, name);
 }
 
-static void make_save_links(struct menu_item **items, size_t *num,
+static void add_save_links(struct menu_item **items, size_t *num,
 	struct save_states *from)
 {
-	size_t cap = 5;
-	*items = xmalloc(cap * sizeof(**items));
-	*num = 0;
+	size_t cap = *num;
+	size_t head = 0;
 	const char *key;
 	void **val;
 	SAVE_STATES_FOR_EACH(from, key, val) {
-		if (strcmp(key, ANONYMOUS)) {
-			struct menu_item *item = GROWE(*items, *num, cap);
+		if (!strcmp(key, ANONYMOUS)) continue;
+		struct menu_item *item = (*items) + head;
+		if (head >= *num || strcmp(key, item->title)) {
+			GROWE(*items, *num, cap);
+			item = (*items) + head;
+			memmove(item + 1, item, (*num - 1 - head)
+				* sizeof(*item));
 			item->parent = NULL;
 			item->kind = ITEM_TAG;
-			item->tag = mid_cat("", 'P', key);
+			item->tag = mid_cat("", '/', key);
 			item->title = item->tag + 1;
 		}
+		++head;
 	}
 }
 
@@ -425,7 +430,7 @@ int main(int argc, char *argv[])
 		.items = NULL,
 		.n_items = 0
 	};
-	make_save_links(&new_game.items, &new_game.n_items, &saves);
+	add_save_links(&new_game.items, &new_game.n_items, &saves);
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
