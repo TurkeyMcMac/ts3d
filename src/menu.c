@@ -1,6 +1,7 @@
 #include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "json-util.h"
 #include "menu.h"
 #include "read-lines.h"
@@ -216,6 +217,20 @@ bool menu_escape(struct menu *menu)
 	if (!menu->current->parent) return false;
 	menu->current = menu->current->parent;
 	werase(menu->win);
+	return true;
+}
+
+bool menu_delete_selected(struct menu *menu, struct menu_item *move_to)
+{
+	struct menu_item *current = menu_get_current(menu);
+	struct menu_item *selected = menu_get_selected(menu);
+	if (!selected) return false;
+	*move_to = *selected;
+	--current->n_items;
+	memmove(selected, selected + 1,
+		(current->n_items - (selected - current->items))
+			* sizeof(*selected));
+	menu_scroll(menu, 0);
 	return true;
 }
 

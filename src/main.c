@@ -405,6 +405,15 @@ static void add_save_links(struct menu_item **items, size_t *num,
 	}
 }
 
+static void delete_save_link(struct menu *menu, struct save_states *saves)
+{
+	struct menu_item freed;
+	if (menu_delete_selected(menu, &freed)) {
+		save_states_remove(saves, freed.tag + 1);
+		free(freed.tag);
+	}
+}
+
 static void write_save_states(struct save_states *saves)
 {
 	FILE *to = fopen("state.json", "w");
@@ -454,6 +463,8 @@ int main(int argc, char *argv[])
 	struct ticker timer;
 	ticker_init(&timer, 30);
 	int key;
+	const char *delete_save = NULL;
+	bool deleting = false;
 	for (;;) {
 		struct menu_item *selected;
 		char *prereq;
@@ -481,16 +492,34 @@ int main(int argc, char *argv[])
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
 				if (!strcmp(selected->tag, "NEW-GAME")) {
+					deleting = false;
 					redirect = &new_game;
 					goto redirect;
 				} else if (!strcmp(selected->tag,
 						"DELETE-GAME")) {
 					menu_set_message(&menu,
 						"Select twice to delete");
+					deleting = true;
+					delete_save = NULL;
 					redirect = &new_game;
 					goto redirect;
 				} else if (!strcmp(selected->tag, "QUIT")) {
 					goto end;
+				} else if (*selected->tag == '/') {
+					if (deleting) {
+						const char *del = selected->tag
+							+ 1;
+						if (delete_save && !strcmp(del,
+								delete_save)) {
+							delete_save_link(
+								&menu, &saves);
+						} else {
+							delete_save = del;
+						}
+					} else {
+						break;
+					}
+					continue;
 				} else if (isupper(*selected->tag)) {
 					beep();
 					break;

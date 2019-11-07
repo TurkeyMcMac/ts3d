@@ -102,6 +102,13 @@ enum menu_action menu_redirect(struct menu *menu, struct menu_item *into);
 // currently viewed is the root menu.
 bool menu_escape(struct menu *menu);
 
+// Delete the selected menu item in a LINKS. This will shift over menu items
+// after it in memory. Returned is whether an item was deleted. If no item was
+// selected (i.e. the current item was not a LINKS) then false is returned.
+// move_to is set to the removed item, which is not freed or modified. move_to
+// must be freed manually.
+bool menu_delete_selected(struct menu *menu, struct menu_item *move_to);
+
 // Draw the viewed menu on menu->win.
 void menu_draw(struct menu *menu);
 
