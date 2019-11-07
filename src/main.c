@@ -592,13 +592,19 @@ int main(int argc, char *argv[])
 					goto redirect;
 				} else if (!strcmp(selected->tag, "act/quit")) {
 					goto end;
-				} else if (!strncmp(selected->tag, "save/", 5)){
+				} else if (!strncmp(selected->tag, "save/", 5))
+				{
 					const char *name = selected->tag + 5;
 					if (save_managing == DELETING) {
 						if (delete_save && !strcmp(name,
 								delete_save)) {
-							if (!strcmp(name, save_state_name(save)))
-								save = save_states_get(&saves, ANONYMOUS);
+							if (!strcmp(name,
+								save_state_name(
+									save)))
+								save = // squish
+								save_states_get(
+								&saves,
+								ANONYMOUS);
 							delete_save_link(
 								&menu, &saves);
 						} else {
