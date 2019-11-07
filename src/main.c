@@ -434,12 +434,18 @@ int main(int argc, char *argv[])
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
 	struct menu_item *redirect = NULL;
+	struct menu_item new_game = {
+		.kind = ITEM_INPUT,
+		.n_items = 0,
+		.tag = ""
+	};
 	struct menu_item game_list = {
 		.kind = ITEM_LINKS,
 		.items = NULL,
 		.n_items = 0
 	};
 	add_save_links(&game_list.items, &game_list.n_items, &saves);
+	char name_buf[20];
 	char msg_buf[64];
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
@@ -493,6 +499,50 @@ int main(int argc, char *argv[])
 				break;
 			case ACTION_WENT:
 				break;
+			case ACTION_INPUT:
+				menu_clear_message(&menu);
+				menu_set_input(&menu, name_buf, sizeof(name_buf)
+					- 1);
+				strcpy(msg_buf, "Save creation cancelled");
+				for (;;) {
+					key = wgetch(menuwin);
+					if (key == KEY_ENTER || key == '\n')
+						break;
+					if (key == ESC || key == KEY_LEFT)
+						goto cancel_new;
+					menu_draw(&menu);
+					wrefresh(menuwin);
+					tick_title(title_cam, title_board,
+						titlewin);
+					tick(&timer);
+					size_t len = strnlen(name_buf,
+						sizeof(name_buf) - 1);
+					if (key == KEY_BACKSPACE) {
+						if (len > 0)
+							name_buf[len-1] = '\0';
+					} else if (key == ERR || !isprint(key)){
+						continue;
+					} else {
+						name_buf[len] = key;
+						name_buf[len + 1] = '\0';
+					}
+				}
+				if (!strcmp(name_buf, ANONYMOUS))
+					goto cancel_new;
+				snprintf(msg_buf, sizeof(msg_buf),
+					"Switched to new save %s", name_buf);
+				struct save_state *new = save_states_add(&saves,
+					name_buf);
+				if (new) {
+					save = new;
+					add_save_links(&game_list.items,
+						&game_list.n_items, &saves);
+				}
+				name_buf[0] = '\0';
+			cancel_new:
+				menu_escape(&menu);
+				menu_set_message(&menu, msg_buf);
+				break;
 			case ACTION_TAG:
 				selected = menu_get_selected(&menu);
 				if (!selected || !selected->tag) break;
@@ -511,6 +561,10 @@ int main(int argc, char *argv[])
 					}
 					save_managing = SWITCHING;
 					redirect = &game_list;
+					goto redirect;
+				} else if (!strcmp(selected->tag,
+						"act/new-game")) {
+					redirect = &new_game;
 					goto redirect;
 				} else if (!strcmp(selected->tag,
 						"act/delete-game")) {
