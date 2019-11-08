@@ -134,10 +134,9 @@ struct menu_item *menu_get_selected(struct menu *menu)
 
 static void text_n_items(struct menu *menu, struct menu_item *text)
 {
-	int maxy, maxx;
+	int maxy, maxx ATTRIBUTE(unused);
 	getmaxyx(menu->win, maxy, maxx);
 	size_t lines = (size_t)maxy - 3;
-	maxy = maxx; // Suppress unused warning.
 	if (menu->n_lines > lines) {
 		text->n_items = menu->n_lines - lines;
 	} else {
@@ -155,7 +154,7 @@ int menu_scroll(struct menu *menu, int amount)
 	current->place =
 		CLAMP(current->place + amount, 0, (int)current->n_items - 1);
 	if (current->kind == ITEM_LINKS) {
-		int maxy, maxx;
+		int maxy, maxx ATTRIBUTE(unused);
 		getmaxyx(menu->win, maxy, maxx);
 		maxy -= 2;
 		if ((int)current->n_items < maxy) {
@@ -164,7 +163,6 @@ int menu_scroll(struct menu *menu, int amount)
 			current->frame = CLAMP(current->frame,
 				current->place - maxy + 1, current->place);
 		}
-		maxy = maxx; // Suppress unused warning.
 	}
 	return current->place - last_place;
 }
@@ -259,7 +257,7 @@ void menu_draw(struct menu *menu)
 	wattron(menu->win, A_UNDERLINE);
 	mvwaddstr(menu->win, 0, 0, current->title);
 	wattroff(menu->win, A_UNDERLINE);
-	int maxy, maxx;
+	int maxy, maxx ATTRIBUTE(unused);
 	getmaxyx(menu->win, maxy, maxx);
 	--maxy;
 	switch (current->kind) {
@@ -303,7 +301,6 @@ void menu_draw(struct menu *menu)
 	wclrtobot(menu->win);
 	if (++i >= maxy) i = maxy;
 	mvwaddstr(menu->win, i, 0, menu->msg);
-	maxy = maxx; // Suppress unused warning.
 }
 
 void menu_set_message(struct menu *menu, const char *msg)
