@@ -39,4 +39,8 @@ void display_frame(d3d_camera *cam, WINDOW *win);
 // Create a camera with the given positive dimensions.
 d3d_camera *camera_with_dims(int width, int height);
 
+// Register all the color pairs needed for drawing the screen. Returns 0 on
+// success, or -1 if not enough colors are supported.
+int set_up_colors(void);
+
 #endif /* UI_UTIL_H_ */

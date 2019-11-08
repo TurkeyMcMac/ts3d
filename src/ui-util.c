@@ -90,3 +90,15 @@ d3d_camera *camera_with_dims(int width, int height)
 			FOV_X / PIXEL_ASPECT, width, height);
 	}
 }
+
+int set_up_colors(void)
+{
+	if (start_color() == ERR) return -1;
+	for (int fg = 0; fg < 8; ++fg) {
+		for (int bg = 0; bg < 8; ++bg) {
+			if (init_pair(pixel_pair(pixel(fg, bg)), fg, bg) == ERR)
+				return -1;
+		}
+	}
+	return 0;
+}

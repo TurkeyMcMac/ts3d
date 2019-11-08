@@ -35,17 +35,6 @@
 // The length of the above prefix, including the slash.
 #define SAVE_PFX_LEN 5
 
-// Register all the color pairs needed for drawing the screen.
-static void set_up_colors(void)
-{
-	start_color();
-	for (int fg = 0; fg < 8; ++fg) {
-		for (int bg = 0; bg < 8; ++bg) {
-			init_pair(pixel_pair(pixel(fg, bg)), fg, bg);
-		}
-	}
-}
-
 // atexit callback that calls endwin().
 static void end_win(void) { endwin(); }
 
@@ -220,7 +209,9 @@ int main(int argc, char *argv[])
 		&saves, loader_logger(&ldr));
 	initscr();
 	atexit(end_win);
-	set_up_colors();
+	if (set_up_colors())
+		logger_printf(&log, LOGGER_WARNING,
+			"Terminal colors not properly supported");
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	// Window to draw the screensaver on:
