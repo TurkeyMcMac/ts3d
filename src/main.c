@@ -257,8 +257,6 @@ static int play_level(const char *root_dir, struct save_state *save,
 	struct ents ents;
 	init_entities(&ents, map);
 	d3d_board *board = map->board;
-	initscr();
-	atexit(end_win);
 	struct meter health_meter = {
 		.label = "HEALTH",
 		.style = pixel_style(pixel(PC_BLACK, PC_GREEN)),
@@ -281,7 +279,6 @@ static int play_level(const char *root_dir, struct save_state *save,
 	d3d_camera *cam = camera_with_dims(COLS, LINES - 1);
 	struct player player;
 	player_init(&player, map);
-	redrawwin(stdscr);
 	timeout(0);
 	keypad(stdscr, TRUE);
 	int translation = '\0';
