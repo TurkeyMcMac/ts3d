@@ -204,6 +204,27 @@ static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
 
 bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
 
+char *map_prereq(struct loader *ldr, const char *name)
+{
+	char *path = loader_map_path(ldr, name);
+	FILE *file = fopen(path, "r");
+	if (!file) {
+		free(path);
+		return NULL;
+	}
+	json_reader rdr;
+	json_alloc(&rdr, NULL, 1, xmalloc, free, xrealloc);
+	char buf[BUFSIZ];
+	json_source_file(&rdr, buf, sizeof(buf), file);
+	struct json_item item;
+	scan_json_key(&rdr, "prereq", &item);
+	json_free(&rdr);
+	fclose(file);
+	free(item.key.bytes);
+	free(path);
+	return item.type == JSON_STRING ? item.val.str.bytes : NULL;
+}
+
 struct map *load_map(struct loader *ldr, const char *name)
 {
 	struct logger *log = loader_logger(ldr);
@@ -215,6 +236,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	map = malloc(sizeof(*map));
 	struct json_node jtree;
 	map->name = str_dup(name);
+	map->prereq = NULL;
 	map->board = NULL;
 	map->walls = NULL;
 	map->blocks = NULL;
@@ -244,6 +266,10 @@ struct map *load_map(struct loader *ldr, const char *name)
 	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
 		free(map->name);
 		map->name = got->str;
+		got->str = NULL;
+	}
+	if ((got = json_map_get(&jtree, "prereq", JN_STRING))) {
+		map->prereq = got->str;
 		got->str = NULL;
 	}
 	uint8_t *walls = NULL;

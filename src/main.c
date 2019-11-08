@@ -2,11 +2,13 @@
 #include "load-texture.h"
 #include "player.h"
 #include "d3d.h"
+#include "grow.h"
 #include "json-util.h"
 #include "map.h"
 #include "menu.h"
 #include "ent.h"
 #include "pixel.h"
+#include "save-state.h"
 #include "ticker.h"
 #include "ui-util.h"
 #include "util.h"
@@ -26,6 +28,10 @@
 #define FOV_X 2.0
 #define TURN_DURATION 5
 #define ESC '\033'
+#define ANONYMOUS ""
+#define SAVE_PFX_NO_SLASH "save"
+#define SAVE_PFX SAVE_PFX_NO_SLASH "/"
+#define SAVE_PFX_LEN 5
 
 static void set_up_colors(void)
 {
@@ -232,8 +238,8 @@ static bool do_pause_popup(struct ticker *timer)
 	return false;
 }
 
-static int play_level(const char *root_dir, const char *map_name,
-	struct ticker *timer)
+static int play_level(const char *root_dir, struct save_state *save,
+	const char *map_name, struct ticker *timer)
 {
 	struct loader ldr;
 	loader_init(&ldr, root_dir);
@@ -244,6 +250,7 @@ static int play_level(const char *root_dir, const char *map_name,
 		loader_free(&ldr);
 		return -1;
 	}
+	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
 	init_entities(&ents, map);
@@ -328,6 +335,7 @@ quit:
 	refresh();
 	delwin(dead_popup);
 	d3d_free_camera(cam);
+	if (won) save_state_mark_complete(save, map_name);
 	loader_free(&ldr);
 	return 0;
 }
@@ -362,16 +370,117 @@ static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 	*d3d_camera_facing(cam) -= 0.003;
 }
 
-int main(void)
+static struct save_state *get_save_state(const char *name,
+	struct save_states *saves, struct logger *log)
+{
+	FILE *from = fopen("state.json", "r");
+	if (from && !save_states_init(saves, from, log)) {
+		struct save_state *save = save_states_get(saves, name);
+		if (save) return save;
+		fclose(from);
+	} else {
+		save_states_empty(saves);
+	}
+	return save_states_add(saves, name);
+}
+
+static void add_save_links(struct menu_item **items, size_t *num,
+	struct save_states *from)
+{
+	size_t cap = *num;
+	size_t head = 0;
+	const char *key;
+	void **val ATTRIBUTE(unused);
+	SAVE_STATES_FOR_EACH(from, key, val) {
+		if (!strcmp(key, ANONYMOUS)) continue;
+		struct menu_item *item = (*items) + head;
+		if (head >= *num || strcmp(key, item->title)) {
+			GROWE(*items, *num, cap);
+			item = (*items) + head;
+			memmove(item + 1, item, (*num - 1 - head)
+				* sizeof(*item));
+			item->parent = NULL;
+			item->kind = ITEM_TAG;
+			item->tag = mid_cat(SAVE_PFX_NO_SLASH, '/', key);
+			item->title = item->tag + SAVE_PFX_LEN;
+		}
+		++head;
+	}
+}
+
+static void delete_save_link(struct menu *menu, struct save_states *saves)
+{
+	struct menu_item freed;
+	if (menu_delete_selected(menu, &freed)) {
+		save_states_remove(saves, freed.tag + SAVE_PFX_LEN);
+		free(freed.tag);
+	}
+}
+
+static void write_save_states(struct save_states *saves)
+{
+	FILE *to = fopen("state.json", "w");
+	if (to) save_states_write(saves, to);
+}
+
+static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
+	d3d_camera *title_cam, d3d_board *title_board, WINDOW *title_win,
+	struct ticker *timer)
+{
+	int key;
+	--buf_size;
+	menu_set_input(menu, name_buf, buf_size);
+	for (;;) {
+		key = wgetch(menu->win);
+		if (key == KEY_ENTER || key == '\n') break;
+		if (key == ESC || key == KEY_LEFT) {
+			*name_buf = '\0';
+			return;
+		}
+		menu_draw(menu);
+		wrefresh(menu->win);
+		tick_title(title_cam, title_board, title_win);
+		tick(timer);
+		size_t len = strnlen(name_buf, buf_size);
+		if (key == KEY_BACKSPACE) {
+			if (len > 0)
+				name_buf[len - 1] = '\0';
+		} else if (key == ERR || !isprint(key)){
+			continue;
+		} else if (len < buf_size) {
+			name_buf[len] = key;
+			name_buf[len + 1] = '\0';
+		}
+	}
+}
+
+int main(int argc, char *argv[])
 {
 	const char *data_dir = "data";
+	struct loader ldr;
+	loader_init(&ldr, data_dir);
+	struct save_states saves;
+	struct save_state *save = get_save_state(argc > 1 ? argv[1] : ANONYMOUS,
+		&saves, loader_logger(&ldr));
 	initscr();
 	atexit(end_win);
 	set_up_colors();
-	struct loader ldr;
-	loader_init(&ldr, data_dir);
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
+	struct menu_item *redirect = NULL;
+	struct menu_item new_game = {
+		.kind = ITEM_INPUT,
+		.n_items = 0,
+		.tag = ""
+	};
+	struct menu_item game_list = {
+		.kind = ITEM_LINKS,
+		.items = NULL,
+		.n_items = 0
+	};
+	add_save_links(&game_list.items, &game_list.n_items, &saves);
+	char name_buf[16] = {'\0'};
+	char msg_buf[64];
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
@@ -395,33 +504,148 @@ int main(void)
 	struct ticker timer;
 	ticker_init(&timer, 30);
 	int key;
+	const char *delete_save = NULL;
+	enum {
+		SWITCHING,
+		DELETING
+	} save_managing = SWITCHING;
 	for (;;) {
-		const char *map_name;
+		struct menu_item *selected;
+		char *prereq;
 		tick_title(title_cam, title_board, titlewin);
 		menu_draw(&menu);
 		wrefresh(menuwin);
 		tick(&timer);
 		switch (key = wgetch(menuwin)) {
+		redirect:
+			redirect->title = selected->title;
+			redirect->parent = selected->parent;
+			/* FALLTHROUGH */
 		case 'd':
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
-			switch (menu_enter(&menu, &map_name)) {
+			switch (redirect ? menu_redirect(&menu, redirect)
+				: menu_enter(&menu))
+			{
 			case ACTION_BLOCKED:
 				beep();
 				break;
 			case ACTION_WENT:
-				menu_clear_message(&menu);
 				break;
-			case ACTION_MAP:
-				if (play_level(data_dir, map_name, &timer))
+			case ACTION_INPUT:
+				menu_clear_message(&menu);
+				for (;;) {
+					get_input(name_buf, sizeof(name_buf),
+						&menu, title_cam, title_board,
+						titlewin, &timer);
+					if (*name_buf
+					 && save_states_get(&saves, name_buf)) {
+						menu_set_message(&menu,
+							"Name already taken");
+					} else {
+						break;
+					}
+				}
+				if (*name_buf) {
+					save = save_states_add(&saves,
+						name_buf);
+					snprintf(msg_buf, sizeof(msg_buf),
+						"Switched to new save %s",
+						name_buf);
+					add_save_links(&game_list.items,
+						&game_list.n_items, &saves);
+					name_buf[0] = '\0';
+				} else {
+					strcpy(msg_buf, "Save creation"
+							" cancelled");
+				}
+				menu_escape(&menu);
+				menu_set_message(&menu, msg_buf);
+				break;
+			case ACTION_TAG:
+				selected = menu_get_selected(&menu);
+				if (!selected || !selected->tag) break;
+				if (!strcmp(selected->tag, "act/resume-game")) {
+					const char *name =
+						save_state_name(save);
+					if (strcmp(name, ANONYMOUS)) {
+						snprintf(msg_buf,
+							sizeof(msg_buf),
+							"Playing as %s", name);
+						menu_set_message(&menu,
+							msg_buf);
+					} else {
+						menu_set_message(&menu,
+							"Playing anonymously");
+					}
+					save_managing = SWITCHING;
+					redirect = &game_list;
+					goto redirect;
+				} else if (!strcmp(selected->tag,
+						"act/new-game")) {
+					redirect = &new_game;
+					goto redirect;
+				} else if (!strcmp(selected->tag,
+						"act/delete-game")) {
+					menu_set_message(&menu,
+						"Select twice to delete");
+					save_managing = DELETING;
+					delete_save = NULL;
+					redirect = &game_list;
+					goto redirect;
+				} else if (!strcmp(selected->tag, "act/quit")) {
+					goto end;
+				} else if (!strncmp(selected->tag, SAVE_PFX,
+						SAVE_PFX_LEN))
+				{
+					const char *name = selected->tag
+						+ SAVE_PFX_LEN;
+					if (save_managing == DELETING) {
+						if (delete_save && !strcmp(name,
+								delete_save)) {
+							if (!strcmp(name,
+								save_state_name(
+									save)))
+								save = // squish
+								save_states_get(
+								&saves,
+								ANONYMOUS);
+							delete_save_link(
+								&menu, &saves);
+						} else {
+							delete_save = name;
+						}
+						continue;
+					} else if (save_managing == SWITCHING) {
+						save = save_states_get(&saves,
+							name);
+						snprintf(msg_buf,
+							sizeof(msg_buf),
+							"Switched to %s", name);
+						menu_set_message(&menu,
+							msg_buf);
+					}
+					break;
+				}
+				prereq = map_prereq(&ldr, selected->tag);
+				if (prereq
+				 && !save_state_is_complete(save, prereq)) {
+					menu_set_message(&menu, "Level locked");
+					beep();
+				} else if (play_level(data_dir, save,
+					selected->tag, &timer))
+				{
 					menu_set_message(&menu,
 						"Error loading map");
+					beep();
+				} else {
+					menu_clear_message(&menu);
+				}
+				free(prereq);
 				redrawwin(menuwin);
 				redrawwin(titlewin);
 				break;
-			case ACTION_QUIT:
-				goto end;
 			}
 			break;
 		case 'a':
@@ -467,8 +691,12 @@ int main(void)
 			}
 			break;
 		}
+		redirect = NULL;
 	}
 end:
 	d3d_free_camera(title_cam);
+	save_states_remove(&saves, ANONYMOUS);
+	write_save_states(&saves);
+	save_states_destroy(&saves);
 	loader_free(&ldr);
 }

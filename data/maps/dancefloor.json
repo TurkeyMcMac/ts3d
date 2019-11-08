@@ -1,4 +1,5 @@
 {
+ "prereq": "halls",
  "blocks": [
   {
    "name": "wall",

@@ -4,7 +4,8 @@ test-log = tests.log
 sources = src/*.c
 headers = src/*.h
 
-cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L ${CFLAGS}
+cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DJSON_WITH_STDIO \
+	 ${CFLAGS}
 linkage = -lm -lcurses
 test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 

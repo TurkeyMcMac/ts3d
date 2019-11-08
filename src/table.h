@@ -4,11 +4,13 @@
 #include <stddef.h>
 
 // A map from strings to pointers
-struct item;
 typedef struct {
 	size_t len;
 	size_t cap;
-	struct item *items;
+	struct item {
+		const char *key;
+		void *val;
+	} *items;
 } table;
 
 // Initialize a table with a certain size suggestion. This need not be the exact
@@ -26,6 +28,10 @@ void table_freeze(table *tbl);
 // NULL is returned.
 void **table_get(table *tbl, const char *key);
 
+// Remove an item from the table and return it. If the item does not exist,
+// NULL is returned. There is no way to tell between a NULL item and a
+// nonexistent one.
+void *table_remove(table *tbl, const char *key);
 
 // Count the number of unique keys added to the table.
 size_t table_count(const table *tbl);
@@ -34,6 +40,17 @@ size_t table_count(const table *tbl);
 // the key, and the second is the mutable pointer to the corresponding value.
 // The order is undefined.
 int table_each(table *tbl, int (*item)(const char *, void **));
+
+// Creates a for loop header to go through each key and value in the table. k
+// and v are names of variables pre-declared, k having type const char * and v
+// having type void **.
+#define TABLE_FOR_EACH(tbl, k, v) \
+	for (size_t i__ = 0; \
+	i__ < (tbl)->len && ( \
+		k = (tbl)->items[i__].key, \
+		v = &(tbl)->items[i__].val, \
+		1); \
+	i__++)
 
 // Free all memory allocated for a table.
 void table_free(table *tbl);

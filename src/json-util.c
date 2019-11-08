@@ -257,6 +257,77 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 	return retval;
 }
 
+int escape_text_json(const char *text, FILE *to)
+{
+	while (*text) {
+		switch (*text) {
+		case '"':
+			TRY(fputs("\\\"", to));
+			break;
+		case '\\':
+			TRY(fputs("\\\\", to));
+			break;
+		case '\b':
+			TRY(fputs("\\b", to));
+			break;
+		case '\f':
+			TRY(fputs("\\f", to));
+			break;
+		case '\n':
+			TRY(fputs("\\n", to));
+			break;
+		case '\r':
+			TRY(fputs("\\r", to));
+			break;
+		case '\t':
+			TRY(fputs("\\t", to));
+			break;
+		default:
+			if ((unsigned char)*text < 32) {
+				TRY(fprintf(to, "\\u%04X",
+					(unsigned char)*text));
+			} else {
+				TRY(fputc(*text, to));
+			}
+			break;
+		}
+		++text;
+	}
+	return 0;
+}
+
+int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
+{
+	long depth = 0;
+	do {
+		if (json_read_item(rdr, item)) return -1;
+		if (depth == 1
+		 && item->key.bytes
+		 && !strcmp(key, item->key.bytes))
+			return 0;
+		switch (item->type) {
+		case JSON_LIST:
+		case JSON_MAP:
+			++depth;
+			break;
+		case JSON_END_LIST:
+		case JSON_END_MAP:
+			--depth;
+			break;
+		case JSON_EMPTY:
+			depth = 0;
+			break;
+		default:
+			break;
+		}
+		free(item->key.bytes);
+	} while (depth > 0);
+	item->type = JSON_EMPTY;
+	item->key.len = 0;
+	item->key.bytes = NULL;
+	return 0;
+}
+
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
@@ -313,6 +384,39 @@ CTF_TEST(json_tree_nested,
 	assert(list->list.vals[0].d.num == 2);
 	assert(list->list.vals[1].d.num == 3);
 	free_json_tree(&root);
+)
+
+CTF_TEST(escapes_text_json,
+	const char text[] = "ABC\n\"\x1BZ";
+	const char expected[] = "ABC\\n\\\"\\u001BZ";
+	size_t n_escaped = 0;
+	char *escaped = NULL;
+	FILE *to = open_memstream(&escaped, &n_escaped);
+	assert(!escape_text_json(text, to));
+	fclose(to);
+	printf("escaped: \"%.*s\"\n", (int)n_escaped, escaped);
+	assert(n_escaped == sizeof(expected) - 1);
+	assert(!memcmp(escaped, expected, n_escaped));
+)
+
+CTF_TEST(scans_json_key,
+	const char text[] = "{\"a\":{\"b\":2},\"b\":1}";
+	json_reader rdr;
+	json_alloc(&rdr, NULL, 2, xmalloc, free, xrealloc);
+	json_source_string(&rdr, text, sizeof(text));
+	struct json_item item;
+	assert(!scan_json_key(&rdr, "b", &item));
+	assert(item.val.num == 1);
+)
+
+CTF_TEST(scans_json_key_array,
+	const char text[] = "[1,2]";
+	json_reader rdr;
+	json_alloc(&rdr, NULL, 2, xmalloc, free, xrealloc);
+	json_source_string(&rdr, text, sizeof(text));
+	struct json_item item;
+	assert(!scan_json_key(&rdr, "b", &item));
+	assert(item.type == JSON_EMPTY);
 )
 
 #endif /* CTF_TESTS_ENABLED */

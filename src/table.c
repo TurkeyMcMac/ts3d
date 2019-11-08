@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-struct item {
-	const char *key;
-	void *val;
-};
-
 #define ITEM_SIZE sizeof(struct item)
 
 void table_init(table *tbl, size_t size)
@@ -63,6 +58,19 @@ void **table_get(table *tbl, const char *key)
 	return find(tbl, &got, key) ? &got->val : NULL;
 }
 
+void *table_remove(table *tbl, const char *key)
+{
+	struct item *got;
+	if (find(tbl, &got, key)) {
+		void *val = got->val;
+		--tbl->len;
+		memmove(got, got + 1,
+			(tbl->len - (got - tbl->items)) * ITEM_SIZE);
+		return val;
+	}
+	return NULL;
+}
+
 size_t table_count(const table *tbl)
 {
 	return tbl->len;
@@ -85,6 +93,7 @@ void table_free(table *tbl)
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
+#	include "util.h"
 #	include <assert.h>
 #	include <stdint.h>
 
@@ -115,6 +124,19 @@ CTF_TEST(table_gets,
 	table_free(&tab);
 )
 
+CTF_TEST(table_removes,
+	table tab;
+	set_up_table(&tab, 2, 3, 5);
+	int product = 1;
+	product *= (intptr_t)table_remove(&tab, "foo");
+	product *= (intptr_t)table_remove(&tab, "bar");
+	product *= (intptr_t)table_remove(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	assert(table_count(&tab) == 0);
+	assert(table_get(&tab, "foo") == NULL);
+	table_free(&tab);
+)
+
 CTF_TEST(table_get_freeze,
 	table tab;
 	set_up_table(&tab, 2, 3, 5);
@@ -141,6 +163,34 @@ static int set_value_for_key(const char *key, void **item_)
 	}
 	return 0;
 }
+
+CTF_TEST(table_for_visits_all,
+	table tab;
+	set_up_table(&tab, 0, 0, 0);
+	const char *key;
+	void **val;
+	TABLE_FOR_EACH(&tab, key, val) {
+		set_value_for_key(key, val);
+	}
+	int product = 1;
+	product *= *(intptr_t *)table_get(&tab, "foo");
+	product *= *(intptr_t *)table_get(&tab, "bar");
+	product *= *(intptr_t *)table_get(&tab, "baz");
+	assert(product == 2 * 3 * 5);
+	table_free(&tab);
+)
+
+CTF_TEST(table_empty_for_visits_all,
+	table tab;
+	table_init(&tab, 0);
+	const char *key ATTRIBUTE(unused);
+	int count = 0;
+	TABLE_FOR_EACH(&tab, key, *(void ***)&count) {
+		++count;
+	}
+	assert(count == 0);
+	table_free(&tab);
+)
 
 CTF_TEST(table_each_visits_all,
 	table tab;

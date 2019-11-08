@@ -1,23 +1,35 @@
 {"title": "Thing Shooter 3D",
+ "#comment": [
+  "Since non-map tags contain slashes, map names cannot contain slashes. Names",
+  "starting with act/ are navigation actions."],
  "items": [
+  {"title": "Manage Games",
+   "items": [
+    {"title": "New Game",
+     "tag": "act/new-game"},
+    {"title": "Resume Game",
+     "tag": "act/resume-game"},
+    {"title": "Delete Game",
+     "tag": "act/delete-game"}
+   ]},
   {"title": "Levels",
    "items": [
     {"title": "The Pond",
-     "map": "pond"},
+     "tag": "pond"},
     {"title": "Entrance",
-     "map": "entrance"},
+     "tag": "entrance"},
     {"title": "Gobstopper",
-     "map": "gobstopper"},
+     "tag": "gobstopper"},
     {"title": "Columns",
-     "map": "columns"},
+     "tag": "columns"},
     {"title": "Halls",
-     "map": "halls"},
+     "tag": "halls"},
     {"title": "Dancefloor",
-     "map": "dancefloor"},
+     "tag": "dancefloor"},
     {"title": "Double Trouble",
-     "map": "double-trouble"},
+     "tag": "double-trouble"},
     {"title": "Ensemble",
-     "map": "ensemble"}
+     "tag": "ensemble"}
    ]},
   {"title": "Help",
    "items": [
@@ -31,5 +43,5 @@
   {"title": "About",
    "text": "About"},
   {"title": "Quit",
-   "quit": true}
+   "tag": "act/quit"}
  ]}

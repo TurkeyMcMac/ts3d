@@ -44,4 +44,8 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 #define CLAMP(num, min, max) \
 	((num) < (min) ? (min) : ((num) > (max) ? (max) : (num)))
 
+// Evaluate the expression that has a numeric type. If it is less than 0, return
+// -1. Otherwise, continue onward.
+#define TRY(expr) if ((expr) >= 0) ; else return -1
+
 #endif /* UTIL_H_ */
