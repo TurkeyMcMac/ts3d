@@ -183,7 +183,7 @@ CTF_TEST(table_for_visits_all,
 CTF_TEST(table_empty_for_visits_all,
 	table tab;
 	table_init(&tab, 0);
-	const char *key ATTRIBUTE(unused);
+	const char *UNUSED_VAR(key);
 	int count = 0;
 	TABLE_FOR_EACH(&tab, key, *(void ***)&count) {
 		++count;

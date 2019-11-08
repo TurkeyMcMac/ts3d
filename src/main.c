@@ -390,7 +390,7 @@ static void add_save_links(struct menu_item **items, size_t *num,
 	size_t cap = *num;
 	size_t head = 0;
 	const char *key;
-	void **val ATTRIBUTE(unused);
+	void **UNUSED_VAR(val);
 	SAVE_STATES_FOR_EACH(from, key, val) {
 		if (!strcmp(key, ANONYMOUS)) continue;
 		struct menu_item *item = (*items) + head;

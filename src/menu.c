@@ -134,7 +134,7 @@ struct menu_item *menu_get_selected(struct menu *menu)
 
 static void text_n_items(struct menu *menu, struct menu_item *text)
 {
-	int maxy, maxx ATTRIBUTE(unused);
+	int maxy, UNUSED_VAR(maxx);
 	getmaxyx(menu->win, maxy, maxx);
 	size_t lines = (size_t)maxy - 3;
 	if (menu->n_lines > lines) {
@@ -154,7 +154,7 @@ int menu_scroll(struct menu *menu, int amount)
 	current->place =
 		CLAMP(current->place + amount, 0, (int)current->n_items - 1);
 	if (current->kind == ITEM_LINKS) {
-		int maxy, maxx ATTRIBUTE(unused);
+		int maxy, UNUSED_VAR(maxx);
 		getmaxyx(menu->win, maxy, maxx);
 		maxy -= 2;
 		if ((int)current->n_items < maxy) {
@@ -257,7 +257,7 @@ void menu_draw(struct menu *menu)
 	wattron(menu->win, A_UNDERLINE);
 	mvwaddstr(menu->win, 0, 0, current->title);
 	wattroff(menu->win, A_UNDERLINE);
-	int maxy, maxx ATTRIBUTE(unused);
+	int maxy, UNUSED_VAR(maxx);
 	getmaxyx(menu->win, maxy, maxx);
 	--maxy;
 	switch (current->kind) {

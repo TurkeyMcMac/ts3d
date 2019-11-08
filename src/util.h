@@ -48,4 +48,8 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 // -1. Otherwise, continue onward.
 #define TRY(expr) if ((expr) >= 0) ; else return -1
 
+// Wrap this around the name of a variable at its point of definition to
+// suppress warnings by the compiler that it is unused.
+#define UNUSED_VAR(var) var ATTRIBUTE(unused)
+
 #endif /* UTIL_H_ */
