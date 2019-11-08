@@ -428,6 +428,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 	struct ticker *timer)
 {
 	int key;
+	--buf_size;
 	menu_set_input(menu, name_buf, buf_size);
 	for (;;) {
 		key = wgetch(menu->win);
@@ -446,7 +447,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 				name_buf[len - 1] = '\0';
 		} else if (key == ERR || !isprint(key)){
 			continue;
-		} else {
+		} else if (len < buf_size) {
 			name_buf[len] = key;
 			name_buf[len + 1] = '\0';
 		}
