@@ -418,6 +418,14 @@ static void delete_save_link(struct menu *menu, struct save_states *saves)
 	}
 }
 
+static void free_save_links(struct menu_item *links)
+{
+	for (size_t i = 0; i < links->n_items; ++i) {
+		free(links->items[i].tag);
+	}
+	free(links->items);
+}
+
 static void write_save_states(struct save_states *saves)
 {
 	FILE *to = fopen("state.json", "w");
@@ -699,6 +707,7 @@ int main(int argc, char *argv[])
 	}
 end:
 	d3d_free_camera(title_cam);
+	free_save_links(&game_list);
 	save_states_remove(&saves, ANONYMOUS);
 	write_save_states(&saves);
 	save_states_destroy(&saves);
