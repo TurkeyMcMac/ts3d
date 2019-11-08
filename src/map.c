@@ -205,8 +205,6 @@ static uint8_t normalize_wall(const struct map *map, size_t x, size_t y)
 	return here;
 }
 
-bool map_has_wall(const struct map *map, size_t x, size_t y, d3d_direction dir);
-
 char *map_prereq(struct loader *ldr, const char *name)
 {
 	char *path = loader_map_path(ldr, name);
