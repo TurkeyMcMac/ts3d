@@ -26,6 +26,11 @@ static void parse_save_state(struct save_state *save, struct json_node *json)
 static void free_save_state(struct save_state *save)
 {
 	free(save->name);
+	const char *key;
+	void **UNUSED_VAR(val);
+	TABLE_FOR_EACH(&save->complete, key, val) {
+		free((char *)key);
+	}
 	table_free(&save->complete);
 	free(save);
 }
