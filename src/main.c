@@ -851,6 +851,7 @@ int main(int argc, char *argv[])
 	}
 end:
 	d3d_free_camera(title_cam);
+	menu_destroy(&menu);
 	free_save_links(&game_list);
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
