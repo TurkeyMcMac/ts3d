@@ -355,6 +355,7 @@ void map_free(struct map *map)
 {
 	if (!map) return;
 	free(map->name);
+	free(map->prereq);
 	d3d_free_board(map->board);
 	free(map->walls);
 	free(map->blocks);
