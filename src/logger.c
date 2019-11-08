@@ -61,6 +61,7 @@ static const char *get_prefix(struct logger *log, int mode)
 
 void logger_init(struct logger *log)
 {
+	if (!log) return;
 	log->flags = LOGGER_ALL;
 	log->info = log->warning = log->error = stderr;
 	log->do_free = 0;
@@ -68,11 +69,13 @@ void logger_init(struct logger *log)
 
 FILE *logger_get_output(struct logger *log, int which)
 {
+	if (!log) return NULL;
 	return *get_filep(log, get_mode(which));
 }
 
 void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free)
 {
+	if (!log) return;
 	int mode = get_mode(which);
 	log->do_free &= ~mode;
 	*get_filep(log, mode) = dest;
@@ -86,12 +89,14 @@ void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free)
 
 void logger_set_color(struct logger *log, int color)
 {
+	if (!log) return;
 	log->flags &= ~(LOGGER_NO_COLOR | LOGGER_COLOR);
 	log->flags |= color & (LOGGER_NO_COLOR | LOGGER_COLOR);
 }
 
 void logger_printf(struct logger *log, int flags, const char *format, ...)
 {
+	if (!log) return;
 	int mode = get_mode(flags);
 	if (!(log->flags & mode)) return;
 	FILE *file = *get_filep(log, mode);
@@ -116,6 +121,7 @@ void logger_printf(struct logger *log, int flags, const char *format, ...)
 
 void logger_free(struct logger *log)
 {
+	if (!log) return;
 	FILE *file;
 	if ((log->do_free & LOGGER_INFO)
 	 && (file = *get_filep(log, LOGGER_INFO)))

@@ -24,6 +24,11 @@ struct logger {
 #define LOGGER_NO_COLOR		0x0020
 #define LOGGER_AUTO_COLOR	0 // Not actually a flag
 
+/*
+ * All the following functions accept NULL as a log in which case they do
+ * nothing. logger_get_output returns NULL.
+ */
+
 // Initialize a logger with default settings: everything going to standard error
 // and AUTO_COLOR (colorization based on whether the output is a terminal.)
 void logger_init(struct logger *log);
