@@ -35,9 +35,6 @@
 // The length of the above prefix, including the slash.
 #define SAVE_PFX_LEN 5
 
-// atexit callback that calls endwin().
-static void end_win(void) { endwin(); }
-
 // Position the camera in the title screensaver.
 static void title_cam_pos(d3d_camera *cam, const d3d_board *board)
 {
@@ -196,6 +193,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 
 int main(int argc, char *argv[])
 {
+	int ret = EXIT_FAILURE;
 	struct logger log;
 	logger_init(&log);
 	const char *data_dir = "data"; // Game data root directory.
@@ -208,7 +206,6 @@ int main(int argc, char *argv[])
 	struct save_state *save = get_save_state(argc > 1 ? argv[1] : ANONYMOUS,
 		&saves, loader_logger(&ldr));
 	initscr();
-	atexit(end_win);
 	if (set_up_colors())
 		logger_printf(&log, LOGGER_WARNING,
 			"Terminal colors not properly supported");
@@ -244,7 +241,7 @@ int main(int argc, char *argv[])
 	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
 			"Failed to load menu\n");
-		exit(EXIT_FAILURE);
+		goto early_end;
 	}
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
@@ -253,7 +250,7 @@ int main(int argc, char *argv[])
 	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
 			"Failed to load title screensaver\n");
-		exit(EXIT_FAILURE);
+		goto early_end;
 	}
 	loader_print_summary(&ldr);
 	curs_set(0); // Hide the cursor.
@@ -491,4 +488,8 @@ end:
 	save_states_destroy(&saves);
 	loader_free(&ldr);
 	logger_free(&log);
+	ret = EXIT_SUCCESS;
+early_end:
+	endwin();
+	return ret;
 }
