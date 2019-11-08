@@ -1,4 +1,6 @@
 #include "load-texture.h"
+#include "loader.h"
+#include "logger.h"
 #include "read-lines.h"
 #include "pixel.h"
 #include "string.h"

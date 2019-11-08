@@ -3,11 +3,12 @@
 
 #include "d3d.h"
 #include "json.h"
-#include "logger.h"
 #include "table.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+
+struct logger; // Weak dependency
 
 // A node in a JSON tree
 struct json_node {

@@ -2,8 +2,8 @@
 #define LOAD_TEXTURE_H_
 
 #include "d3d.h"
-#include "loader.h"
-#include "table.h"
+
+struct loader; // Weak dependency
 
 // The key implanted in the txtrs table by load_textures which corresponds to
 // an empty sprite texture. This will always be present.

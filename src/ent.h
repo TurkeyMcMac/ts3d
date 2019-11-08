@@ -3,10 +3,10 @@
 
 #include "chance.h"
 #include "d3d.h"
-#include "loader.h"
-#include "table.h"
 #include "team.h"
 #include <stdbool.h>
+
+struct loader; // Weak dependency
 
 struct ent_frame {
 	// The texture displayed.

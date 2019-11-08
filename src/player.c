@@ -1,4 +1,6 @@
 #include "player.h"
+#include "ent.h"
+#include "map.h"
 #include "util.h"
 #include <math.h>
 #include <stdlib.h>

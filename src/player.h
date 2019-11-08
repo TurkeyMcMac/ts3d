@@ -3,7 +3,11 @@
 
 #include "body.h"
 #include "d3d.h"
-#include "map.h"
+
+// Weak dependencies
+struct ents;
+struct map;
+struct map_ent_start;
 
 // Player in-game information.
 struct player {

@@ -1,5 +1,7 @@
 #include "body.h"
 #include "load-texture.h"
+#include "loader.h"
+#include "logger.h"
 #include "player.h"
 #include "d3d.h"
 #include "grow.h"

@@ -2,7 +2,8 @@
 #define MENU_H_
 
 #include <curses.h>
-#include "logger.h"
+
+struct logger; // Weak dependency
 
 // An action taken when a menu item is entered.
 enum menu_action {

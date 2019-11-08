@@ -1,13 +1,14 @@
 #ifndef LOADER_H_
 #define LOADER_H_
 
-#include "table.h"
-struct loader;
-#include "ent.h"
-#include "map.h"
 #include "d3d.h"
-#include "logger.h"
+#include "table.h"
 #include <stdio.h>
+
+// Weak dependencies
+struct logger;
+struct map;
+struct ent_type;
 
 // An object for loading game resources recursively. The fields are private.
 struct loader {

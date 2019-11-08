@@ -1,10 +1,12 @@
+#include "menu.h"
 #include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "json-util.h"
-#include "menu.h"
+#include "logger.h"
 #include "read-lines.h"
+#include "util.h"
 #include "xalloc.h"
 
 static bool has_items(const struct menu_item *item)

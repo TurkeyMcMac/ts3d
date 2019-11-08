@@ -1,6 +1,8 @@
 #include "json-util.h"
 #include "grow.h"
+#include "logger.h"
 #include "table.h"
+#include "util.h"
 #include "xalloc.h"
 #include <errno.h>
 #include <stdbool.h>

@@ -2,11 +2,13 @@
 #define MAP_H_
 
 #include "d3d.h"
-#include "loader.h"
-#include "ent.h"
 #include "team.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+// Weak dependencies
+struct loader;
+struct ent_type;
 
 // A specification of where some entity should begin.
 struct map_ent_start {

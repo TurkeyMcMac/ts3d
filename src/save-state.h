@@ -2,9 +2,10 @@
 #define SAVE_STATE_H_
 
 #include "table.h"
-#include "logger.h"
 #include <stdio.h>
 #include <stdbool.h>
+
+struct logger; // Weak dependency
 
 struct save_state;
 

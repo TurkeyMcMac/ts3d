@@ -1,5 +1,6 @@
 #include "save-state.h"
 #include "json-util.h"
+#include "util.h"
 #include "xalloc.h"
 #include <stdlib.h>
 

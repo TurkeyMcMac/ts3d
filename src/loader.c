@@ -1,4 +1,7 @@
 #include "loader.h"
+#include "ent.h"
+#include "map.h"
+#include "logger.h"
 #include "pixel.h"
 #include "string.h"
 #include "util.h"
