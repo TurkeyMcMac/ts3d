@@ -399,6 +399,7 @@ quit:
 	d3d_free_camera(cam);
 	// Record the player's winning:
 	if (won) save_state_mark_complete(save, map_name);
+	ents_destroy(&ents);
 	loader_free(&ldr);
 	return 0;
 
