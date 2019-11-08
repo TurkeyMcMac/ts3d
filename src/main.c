@@ -517,7 +517,10 @@ static void write_save_states(struct save_states *saves)
 {
 	FILE *to = fopen("state.json", "w");
 	// Silently fail for now.
-	if (to) save_states_write(saves, to);
+	if (to) {
+		save_states_write(saves, to);
+		fclose(to);
+	}
 }
 
 // Get an input that is the name of a save from the menu. The menu must be in
