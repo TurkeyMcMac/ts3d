@@ -249,9 +249,10 @@ static int play_level(const char *root_dir, struct save_state *save,
 	if (!map) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
 			"Failed to load map \"%s\"\n", map_name);
-		loader_free(&ldr);
-		return -1;
+		goto error_map;
 	}
+	if (map->prereq && !save_state_is_complete(save, map->prereq))
+		goto error_map; // Map not unlocked.
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
@@ -337,6 +338,10 @@ quit:
 	if (won) save_state_mark_complete(save, map_name);
 	loader_free(&ldr);
 	return 0;
+
+error_map:
+	loader_free(&ldr);
+	return -1;
 }
 
 static void title_cam_pos(d3d_camera *cam, const d3d_board *board)
