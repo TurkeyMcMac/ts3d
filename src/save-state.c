@@ -151,6 +151,7 @@ void save_states_destroy(struct save_states *saves)
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
+#	include "logger.h"
 #	include <assert.h>
 #	include <string.h>
 
