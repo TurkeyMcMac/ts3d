@@ -28,6 +28,7 @@
 #define FOV_X 2.0
 #define TURN_DURATION 5
 #define ESC '\033'
+#define DEL '\177'
 #define ANONYMOUS ""
 #define SAVE_PFX_NO_SLASH "save"
 #define SAVE_PFX SAVE_PFX_NO_SLASH "/"
@@ -451,7 +452,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 		tick_title(title_cam, title_board, title_win);
 		tick(timer);
 		size_t len = strnlen(name_buf, buf_size);
-		if (key == KEY_BACKSPACE) {
+		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
 			if (len > 0)
 				name_buf[len - 1] = '\0';
 		} else if (key == ERR || !isprint(key)){
