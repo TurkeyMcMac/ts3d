@@ -14,7 +14,7 @@ void loader_init(struct loader *ldr, const char *root)
 	table_init(&ldr->ents, 16);
 	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
-	logger_init(&ldr->log);
+	ldr->log = NULL;
 	ldr->empty_txtr = NULL;
 }
 
@@ -65,20 +65,20 @@ static void **loadj(table *tab, const char *root, const char *name, FILE **file,
 struct ent_type **loader_ent(struct loader *ldr, const char *name, FILE **file)
 {
 	return (struct ent_type **)loadj(&ldr->ents, ldr->ents_dir, name, file,
-		&ldr->log);
+		ldr->log);
 }
 
 struct map **loader_map(struct loader *ldr, const char *name, FILE **file)
 {
 	return (struct map **)loadj(&ldr->maps, ldr->maps_dir, name, file,
-		&ldr->log);
+		ldr->log);
 }
 
 d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 {
 	char *fname = str_dup(name);
 	d3d_texture **loaded = (d3d_texture **)load(&ldr->txtrs, ldr->txtrs_dir,
-		fname, file, &ldr->log);
+		fname, file, ldr->log);
 	if (!*file) free(fname);
 	return loaded;
 }
@@ -115,7 +115,7 @@ static int free_maps_callback(const char *key, void **val)
 
 void loader_print_summary(struct loader *ldr)
 {
-	logger_printf(&ldr->log, LOGGER_INFO,
+	logger_printf(ldr->log, LOGGER_INFO,
 		"Load summary: %zu maps, %zu entity types, %zu textures\n",
 		table_count(&ldr->maps),
 		table_count(&ldr->ents),
@@ -124,13 +124,19 @@ void loader_print_summary(struct loader *ldr)
 
 struct logger *loader_logger(struct loader *ldr)
 {
-	return &ldr->log;
+	return ldr->log;
+}
+
+struct logger *loader_set_logger(struct loader *ldr, struct logger *log)
+{
+	struct logger *old = ldr->log;
+	ldr->log = log;
+	return old;
 }
 
 void loader_free(struct loader *ldr)
 {
 	d3d_free_texture(ldr->empty_txtr);
-	logger_free(&ldr->log);
 	table_each(&ldr->txtrs, free_txtrs_callback);
 	table_free(&ldr->txtrs);
 	free(ldr->txtrs_dir);

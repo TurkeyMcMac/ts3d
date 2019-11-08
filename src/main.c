@@ -239,10 +239,11 @@ static bool do_pause_popup(struct ticker *timer)
 }
 
 static int play_level(const char *root_dir, struct save_state *save,
-	const char *map_name, struct ticker *timer)
+	const char *map_name, struct ticker *timer, struct logger *log)
 {
 	struct loader ldr;
 	loader_init(&ldr, root_dir);
+	logger_free(loader_set_logger(&ldr, log));
 	struct map *map = load_map(&ldr, map_name);
 	if (!map) {
 		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
@@ -456,9 +457,12 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 
 int main(int argc, char *argv[])
 {
+	struct logger log;
+	logger_init(&log);
 	const char *data_dir = "data";
 	struct loader ldr;
 	loader_init(&ldr, data_dir);
+	logger_free(loader_set_logger(&ldr, &log));
 	struct save_states saves;
 	struct save_state *save = get_save_state(argc > 1 ? argv[1] : ANONYMOUS,
 		&saves, loader_logger(&ldr));
@@ -634,7 +638,7 @@ int main(int argc, char *argv[])
 					menu_set_message(&menu, "Level locked");
 					beep();
 				} else if (play_level(data_dir, save,
-					selected->tag, &timer))
+					selected->tag, &timer, &log))
 				{
 					menu_set_message(&menu,
 						"Error loading map");
@@ -699,4 +703,5 @@ end:
 	write_save_states(&saves);
 	save_states_destroy(&saves);
 	loader_free(&ldr);
+	logger_free(&log);
 }

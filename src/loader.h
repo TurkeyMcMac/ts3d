@@ -18,7 +18,7 @@ struct loader {
 	char *ents_dir;
 	table maps;
 	char *maps_dir;
-	struct logger log;
+	struct logger *log;
 };
 
 // Initialize a loader with the given data root directory. If the directory is
@@ -51,7 +51,11 @@ void loader_print_summary(struct loader *ldr);
 // settings.
 struct logger *loader_logger(struct loader *ldr);
 
-// Free a loader, its logger, and the items it has loaded.
+// Set the logger to use, returning the old logger. The new logger must survive
+// at least as long as the loader, and will not be freed by it.
+struct logger *loader_set_logger(struct loader *ldr, struct logger *log);
+
+// Free a loader and the items it has loaded (not the logger.)
 void loader_free(struct loader *ldr);
 
 #endif /* LOADER_H_ */
