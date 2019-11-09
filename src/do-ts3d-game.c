@@ -81,7 +81,7 @@ static struct save_state *get_save_state(const char *name,
 	if (from && !save_states_init(saves, from, log)) {
 		struct save_state *save = save_states_get(saves, name);
 		if (save) return save;
-		fclose(from);
+		// from closed by save_state_init
 	} else {
 		save_states_empty(saves);
 	}
