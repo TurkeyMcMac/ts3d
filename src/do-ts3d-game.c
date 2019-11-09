@@ -1,3 +1,4 @@
+#include "do-ts3d-game.h"
 #include "body.h"
 #include "load-texture.h"
 #include "loader.h"
@@ -74,9 +75,9 @@ static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 // Load the save state list and log in as the one with the given name. If that
 // name is not present, create it.
 static struct save_state *get_save_state(const char *name,
-	struct save_states *saves, struct logger *log)
+	const char *state_file, struct save_states *saves, struct logger *log)
 {
-	FILE *from = fopen("state.json", "r");
+	FILE *from = fopen(state_file, "r");
 	if (from && !save_states_init(saves, from, log)) {
 		struct save_state *save = save_states_get(saves, name);
 		if (save) return save;
@@ -140,9 +141,9 @@ static void free_save_links(struct menu_item *links)
 }
 
 // Sync the save state set with the file.
-static void write_save_states(struct save_states *saves)
+static void write_save_states(struct save_states *saves, const char *state_file)
 {
-	FILE *to = fopen("state.json", "w");
+	FILE *to = fopen(state_file, "w");
 	// Silently fail for now.
 	if (to) {
 		save_states_write(saves, to);
@@ -191,20 +192,19 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 	}
 }
 
-int main(int argc, char *argv[])
+int do_ts3d_game(const char *play_as, const char *data_dir,
+	const char *state_file)
 {
-	int ret = EXIT_FAILURE;
+	int ret = -1;
 	struct logger log;
 	logger_init(&log);
-	const char *data_dir = "data"; // Game data root directory.
 	struct loader ldr;
 	loader_init(&ldr, data_dir);
 	logger_free(loader_set_logger(&ldr, &log));
 	struct save_states saves;
-	// Log in with the first argument as the name, or anonymously if no
-	// argument is given:
-	struct save_state *save = get_save_state(argc > 1 ? argv[1] : ANONYMOUS,
-		&saves, loader_logger(&ldr));
+	// Log in with the given save name, or anonymously if NULL is given.
+	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
+		state_file, &saves, loader_logger(&ldr));
 	initscr();
 	if (set_up_colors())
 		logger_printf(&log, LOGGER_WARNING,
@@ -484,11 +484,11 @@ end:
 	free_save_links(&game_list);
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
-	write_save_states(&saves);
+	write_save_states(&saves, state_file);
 	save_states_destroy(&saves);
 	loader_free(&ldr);
 	logger_free(&log);
-	ret = EXIT_SUCCESS;
+	ret = 0;
 early_end:
 	endwin();
 	return ret;
