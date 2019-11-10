@@ -29,29 +29,37 @@ static void print_help(const char *progname)
 "The optional argument play_as gives the name of the save to start off with.\n"
 "If it does not exist, it will be created. If it is not given, you start out\n"
 "anonymous; log in to save your progress!\n"
-"If -d and/or -s is not given, the program will look in ~/.ts3d, creating the\n"
-"directory if it does not exist. Data is looked for in ~/.ts3d/data, and\n"
-"state is in ~/.ts3d/state.json.");
+"Game data and state is looked for in $TS3D_ROOT, or $HOME/.ts3d by default.\n"
+"If the root directory doesn't exist, it will be created. The paths for data\n"
+"and state specifically can be overriden by $TS3D_DATA/-d and $TS3D_STATE/-s,\n"
+"respectively. The files will be created if they do not exist. The options\n"
+"can override the environment variables if given.");
 }
 
 static void print_version(const char *progname)
 {
-	printf("%s version 1.1.0\n", progname);
+	printf("%s version 1.2.0\n", progname);
 }
 
-static char *default_file(const char *name)
+static char *default_file(const char *name, const char *env)
 {
 	char *dot_dir = NULL, *path = NULL;
-	char *home = getenv("HOME");
-	if (home) {
-		dot_dir = mid_cat(home, '/', ".ts3d");
-		if (ensure_file(dot_dir, O_RDONLY | O_DIRECTORY))
-			goto error_dir;
-		path = mid_cat(dot_dir, '/', name);
+	char *env_root, *env_path = getenv(env);
+	if (env_path) return str_dup(env_path);
+	env_root = getenv("TS3D_ROOT");
+	if (env_root) {
+		dot_dir = str_dup(env_root);
 	} else {
-		errno = ENOENT;
+		char *home = getenv("HOME");
+		if (home) {
+			dot_dir = mid_cat(home, '/', ".ts3d");
+		} else {
+			errno = ENOENT;
+			return NULL;
+		}
 	}
-error_dir:
+	if (!ensure_file(dot_dir, O_RDONLY | O_DIRECTORY))
+		path = mid_cat(dot_dir, '/', name);
 	free(dot_dir);
 	return path;
 }
@@ -89,14 +97,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	if (optind < argc) play_as = argv[optind];
-	if (!data_dir) data_dir = default_file("data");
+	if (!data_dir) data_dir = default_file("data", "TS3D_DATA");
 	if (!data_dir || ensure_file(data_dir, O_RDONLY | O_DIRECTORY)) {
 		fprintf(stderr,
 			"%s: No suitable \"data\" directory available: %s\n",
 			progname, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	if (!state_file) state_file = default_file("state.json");
+	if (!state_file) state_file = default_file("state.json", "TS3D_STATE");
 	if (!state_file || ensure_file(state_file, O_RDONLY)) {
 		fprintf(stderr,
 			"%s: No suitable \"state.json\" file available: %s\n",
