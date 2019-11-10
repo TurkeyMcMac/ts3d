@@ -35,6 +35,8 @@
    "items": [
     {"title": "Overview",
      "text": "help/Overview"},
+    {"title": "Game Management",
+     "text": "help/Game-Management"},
     {"title": "Controls",
      "text": "help/Controls"},
     {"title": "Gameplay",

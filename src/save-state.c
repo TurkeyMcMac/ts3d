@@ -166,7 +166,6 @@ static void setup_saves(struct save_states *saves)
 	struct logger logger;
 	logger_init(&logger);
 	assert(!save_states_init(saves, from, &logger));
-	fclose(from);
 }
 
 char *saves_to_string(struct save_states *saves, size_t *n_writ)
@@ -192,7 +191,6 @@ CTF_TEST(write_save_valid,
 	assert(parse_json_tree("(memory)", source, &logger, &root) == 0);
 	logger_free(&logger);
 	free_json_tree(&root);
-	fclose(source);
 	assert(strstr(writ, "PLAYER_1"));
 	assert(strstr(writ, "PLAYER_2"));
 	save_states_destroy(&saves);
