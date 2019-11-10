@@ -193,21 +193,19 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 }
 
 int do_ts3d_game(const char *play_as, const char *data_dir,
-	const char *state_file)
+	const char *state_file, struct logger *log)
 {
 	int ret = -1;
-	struct logger log;
-	logger_init(&log);
 	struct loader ldr;
 	loader_init(&ldr, data_dir);
-	logger_free(loader_set_logger(&ldr, &log));
+	logger_free(loader_set_logger(&ldr, log));
 	struct save_states saves;
 	// Log in with the given save name, or anonymously if NULL is given.
 	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
-		state_file, &saves, loader_logger(&ldr));
+		state_file, &saves, log);
 	initscr();
 	if (set_up_colors())
-		logger_printf(&log, LOGGER_WARNING,
+		logger_printf(log, LOGGER_WARNING,
 			"Terminal colors not properly supported");
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
@@ -238,9 +236,8 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// The menu message buffer. The maximum length is 63 characters:
 	char msg_buf[64];
 	struct menu menu;
-	if (menu_init(&menu, data_dir, menuwin, loader_logger(&ldr))) {
-		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
-			"Failed to load menu\n");
+	if (menu_init(&menu, data_dir, menuwin, log)) {
+		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
 		goto early_end;
 	}
 	d3d_malloc = xmalloc;
@@ -248,7 +245,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	d3d_camera *title_cam;
 	d3d_board *title_board;
 	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {
-		logger_printf(loader_logger(&ldr), LOGGER_ERROR,
+		logger_printf(log, LOGGER_ERROR,
 			"Failed to load title screensaver\n");
 		goto early_end;
 	}
@@ -410,7 +407,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					menu_set_message(&menu, "Level locked");
 					beep();
 				} else if (play_level(data_dir, save,
-					selected->tag, &timer, &log))
+					selected->tag, &timer, log))
 				{
 					menu_set_message(&menu,
 						"Error loading map");
@@ -487,7 +484,6 @@ end:
 	write_save_states(&saves, state_file);
 	save_states_destroy(&saves);
 	loader_free(&ldr);
-	logger_free(&log);
 	ret = 0;
 early_end:
 	endwin();

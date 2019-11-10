@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 			progname, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	ret = do_ts3d_game(play_as, data_dir, state_file);
+	ret = do_ts3d_game(play_as, data_dir, state_file, NULL);
 	free(data_dir);
 	free(state_file);
 	exit(ret >= 0 ? EXIT_SUCCESS : EXIT_FAILURE);
