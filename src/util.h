@@ -2,6 +2,7 @@
 #define UTIL_H_
 
 #include "d3d.h"
+#include <stdbool.h>
 #include <stddef.h>
 
 // Version of GNU __attribute__ which expands to nothing if attributes aren't
@@ -28,15 +29,15 @@ d3d_direction flip_direction(d3d_direction dir);
 char *mid_cat(const char *part1, int mid, const char *part2);
 
 // If the path exists, open it. If not, create it. The flags argument is used in
-// both cases, although O_CREAT is switched on or off as necessary. The file can
-// be a directory if O_DIRECTORY is specified. On success, the file descriptor
-// is returned. On failure, -1 is returned and errno is set appropriately.
-int make_or_open_file(const char *path, int flags);
+// both cases, although O_CREAT is switched on or off as necessary. dir tells
+// whether the file should be a directory. On success, the file descriptor is
+// returned. On failure, -1 is returned and errno is set appropriately.
+int make_or_open_file(const char *path, int flags, bool dir);
 
-// Ensure a file exists or create it if it doesn't exist. A directory can be
-// created by passing O_DIRECTORY as a flag. 0 indicates success and -1 is for
+// Ensure a file exists or create it if it doesn't exist. dir tells whether a
+// directory should be searched for/created. 0 indicates success and -1 is for
 // failure (with errno being set.)
-int ensure_file(const char *path, int flags);
+int ensure_file(const char *path, bool dir);
 
 // Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
 // is +x. Underflow in x or y is NOT accounted for.

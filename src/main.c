@@ -1,8 +1,6 @@
 #include "do-ts3d-game.h"
 #include "util.h"
-#include <fcntl.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +36,7 @@ static void print_help(const char *progname)
 
 static void print_version(const char *progname)
 {
-	printf("%s version 1.2.0\n", progname);
+	printf("%s version 1.2.1\n", progname);
 }
 
 static char *default_file(const char *name, const char *env)
@@ -58,7 +56,7 @@ static char *default_file(const char *name, const char *env)
 			return NULL;
 		}
 	}
-	if (!ensure_file(dot_dir, O_RDONLY | O_DIRECTORY))
+	if (!ensure_file(dot_dir, true))
 		path = mid_cat(dot_dir, '/', name);
 	free(dot_dir);
 	return path;
@@ -98,14 +96,14 @@ int main(int argc, char *argv[])
 	}
 	if (optind < argc) play_as = argv[optind];
 	if (!data_dir) data_dir = default_file("data", "TS3D_DATA");
-	if (!data_dir || ensure_file(data_dir, O_RDONLY | O_DIRECTORY)) {
+	if (!data_dir || ensure_file(data_dir, true)) {
 		fprintf(stderr,
 			"%s: No suitable \"data\" directory available: %s\n",
 			progname, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	if (!state_file) state_file = default_file("state.json", "TS3D_STATE");
-	if (!state_file || ensure_file(state_file, O_RDONLY)) {
+	if (!state_file || ensure_file(state_file, false)) {
 		fprintf(stderr,
 			"%s: No suitable \"state.json\" file available: %s\n",
 			progname, strerror(errno));

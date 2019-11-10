@@ -53,9 +53,8 @@ char *mid_cat(const char *part1, int mid, const char *part2)
 	return cat;
 }
 
-int make_or_open_file(const char *path, int flags)
+int make_or_open_file(const char *path, int flags, bool dir)
 {
-	bool dir = flags & O_DIRECTORY;
 	struct stat st;
 	if (stat(path, &st)) {
 		return dir ?
@@ -74,10 +73,10 @@ int make_or_open_file(const char *path, int flags)
 	}
 }
 
-int ensure_file(const char *path, int flags)
+int ensure_file(const char *path, bool dir)
 {
 	int fd;
-	TRY(fd = make_or_open_file(path, flags));
+	TRY(fd = make_or_open_file(path, O_RDONLY, dir));
 	close(fd);
 	return 0;
 }
