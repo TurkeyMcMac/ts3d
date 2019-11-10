@@ -1,8 +1,13 @@
 #include "util.h"
 #include "xalloc.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 char *str_dup(const char *str)
 {
@@ -46,6 +51,35 @@ char *mid_cat(const char *part1, int mid, const char *part2)
 	cat[len1] = mid;
 	memcpy(cat + len1 + 1, part2, len2 + 1);
 	return cat;
+}
+
+int make_or_open_file(const char *path, int flags)
+{
+	bool dir = flags & O_DIRECTORY;
+	struct stat st;
+	if (stat(path, &st)) {
+		return dir ?
+			mkdir(path, 0775) : open(path, flags | O_CREAT, 0664);
+	} else {
+		if (dir) {
+			if (!S_ISDIR(st.st_mode)) {
+				errno = EEXIST;
+				return -1;
+			}
+		} else if (!S_ISREG(st.st_mode)) {
+			errno = S_ISDIR(st.st_mode) ? EISDIR : EEXIST;
+			return -1;
+		}
+		return open(path, flags & ~O_CREAT);
+	}
+}
+
+int ensure_file(const char *path, int flags)
+{
+	int fd;
+	TRY(fd = make_or_open_file(path, flags));
+	close(fd);
+	return 0;
 }
 
 void move_direction(d3d_direction dir, size_t *x, size_t *y)

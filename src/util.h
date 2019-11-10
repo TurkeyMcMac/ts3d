@@ -27,6 +27,17 @@ d3d_direction flip_direction(d3d_direction dir);
 // NOTE: recalculates lengths, not efficient.
 char *mid_cat(const char *part1, int mid, const char *part2);
 
+// If the path exists, open it. If not, create it. The flags argument is used in
+// both cases, although O_CREAT is switched on or off as necessary. The file can
+// be a directory if O_DIRECTORY is specified. On success, the file descriptor
+// is returned. On failure, -1 is returned and errno is set appropriately.
+int make_or_open_file(const char *path, int flags);
+
+// Ensure a file exists or create it if it doesn't exist. A directory can be
+// created by passing O_DIRECTORY as a flag. 0 indicates success and -1 is for
+// failure (with errno being set.)
+int ensure_file(const char *path, int flags);
+
 // Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
 // is +x. Underflow in x or y is NOT accounted for.
 void move_direction(d3d_direction dir, size_t *x, size_t *y);
