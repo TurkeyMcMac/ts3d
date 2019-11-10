@@ -28,7 +28,10 @@ static void print_help(const char *progname)
 "\n"
 "The optional argument play_as gives the name of the save to start off with.\n"
 "If it does not exist, it will be created. If it is not given, you start out\n"
-"anonymous; log in to save your progress!");
+"anonymous; log in to save your progress!\n"
+"If -d and/or -s is not given, the program will look in ~/.ts3d, creating the\n"
+"directory if it does not exist. Data is looked for in ~/.ts3d/data, and\n"
+"state is in ~/.ts3d/state.json.");
 }
 
 static void print_version(const char *progname)
