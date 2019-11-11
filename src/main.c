@@ -52,12 +52,14 @@ static void print_version(const char *progname)
 // will never be configured to write to stdin, so it can be a sentinel value.
 #define UNTOUCHED_MARKER stdin
 
+// Log information at the given log level name at the path specified in arg,
+// with the format "name=path".
 static int add_log_dest(const char *progname, struct logger *log,
 	const char *arg)
 {
 	FILE *dest;
 	bool do_free = false;
-	const char *eq = strchr(arg, '=');
+	const char *eq = strchr(arg, '='); // Pointer to equals sign.
 	if (eq) {
 		const char *fname = eq + 1;
 		if (*fname) {
@@ -99,6 +101,8 @@ static int add_log_dest(const char *progname, struct logger *log,
 	return 0;
 }
 
+// Do not log information from the given level name anywhere. The old
+// destination, if it exists, is closed.
 static int remove_log_dest(const char *progname, struct logger *log,
 	const char *arg)
 {
@@ -124,6 +128,10 @@ static int remove_log_dest(const char *progname, struct logger *log,
 	return 0;
 }
 
+// Allocate and return the default path of some file. name is the file name. env
+// is the name an environment variable override would have; it is checked first.
+// The path of the file itself is not checked for existence, but the directory
+// path is unless the path was provided by the environment variable.
 static char *default_file(const char *name, const char *env)
 {
 	char *dot_dir = NULL, *path = NULL;
@@ -149,12 +157,23 @@ static char *default_file(const char *name, const char *env)
 
 int main(int argc, char *argv[])
 {
+	// 0 for EXIT_SUCCESS, -1 for EXIT_FAILURE:
 	int ret = -1;
-	bool error = false; // Indicates option parsing error.
+	// Indicates option parsing error:
+	bool error = false;
+	// Program name from invokation:
 	const char *progname = argc > 0 ? argv[0] : "ts3d";
-	char *play_as = NULL, *data_dir = NULL, *state_file = NULL;
+	// Save name, NULL for anonymous:
+	char *play_as = NULL;
+	// Data directory path, NULL for default:
+	char *data_dir = NULL;
+	// State file path, NULL for default:
+	char *state_file = NULL;
+	// Logger to be used by do_ts3d_game:
 	struct logger log;
+	// Default log destination file path, NULL until initialized:
 	char *log_name_def = NULL;
+	// Default log destination file, NULL until initialized:
 	FILE *log_def = NULL;
 	int opt;
 	logger_init(&log);
@@ -209,6 +228,7 @@ int main(int argc, char *argv[])
 	}
 	if ((log_name_def = default_file("log", "TS3D_LOG"))
 	 && (log_def = fopen(log_name_def, "w"))) {
+		// Replace UNTOUCHED_MARKER with log_def.
 		if (logger_get_output(&log, LOGGER_INFO) == UNTOUCHED_MARKER)
 			logger_set_output(&log, LOGGER_INFO, log_def, false);
 		if (logger_get_output(&log, LOGGER_WARNING) == UNTOUCHED_MARKER)
