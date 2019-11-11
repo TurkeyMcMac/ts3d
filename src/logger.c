@@ -76,14 +76,24 @@ FILE *logger_get_output(struct logger *log, int which)
 void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free)
 {
 	if (!log) return;
-	int mode = get_mode(which);
-	log->do_free &= ~mode;
-	*get_filep(log, mode) = dest;
-	if (dest) {
-		log->flags |= mode;
-		if (do_free) log->do_free |= mode;
+	if ((which & LOGGER_ALL) == LOGGER_ALL) {
+		log->do_free &= ~LOGGER_ALL;
+		log->flags &= ~LOGGER_ALL;
+		log->info = log->warning = log->error = dest;
+		if (dest) {
+			log->flags |= LOGGER_ALL;
+			if (do_free) log->do_free |= LOGGER_ALL;
+		}
 	} else {
-		log->flags &= ~mode;
+		int mode = get_mode(which);
+		log->do_free &= ~mode;
+		*get_filep(log, mode) = dest;
+		if (dest) {
+			log->flags |= mode;
+			if (do_free) log->do_free |= mode;
+		} else {
+			log->flags &= ~mode;
+		}
 	}
 }
 

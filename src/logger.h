@@ -33,12 +33,14 @@ struct logger {
 void logger_init(struct logger *log);
 
 // Get the current output for the log type `which` (INFO, WARNING, or ERROR). If
-// the log goes nowhere (output is discarded), NULL is returned.
+// the log goes nowhere (output is discarded), NULL is returned. LOGGER_ALL is
+// not valid because only one file can be returned.
 FILE *logger_get_output(struct logger *log, int which);
 
 // Set an output for `which`, which is INFO, WARNING, or ERROR. If `dest` is
 // NULL, messages are never printed. If not and do_free is true, the output will
-// be closed when logger_free is called. The previous output is not closed.
+// be closed when logger_free is called. The previous output is not closed. Here
+// LOGGER_ALL is a valid which, and sets the information for all levels.
 void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free);
 
 // Set colorization, which for now affects all three log types. `color` is COLOR
