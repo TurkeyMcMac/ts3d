@@ -45,7 +45,7 @@ static void print_help(const char *progname)
 
 static void print_version(const char *progname)
 {
-	printf("%s version 1.3.3\n", progname);
+	printf("%s version 1.3.4\n", progname);
 }
 
 // Marker for log levels indicating that the user did not configure them; they

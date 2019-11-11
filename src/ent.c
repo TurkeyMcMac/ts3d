@@ -235,8 +235,9 @@ d3d_sprite_s *ents_sprites(struct ents *ents)
 }
 
 ent_id ents_add(struct ents *ents, struct ent_type *type, enum team team,
-	const d3d_vec_s *pos)
+	const d3d_vec_s *posp)
 {
+	d3d_vec_s pos = *posp;
 	size_t old_num = ents->num;
 	size_t old_cap = ents->cap;
 	struct ent *ent = GROWE(ents->ents, ents->num, ents->cap);
@@ -244,7 +245,7 @@ ent_id ents_add(struct ents *ents, struct ent_type *type, enum team team,
 		ents->sprites = xrealloc(ents->sprites, ents->cap
 			* sizeof(*ents->sprites));
 	}
-	ent_init(ent, type, team, &ents->sprites[old_num], pos);
+	ent_init(ent, type, team, &ents->sprites[old_num], &pos);
 	return ents->num - 1;
 }
 
