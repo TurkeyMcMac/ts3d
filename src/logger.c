@@ -127,6 +127,7 @@ void logger_printf(struct logger *log, int flags, const char *format, ...)
 	if (colored) {
 		fprintf(file, "\x1B[0m");
 	}
+	fflush(file);
 }
 
 void logger_free(struct logger *log)
