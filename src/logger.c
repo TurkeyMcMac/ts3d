@@ -122,14 +122,18 @@ void logger_printf(struct logger *log, int flags, const char *format, ...)
 void logger_free(struct logger *log)
 {
 	if (!log) return;
-	FILE *file;
+	// Make sure no files are closed twice.
+	FILE *filei = NULL, *filew = NULL, *filee = NULL;
 	if ((log->do_free & LOGGER_INFO)
-	 && (file = *get_filep(log, LOGGER_INFO)))
-		fclose(file);
+	 && (filei = *get_filep(log, LOGGER_INFO)))
+		fclose(filei);
 	if ((log->do_free & LOGGER_WARNING)
-	 && (file = *get_filep(log, LOGGER_WARNING)))
-		fclose(file);
+	 && (filew = *get_filep(log, LOGGER_WARNING))
+	 && !(filew == filei && log->do_free & LOGGER_INFO))
+		fclose(filew);
 	if ((log->do_free & LOGGER_ERROR)
-	 && (file = *get_filep(log, LOGGER_ERROR)))
-		fclose(file);
+	 && (filee = *get_filep(log, LOGGER_ERROR))
+	 && !(filee == filei && log->do_free & LOGGER_INFO)
+	 && !(filee == filew && log->do_free & LOGGER_WARNING))
+		fclose(filee);
 }
