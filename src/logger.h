@@ -29,8 +29,7 @@ struct logger {
  * nothing. logger_get_output returns NULL.
  */
 
-// Initialize a logger with default settings: everything going to standard error
-// and AUTO_COLOR (colorization based on whether the output is a terminal.)
+// Initialize a logger with nothing being logged (all outputs NULL.)
 void logger_init(struct logger *log);
 
 // Get the current output for the log type `which` (INFO, WARNING, or ERROR). If

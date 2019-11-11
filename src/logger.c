@@ -62,8 +62,8 @@ static const char *get_prefix(struct logger *log, int mode)
 void logger_init(struct logger *log)
 {
 	if (!log) return;
-	log->flags = LOGGER_ALL;
-	log->info = log->warning = log->error = stderr;
+	log->flags = 0;
+	log->info = log->warning = log->error = NULL;
 	log->do_free = 0;
 }
 
