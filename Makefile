@@ -1,4 +1,4 @@
-version = 1.3.4
+version = 1.3.5
 exe = ts3d
 exe-dir = $(HOME)/bin
 tests = tests

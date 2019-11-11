@@ -52,8 +52,15 @@ static void print_version(const char *progname)
 // will never be configured to write to stdin, so it can be a sentinel value.
 #define UNTOUCHED_MARKER stdin
 
+// Close a previously configured log destination unless it was never `fopen`ed.
+static void close_old_file(struct logger *log, int which)
+{
+	FILE *old = logger_get_output(log, which);
+	if (old && old != stderr && old != UNTOUCHED_MARKER) fclose(old);
+}
+
 // Log information at the given log level name at the path specified in arg,
-// with the format "name=path".
+// with the format "name=path". The old destination is closed if appropriate.
 static int add_log_dest(const char *progname, struct logger *log,
 	const char *arg)
 {
@@ -97,12 +104,13 @@ static int add_log_dest(const char *progname, struct logger *log,
 			progname, (int)name_size, arg);
 		return -1;
 	}
+	close_old_file(log, which);
 	logger_set_output(log, which, dest, do_free);
 	return 0;
 }
 
 // Do not log information from the given level name anywhere. The old
-// destination, if it exists, is closed.
+// destination, if it is an opened file, is closed.
 static int remove_log_dest(const char *progname, struct logger *log,
 	const char *arg)
 {
@@ -122,8 +130,7 @@ static int remove_log_dest(const char *progname, struct logger *log,
 		fprintf(stderr, "%s: Invalid log name: %s\n", progname, arg);
 		return -1;
 	}
-	FILE *old = logger_get_output(log, which);
-	if (old && old != stderr && old != UNTOUCHED_MARKER) fclose(old);
+	close_old_file(log, which);
 	logger_set_output(log, which, NULL, false);
 	return 0;
 }
