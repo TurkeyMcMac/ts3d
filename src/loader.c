@@ -45,7 +45,7 @@ static void **load(table *tab, const char *root, const char *name, FILE **file,
 		if (*file) {
 			logger_printf(log, LOGGER_INFO, "Loading %s\n", path);
 			table_add(tab, name, NULL);
-			item = table_get(tab, name); // TODO: more efficient?
+			item = table_get(tab, name);
 		} else {
 			logger_printf(log, LOGGER_ERROR,
 				"Cannot load %s\n", path);
