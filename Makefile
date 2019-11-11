@@ -42,6 +42,7 @@ $(man-install): $(man-page)
 .PHONY: uninstall
 uninstall:
 	$(RM) -r $(exe-install) $(man-install) $(data-install)
+	rmdir "$(TS3D_ROOT)" 2>/dev/null || : ignore error
 
 .PHONY: run-tests
 run-tests: $(tests)
