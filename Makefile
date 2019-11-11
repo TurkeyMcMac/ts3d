@@ -39,6 +39,10 @@ $(data-install): $(data-dir)
 $(man-install): $(man-page)
 	sed '1s/@@VERSION@@/$(version)/' $< | gzip | tee $@ >/dev/null
 
+.PHONY: uninstall
+uninstall:
+	$(RM) -r $(exe-install) $(man-install) $(data-install)
+
 .PHONY: run-tests
 run-tests: $(tests)
 	ceeteef $(tests)
