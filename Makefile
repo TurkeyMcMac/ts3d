@@ -38,7 +38,7 @@ $(data-install): $(data-dir)
 	cp -fr $</* "$@"
 
 $(man-install): $(man-page)
-	sed '1s/@@VERSION@@/$(version)/' $< | gzip | sudo tee $@ >/dev/null
+	sed '1s/@@VERSION@@/$(version)/' $< | gzip | tee $@ >/dev/null
 
 $(test-log): $(tests)
 	ceeteef -s $(tests) > $(test-log)
