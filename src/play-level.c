@@ -88,14 +88,10 @@ static void move_ents(struct ents *ents, struct map *map, struct player *player)
 		epos->x += evel->x;
 		epos->y += evel->y;
 		d3d_vec_s disp;
-		double dist;
 		if (chance_decide(type->turn_chance)) {
 			disp.x = epos->x - player->body.pos.x;
 			disp.y = epos->y - player->body.pos.y;
-			// Normalize displacement to speed.
-			dist = hypot(disp.x, disp.y) / -type->speed;
-			disp.x /= dist;
-			disp.y /= dist;
+			vec_norm_mul(&disp, -type->speed);
 		} else {
 			disp.x = disp.y = 0;
 		}
@@ -138,14 +134,11 @@ static void shoot_bullets(struct ents *ents)
 		if (type->bullet && chance_decide(type->shoot_chance)) {
 			ent_id bullet = ents_add(ents, type->bullet,
 				ents_team(ents, e), ents_pos(ents, e));
-			d3d_vec_s *bvel = ents_vel(ents, bullet);
-			*bvel = *ents_vel(ents, e);
-			double speed = hypot(bvel->x, bvel->y) /
-				ents_type(ents, bullet)->speed;
-			if (!isnan(speed)) {
-				bvel->x += bvel->x / speed;
-				bvel->y += bvel->y / speed;
-			}
+			d3d_vec_s *bvel = ents_vel(ents, bullet), d_bvel;
+			d_bvel = *bvel = *ents_vel(ents, e);
+			vec_norm_mul(&d_bvel, ents_type(ents, bullet)->speed);
+			bvel->x += d_bvel.x;
+			bvel->y += d_bvel.y;
 		}
 	}
 }

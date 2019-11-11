@@ -2,6 +2,7 @@
 #include "xalloc.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -89,5 +90,14 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y)
 	case D3D_DWEST: --*x; break;
 	case D3D_DEAST: ++*x; break;
 	default: break;
+	}
+}
+
+void vec_norm_mul(d3d_vec_s *vec, double mag)
+{
+	double hyp = hypot(vec->x, vec->y);
+	if (hyp != 0) {
+		vec->x *= mag / hyp;
+		vec->y *= mag / hyp;
 	}
 }

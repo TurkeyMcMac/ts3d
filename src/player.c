@@ -2,6 +2,7 @@
 #include "ent.h"
 #include "map.h"
 #include "util.h"
+#include <limits.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -14,19 +15,22 @@ void player_init(struct player *player, struct map *map)
 	player->body.damage = player->start->type->damage;
 	player->turn_speed =
 		2.5 * chance_to_fraction(player->start->type->turn_chance);
-	player->reload_ready =
+	double reload_ready =
 		1.0 / chance_to_fraction(player->start->type->shoot_chance);
+	player->reload_ready = isfinite(reload_ready) ? reload_ready : LONG_MAX;
 	player->reload = player->reload_ready;
 	player->facing = 0;
 }
 
 double player_health_fraction(const struct player *player)
 {
+	if (player->start->type->health <= 0) return 0;
 	return player->body.health / player->start->type->health;
 }
 
 double player_reload_fraction(const struct player *player)
 {
+	if (player->reload_ready <= 0) return 1.0;
 	return (double)player->reload / player->reload_ready;
 }
 
