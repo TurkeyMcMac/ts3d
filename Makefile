@@ -1,11 +1,13 @@
 version = 1.3.4
 exe = ts3d
+exe-dir = $(HOME)/bin
 tests = tests
 data-dir = data
 man-page = ts3d.6
 man-dir = /usr/share/man/man6
 TS3D_ROOT = $(HOME)/.ts3d
 test-log = tests.log
+exe-install = $(exe-dir)/$(exe)
 man-install = $(man-dir)/$(man-page).gz
 data-install = $(TS3D_ROOT)/data
 sources = src/*.c
@@ -26,7 +28,10 @@ $(tests): $(sources) $(headers)
 	$(CC) $(cflags) $(test-flags) -o $@ $(sources) $(linkage)
 
 .PHONY: install
-install: $(data-install) $(man-install)
+install: $(exe-install) $(data-install) $(man-install)
+
+$(exe-install): $(exe)
+	cp $< "$@"
 
 $(data-install): $(data-dir)
 	mkdir -p "$@"
