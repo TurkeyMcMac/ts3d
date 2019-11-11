@@ -6,9 +6,10 @@ data-dir = data
 man-page = ts3d.6
 man-dir = /usr/share/man/man6
 TS3D_ROOT = $(HOME)/.ts3d
+TS3D_DATA = $(TS3D_ROOT)/data
 exe-install = $(exe-dir)/$(exe)
 man-install = $(man-dir)/$(man-page).gz
-data-install = $(TS3D_ROOT)/data
+data-install = $(TS3D_DATA)
 sources = src/*.c
 headers = src/*.h
 
