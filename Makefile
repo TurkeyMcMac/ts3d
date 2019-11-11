@@ -6,7 +6,6 @@ data-dir = data
 man-page = ts3d.6
 man-dir = /usr/share/man/man6
 TS3D_ROOT = $(HOME)/.ts3d
-test-log = tests.log
 exe-install = $(exe-dir)/$(exe)
 man-install = $(man-dir)/$(man-page).gz
 data-install = $(TS3D_ROOT)/data
@@ -40,13 +39,10 @@ $(data-install): $(data-dir)
 $(man-install): $(man-page)
 	sed '1s/@@VERSION@@/$(version)/' $< | gzip | tee $@ >/dev/null
 
-$(test-log): $(tests)
-	ceeteef -s $(tests) > $(test-log)
-
 .PHONY: run-tests
-run-tests: $(test-log)
-	cat $(test-log)
+run-tests: $(tests)
+	ceeteef $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) $(exe) $(tests) $(test-log)
+	$(RM) $(exe) $(tests)
