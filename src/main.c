@@ -40,7 +40,7 @@ static void print_help(const char *progname)
 "respectively. The files will be created if they do not exist. The options\n"
 "can override the environment variables if given.\n"
 "ts3d by default logs to the file 'log' in the game's root directory, or to\n"
-"the $TS3D_LOG variable if it is set. Again, options override this.\n");
+"the $TS3D_LOG variable if it is set. Again, options override this.");
 }
 
 static void print_version(const char *progname)
