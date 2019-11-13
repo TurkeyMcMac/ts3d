@@ -14,7 +14,7 @@ fi
 ask_to_proceed() {
 	while :; do
 		printf 'Do you wish to proceed? (yes/no) '
-		read -r answer
+		read -r answer || exit 0
 		case "$answer" in
 		[Yy]*)	return 0 ;;
 		[Nn]*)	exit 0 ;;
