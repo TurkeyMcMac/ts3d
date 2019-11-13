@@ -28,22 +28,20 @@ $(tests): $(sources) $(headers)
 	$(CC) $(cflags) $(test-flags) -o $@ $(sources) $(linkage)
 
 .PHONY: install
-install: $(exe-install) $(data-install) $(man-install)
-
-$(exe-install): $(exe)
-	cp $< "$@"
-
-$(data-install): $(data-dir)
-	mkdir -p "$@"
-	cp -fr $</* "$@"
-
-$(man-install): $(man-page)
-	sed '1s/@@VERSION@@/$(version)/' $< | gzip > $@
+install: $(exe)
+	MAKEFILE=yes VERSION=$(version) \
+	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
+	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
+	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
+	./installer install
 
 .PHONY: uninstall
 uninstall:
-	$(RM) -r $(exe-install) $(man-install) $(data-install)
-	rmdir "$(TS3D_ROOT)" 2>/dev/null || : ignore error
+	MAKEFILE=yes VERSION=$(version) \
+	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
+	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
+	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
+	./installer uninstall
 
 .PHONY: run-tests
 run-tests: $(tests)

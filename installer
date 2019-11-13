@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# (Un)installation script for the Makefile to call; the script is a bit complex
+# to put in the Makefile. It tries to do stuff as a normal user and only falls
+# back to root if necessary.
+
+if test -z "$MAKEFILE"; then
+	echo >&2 'Only run this command through make install'
+	exit 1
+fi
+
+set -ex
+
+do_or_sudo() {
+	( exec "$@" ) || (
+		: Trying again as super user
+		exec sudo "$@"
+	)
+}
+
+case "$1" in
+install)
+	do_or_sudo cp "$EXE" "$EXE_INSTALL"
+	do_or_sudo mkdir -p "$DATA_INSTALL"
+	do_or_sudo cp -fr "$DATA_DIR"/* "$DATA_INSTALL"
+	do_or_sudo sh -c 'sed "1s/@@VERSION@@/$1/" "$2" | gzip > "$3"' -- \
+		"$VERSION" "$MAN_PAGE" "$MAN_INSTALL"
+	;;
+uninstall)
+	do_or_sudo rm -f "$EXE_INSTALL"
+	do_or_sudo rm -rf "$DATA_INSTALL"
+	do_or_sudo rm -f "$MAN_INSTALL"
+	;;
+esac
