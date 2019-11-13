@@ -4,12 +4,23 @@
 # to put in the Makefile. It tries to do stuff as a normal user and only falls
 # back to root if necessary.
 
+set -e
+
 if test -z "$MAKEFILE"; then
 	echo >&2 'Only run this command through make install'
 	exit 1
 fi
 
-set -ex
+ask_to_proceed() {
+	while :; do
+		printf 'Do you wish to proceed? (yes/no) '
+		read -r answer
+		case "$answer" in
+		[Yy]*)	return 0 ;;
+		[Nn]*)	exit 0 ;;
+		esac
+	done
+}
 
 do_or_sudo() {
 	( exec "$@" ) || (
@@ -20,6 +31,12 @@ do_or_sudo() {
 
 case "$1" in
 install)
+	echo
+	echo "Installing executable to $EXE_INSTALL"
+	echo " Installing game data to $DATA_INSTALL"
+	echo "    Installing manual to $MAN_INSTALL"
+	ask_to_proceed
+	set -x
 	do_or_sudo cp "$EXE" "$EXE_INSTALL"
 	do_or_sudo mkdir -p "$DATA_INSTALL"
 	do_or_sudo cp -fr "$DATA_DIR"/* "$DATA_INSTALL"
@@ -27,6 +44,12 @@ install)
 		"$VERSION" "$MAN_PAGE" "$MAN_INSTALL"
 	;;
 uninstall)
+	echo
+	echo "Removing executable at $EXE_INSTALL"
+	echo " Removing game data at $DATA_INSTALL"
+	echo "    Removing manual at $MAN_INSTALL"
+	ask_to_proceed
+	set -x
 	do_or_sudo rm -f "$EXE_INSTALL"
 	do_or_sudo rm -rf "$DATA_INSTALL"
 	do_or_sudo rm -f "$MAN_INSTALL"
