@@ -64,11 +64,19 @@ This overrides the default $TS3D_ROOT/state.json game state file.
 This overrides the default $TS3D_ROOT/log log file of the most recent game,
 including all log levels "info", "warning", and "error".
 
+.IP "LINES, COLUMNS"
+If these variables are read by the Curses implementation, they can be used to
+keep the entire screen from being drawn upon.
+
 
 .SH BUGS
 
 \fBts3d\fR at the moment does not work with unicode because Curses does not
 support doing so.
+
+Window resizing is not handled well. It may be possible to trigger a
+segmentation fault with the right resizing, but the bug has proven hard to
+reproduce.
 
 
 .SH AUTHOR
