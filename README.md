@@ -2,8 +2,8 @@
 
 ## Overview
 
-This is a mostly finished first-person shooter. It uses terminal-based 3D
-graphics.
+Thing Shooter 3D is a mostly finished first-person shooter. It uses
+terminal-based 3D graphics.
 
 ## Building
 
