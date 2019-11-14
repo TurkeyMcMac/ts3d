@@ -1,38 +1,33 @@
- _____ _     _             ____  _                 _           _____ ____  
-|_   _| |__ (_)_ __   __ _/ ___|| |__   ___   ___ | |_ ___ _ _|___ /|  _ \ 
-  | | | '_ \| | '_ \ / _` \___ \| '_ \ / _ \ / _ \| __/ _ \ '__||_ \| | | |
-  | | | | | | | | | | (_| |___) | | | | (_) | (_) | ||  __/ |  ___) | |_| |
-  |_| |_| |_|_|_| |_|\__, |____/|_| |_|\___/ \___/ \__\___|_| |____/|____/ 
-=====================|___/=================================================
+![TS3D](./logo.gif)
 
-OVERVIEW
---------
+## Overview
+
 This is a work-in-progress first-person shooter. It uses terminal-based 3D
 graphics.
 
-BUILDING
---------
+## Building
+
 Run make in the project root. This does not account for updates to dependencies.
 To update those, see DEPENDENCIES.
 
 To build the tests, run `make tests`. A binary `tests` will be produced. This
 can then be used with the `ceeteef` command.
 
-RUNNING
--------
+## Running
+
 Currently, to run a demo sort of thing, execute either ./ts3d columns or
 ./ts3d title-screen after running Make. To exit, press 'x'.
 
 To run the tests and print the colored output to a file, do `make run-tests`.
 The file is `tests.log`. It is best viewed with `cat` or `less -R`.
 
-DATA
-----
+## Data
+
 The data/ directory holds game data. The data is stored in a combination of JSON
 and simpler custom formats. It is organized into sub-directories.
 
-DEPENDENCIES
-------------
+## Dependencies
+
 The external/ folder holds dependencies to other projects, with source code and
 such bundled here. There are currently three dependencies, all of which I myself
 created. d3d/ is the 3D graphics library. json/ is the JSON parser.
