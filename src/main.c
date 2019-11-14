@@ -73,7 +73,7 @@ static int add_log_dest(const char *progname, struct logger *log,
 			// Open the file to append so FILEs to the same physical
 			// file work out as expected (hopefully.)
 			if (!(dest = fopen(fname, "w")) // Clear the file.
-			 || !(dest = freopen(fname, "a", dest))) {
+			 || !(dest = freopen(fname, "a+", dest))) {
 				fprintf(stderr,
 					"%s: Error opening log file %s: %s\n",
 					progname, fname, strerror(errno));
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 		goto end;
 	}
 	if ((log_name_def = default_file("log", "TS3D_LOG"))
-	 && (log_def = fopen(log_name_def, "w"))) {
+	 && (log_def = fopen(log_name_def, "w+"))) {
 		// Replace UNTOUCHED_MARKER with log_def.
 		if (logger_get_output(&log, LOGGER_INFO) == UNTOUCHED_MARKER)
 			logger_set_output(&log, LOGGER_INFO, log_def, false);
@@ -244,6 +244,24 @@ int main(int argc, char *argv[])
 			logger_set_output(&log, LOGGER_ERROR, log_def, false);
 	}
 	ret = do_ts3d_game(play_as, data_dir, state_file, &log);
+	if (ret < 0) {
+		FILE *err_log = logger_get_output(&log, LOGGER_ERROR);
+		if (err_log) {
+			fflush(err_log);
+			rewind(err_log);
+			fprintf(stderr, "%s: An error occurred:\n", progname);
+			// Copy the error log to stderr:
+			int c;
+			while ((c = getc(err_log)) != EOF) {
+				putc(c, stderr);
+			}
+		} else {
+			fprintf(stderr,
+				"%s: An error occurred and was not logged.\n",
+				progname);
+		}
+		goto end;
+	}
 end:
 	free(data_dir);
 	free(state_file);
