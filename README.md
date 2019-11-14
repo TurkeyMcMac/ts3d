@@ -2,29 +2,43 @@
 
 ## Overview
 
-This is a work-in-progress first-person shooter. It uses terminal-based 3D
+This is a mostly finished first-person shooter. It uses terminal-based 3D
 graphics.
 
 ## Building
 
 Run make in the project root. This does not account for updates to dependencies.
-To update those, see DEPENDENCIES.
+To update those, see **Dependencies**.
 
-To build the tests, run `make tests`. A binary `tests` will be produced. This
-can then be used with the `ceeteef` command.
+To build the tests, run `make tests`. A binary `tests` will be produced.
 
 ## Running
 
-Currently, to run a demo sort of thing, execute either ./ts3d columns or
-./ts3d title-screen after running Make. To exit, press 'x'.
+To run the game, type `./ts3d`. More information is available with `./ts3d -h`,
+`man ./ts3d.6`, or through in-game help.
 
-To run the tests and print the colored output to a file, do `make run-tests`.
-The file is `tests.log`. It is best viewed with `cat` or `less -R`.
+To run the tests and print the colored output, do `make run-tests`. You can also
+call `ceeteef` directly.
+
+## Installation
+
+To install, run `make install exe-dir=</usr/bin or something>
+man-dir=</usr/share/man/man6 or whatever>`. A script will be launched taking you
+through the installation procedure. If something goes wrong, run `make uninstall
+<same parameters as before>`. You may be asked to type your password to move
+files to a privileged directory. Be careful, as the installer isn't the best. It
+will, however, print out lots of stuff so you know what it did wrong.
+
+If all goes well, you will be able to type `ts3d` or `man ts3d` and have good
+stuff happen.
 
 ## Data
 
 The data/ directory holds game data. The data is stored in a combination of JSON
 and simpler custom formats. It is organized into sub-directories.
+
+Textures and animations can be viewed with `./texture ...`. For example, to view
+the frog animation, use `./texture animate data/ents/frog.json`.
 
 ## Dependencies
 
@@ -36,4 +50,4 @@ c-test-functions/ (or ctf) is the testing framework.
 The ctf API is included, but not the executable. To run the tests, you will need
 to install that in your PATH yourself.
 
-To update the depencies from Github, run ./update-all from external/.
+To update the depencies from Github, run `external/update-all`.
