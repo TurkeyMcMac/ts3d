@@ -14,8 +14,8 @@ To build the tests, run `make tests`. A binary `tests` will be produced.
 
 ## Running
 
-To run the game, type `./ts3d`. More information is available with `./ts3d -h`,
-`man ./ts3d.6`, or through in-game help.
+To run the game, type `TS3D_ROOT=. ./ts3d`. More information is available with
+`./ts3d -h`, `man ./ts3d.6`, or through in-game help.
 
 To run the tests and print the colored output, do `make run-tests`. You can also
 call `ceeteef` directly.
