@@ -30,7 +30,7 @@ double player_health_fraction(const struct player *player)
 
 double player_reload_fraction(const struct player *player)
 {
-	if (player->reload_ready <= 0) return 1.0;
+	if (player->reload >= player->reload_ready) return 1.0;
 	return (double)player->reload / player->reload_ready;
 }
 
