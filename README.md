@@ -50,4 +50,4 @@ c-test-functions/ (or ctf) is the testing framework.
 The ctf API is included, but not the executable. To run the tests, you will need
 to install that in your PATH yourself.
 
-To update the depencies from Github, run `external/update-all`.
+To update the dependencies from Github, run `external/update-all`.
