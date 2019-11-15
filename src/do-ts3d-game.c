@@ -206,7 +206,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	initscr();
 	if (set_up_colors())
 		logger_printf(log, LOGGER_WARNING,
-			"Terminal colors not properly supported");
+			"Terminal colors not properly supported\n");
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
 	// Window to draw the screensaver on:
