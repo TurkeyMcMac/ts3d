@@ -1,4 +1,4 @@
-.TH ts3d 6 "11 Nov. 2019" "version @@VERSION@@"
+.TH ts3d 6 "15 Nov. 2019" "version @@VERSION@@"
 
 
 .SH NAME
@@ -77,6 +77,13 @@ support doing so.
 Window resizing is not handled well. It may be possible to trigger a
 segmentation fault with the right resizing, but the bug has proven hard to
 reproduce.
+
+The main performance bottleneck is Curses. To run the game on a large screen, a
+fast terminal emulator may be needed. The hardware text mode will probably work.
+GPU-accelerated terminals are the best. However, the game is playable on the
+classic 80x24 screen, which almost all terminal programs can support. If you
+want a large screen, test out different sizes to see how large you can get
+without slowing the game.
 
 
 .SH AUTHOR
