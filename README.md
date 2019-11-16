@@ -35,7 +35,8 @@ stuff happen.
 ## Data
 
 The data/ directory holds game data. The data is stored in a combination of JSON
-and simpler custom formats. It is organized into sub-directories.
+and simpler custom formats. It is organized into sub-directories. The formats
+are described in detail in data/README.
 
 Textures and animations can be viewed with `./texture ...`. For example, to view
 the frog animation, use `./texture animate data/ents/frog.json`.
