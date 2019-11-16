@@ -40,6 +40,7 @@ install)
 	do_or_sudo cp "$EXE" "$EXE_INSTALL"
 	do_or_sudo mkdir -p "$DATA_INSTALL"
 	do_or_sudo cp -fr "$DATA_DIR"/* "$DATA_INSTALL"
+	do_or_sudo cp -f LICENSE "$DATA_INSTALL/LICENSE"
 	do_or_sudo sh -c 'sed "1s/@@VERSION@@/$1/" "$2" | gzip > "$3"' -- \
 		"$VERSION" "$MAN_PAGE" "$MAN_INSTALL"
 	;;
