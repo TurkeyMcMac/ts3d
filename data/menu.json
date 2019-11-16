@@ -1,7 +1,4 @@
 {"title": "Thing Shooter 3D",
- "#comment": [
-  "Since non-map tags contain slashes, map names cannot contain slashes. Names",
-  "starting with act/ are navigation actions."],
  "items": [
   {"title": "Manage Games",
    "items": [

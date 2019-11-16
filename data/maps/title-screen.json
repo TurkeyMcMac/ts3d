@@ -39,7 +39,6 @@
   }
  ],
  "player": {
-  "#comment": "Something with only one frame; less loading needed.",
   "kind": "health"
  }
 }

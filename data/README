@@ -97,6 +97,12 @@ Some attributes are special for played entities:
  - "wall_die": Players never die when they touch a wall.
  - "frames": Players are invisible, so frames are ignored.
 
+data/ents/player.json
+---------------------
+This is the main player entity currently in use. The remarks above apply. If you
+want to change your abilities to make the game harder or easier, change
+data/ents/player.json.
+
 data/maps/
 ----------
 The list of maps, AKA levels. Map names are paths relative to this directory
@@ -124,3 +130,10 @@ Map attributes are as follows:
       the team override, which can also override any given value.
  - "player": An object with the same format as an item of "ents". It describes
    how the player starts out.
+
+data/maps/title-screen.json
+---------------------------
+This is the map that is loaded to produce the screensaver next to the menu. You
+may notice that its player kind is "health", not "player". This is because the
+map is not meant to be played. "health" is used because it does not require
+loading as many textures and other resources as "player".
