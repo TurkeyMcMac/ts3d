@@ -52,3 +52,7 @@ The ctf API is included, but not the executable. To run the tests, you will need
 to install that in your PATH yourself.
 
 To update the dependencies from Github, run `external/update-all`.
+
+I have tried to make this project as portable as possible across systems which
+implement POSIX.1-2008. The only shared library dependencies are the standard
+library, the standard math library, and libcurses.
