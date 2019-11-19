@@ -21,12 +21,12 @@
   },
   {
    "name": "sand",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "sand"
   },
   {
    "name": "water",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "lilypad"
   }
  ],

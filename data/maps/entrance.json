@@ -20,7 +20,7 @@
   },
   {
    "name": "sand",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "sand"
   },
   {
@@ -46,7 +46,7 @@
   {
    "name": "south-sand-slope",
    "east": "sand-slope-sky",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "sand"
   },
   {
@@ -63,13 +63,13 @@
   },
   {
    "name": "lilypad",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "lilypad"
   },
   {
    "name": "outside-entrance",
    "east": "cave-entrance",
-   "top": "sky",
+   "top": "cyan",
    "bottom": "sand"
   },
   {
