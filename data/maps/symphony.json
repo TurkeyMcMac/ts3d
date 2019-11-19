@@ -1,0 +1,40 @@
+{
+ "prereq": "dancefloor",
+ "blocks": [
+  {
+   "name": "wall-1",
+   "all_solid": true,
+   "all": "square-magenta-blue"
+  },
+  {
+   "name": "wall-2",
+   "all_solid": true,
+   "all": "brick-red"
+  },
+  {
+   "name": "floor",
+   "top": "tiles-blue-cyan",
+   "bottom": "sand"
+  }
+ ],
+ "layout": [
+  [0,1,0,1,0,1,0,1,0,1,0,1,0],
+  [0,2,2,2,2,2,2,2,2,2,2,2,0],
+  [1,2,2,2,2,2,2,2,2,2,2,2,1],
+  [0,2,2,2,2,2,2,2,2,2,2,2,0],
+  [1,2,2,2,2,2,2,2,2,2,2,2,1],
+  [0,2,2,2,2,2,2,2,2,2,2,2,0],
+  [0,1,0,1,0,1,0,1,0,1,0,1,0]
+ ],
+ "player": {
+  "kind": "player",
+  "pos": [1.5, 3.5]
+ },
+ "ents": [
+  {
+   "kind": "eyeball-1",
+   "team": "enemy",
+   "pos": [8.5, 3.5]
+  }
+ ]
+}

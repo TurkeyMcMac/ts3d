@@ -1,0 +1,25 @@
+{
+ "name": "Eyeball Stage 2",
+ "team_override": "enemy",
+ "width": 1,
+ "height": 1,
+ "shoot_chance": 0.4,
+ "turn_chance": 0.4,
+ "speed": -0.09,
+ "death_spawn": "eyeball-2-death",
+ "health": 1,
+ "damage": 0.02,
+ "bullet": "bat",
+ "frames": [
+  ["eyeball-1", 8],
+  ["eyeball-2", 4],
+  ["eyeball-3", 2],
+  ["eyeball-4", 2],
+  ["eyeball-5", 4],
+  ["eyeball-6", 8],
+  ["eyeball-5", 4],
+  ["eyeball-4", 2],
+  ["eyeball-3", 2],
+  ["eyeball-2", 4]
+ ]
+}
