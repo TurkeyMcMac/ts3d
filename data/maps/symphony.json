@@ -1,5 +1,5 @@
 {
- "prereq": "dancefloor",
+ "prereq": "ensemble",
  "blocks": [
   {
    "name": "wall-1",
