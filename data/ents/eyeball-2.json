@@ -4,7 +4,7 @@
  "width": 1,
  "height": 1,
  "shoot_chance": 0.8,
- "turn_chance": 0.4,
+ "turn_chance": 1,
  "speed": -0.09,
  "death_spawn": "eyeball-2-death",
  "health": 6,
