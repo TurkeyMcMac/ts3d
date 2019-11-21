@@ -41,4 +41,15 @@ void string_pushc(struct string *str, size_t *cap, int push)
 #	include "libctf.h"
 #	include <assert.h>
 
+CTF_TEST(string,
+	size_t cap = 0;
+	struct string str;
+	string_init(&str, cap);
+	string_pushn(&str, &cap, "Hello, ", 7);
+	string_pushz(&str, &cap, "world");
+	string_pushc(&str, &cap, '!');
+	string_pushc(&str, &cap, '\0');
+	assert(!strcmp("Hello, world!", str.text));
+)
+
 #endif /* CTF_TESTS_ENABLED */
