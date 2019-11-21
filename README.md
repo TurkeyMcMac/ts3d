@@ -59,4 +59,7 @@ To update the dependencies from Github, run `external/update-all`.
 
 I have tried to make this project as portable as possible across systems which
 implement POSIX.1-2008. The only shared library dependencies are the standard
-library, the standard math library, and libcurses.
+library, the standard math library, and libcurses. The two standard libraries,
+as their names suggest, are required to be installed by the POSIX/C standard.
+libcurses will almost definitely by installed on your system. If it is not, it
+should be available through your package manager.
