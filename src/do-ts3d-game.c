@@ -83,7 +83,11 @@ static struct save_state *get_save_state(const char *name,
 		if (save) return save;
 		// from closed by save_state_init
 	} else {
+		logger_printf(log, LOGGER_WARNING,
+			"Unable to load save state from %s; "
+			"creating empty state\n", state_file);
 		save_states_empty(saves);
+		// from closed by save_state_init
 	}
 	return save_states_add(saves, name);
 }
@@ -141,14 +145,29 @@ static void free_save_links(struct menu_item *links)
 }
 
 // Sync the save state set with the file.
-static void write_save_states(struct save_states *saves, const char *state_file)
+static int write_save_states(struct save_states *saves, const char *state_file,
+	struct logger *log)
 {
 	FILE *to = fopen(state_file, "w");
-	// Silently fail for now.
-	if (to) {
-		save_states_write(saves, to);
-		fclose(to);
+	int ret = 0;
+	if (!to || save_states_write(saves, to)) {
+		int errnum = errno;
+		FILE *print = logger_get_output(log, LOGGER_ERROR);
+		if (print) {
+			static const char *const lines[] = {
+				"Failed to write state information to %s: %s\n",
+				"The information is below. Copy this to %s or"
+				" to another location (see ts3d -h output):\n"
+			};
+			logger_printf(log, LOGGER_ERROR, lines[0],
+				state_file, strerror(errnum));
+			logger_printf(log, LOGGER_ERROR, lines[1], state_file);
+			save_states_write(saves, print);
+		}
+		ret = -1;
 	}
+	if (to) fclose(to);
+	return ret;
 }
 
 // Get an input that is the name of a save from the menu. The menu must be in
@@ -481,10 +500,9 @@ end:
 	free_save_links(&game_list);
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
-	write_save_states(&saves, state_file);
+	ret = write_save_states(&saves, state_file, log);
 	save_states_destroy(&saves);
 	loader_free(&ldr);
-	ret = 0;
 early_end:
 	endwin();
 	return ret;
