@@ -131,9 +131,9 @@ int save_states_write(struct save_states *saves, FILE *to)
 			TRY(save_state_write(*val, to));
 			before = ',';
 		}
-		TRY(fputs("\n }\n}", to));
+		TRY(fputs("\n }\n}\n", to));
 	} else {
-		TRY(fputs("{}\n}", to));
+		TRY(fputs("{}\n}\n", to));
 	}
 	return 0;
 }
