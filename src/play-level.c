@@ -132,8 +132,9 @@ static void shoot_bullets(struct ents *ents)
 	ENTS_FOR_EACH(ents, e) {
 		struct ent_type *type = ents_type(ents, e);
 		if (type->bullet && chance_decide(type->shoot_chance)) {
+			d3d_vec_s pos = *ents_pos(ents, e);
 			ent_id bullet = ents_add(ents, type->bullet,
-				ents_team(ents, e), ents_pos(ents, e));
+				ents_team(ents, e), &pos);
 			d3d_vec_s *bvel = ents_vel(ents, bullet), d_bvel;
 			d_bvel = *bvel = *ents_vel(ents, e);
 			vec_norm_mul(&d_bvel, ents_type(ents, bullet)->speed);
