@@ -95,27 +95,6 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 	return ldr->empty_txtr;
 }
 
-static int free_txtrs_callback(const char *key, void **val)
-{
-	free((char *)key);
-	d3d_free_texture(*val);
-	return 0;
-}
-
-static int free_ents_callback(const char *key, void **val)
-{
-	free((char *)key);
-	ent_type_free(*val);
-	return 0;
-}
-
-static int free_maps_callback(const char *key, void **val)
-{
-	free((char *)key);
-	map_free(*val);
-	return 0;
-}
-
 void loader_print_summary(struct loader *ldr)
 {
 	logger_printf(ldr->log, LOGGER_INFO,
@@ -139,14 +118,25 @@ struct logger *loader_set_logger(struct loader *ldr, struct logger *log)
 
 void loader_free(struct loader *ldr)
 {
+	const char *key;
+	void **val;
 	d3d_free_texture(ldr->empty_txtr);
-	table_each(&ldr->txtrs, free_txtrs_callback);
+	TABLE_FOR_EACH(&ldr->txtrs, key, val) {
+		free((char *)key);
+		d3d_free_texture(*val);
+	}
 	table_free(&ldr->txtrs);
 	free(ldr->txtrs_dir);
-	table_each(&ldr->ents, free_ents_callback);
+	TABLE_FOR_EACH(&ldr->ents, key, val) {
+		free((char *)key);
+		ent_type_free(*val);
+	}
 	table_free(&ldr->ents);
 	free(ldr->ents_dir);
-	table_each(&ldr->maps, free_maps_callback);
+	TABLE_FOR_EACH(&ldr->maps, key, val) {
+		free((char *)key);
+		map_free(*val);
+	}
 	table_free(&ldr->maps);
 	free(ldr->maps_dir);
 }

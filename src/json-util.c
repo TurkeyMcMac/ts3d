@@ -145,7 +145,11 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 			} else if (entry->kind == JN_ERROR) {
 				free(key);
 				free(entry);
-				table_each(&nd->d.map, free_json_pair);
+				const char *k;
+				void **v;
+				TABLE_FOR_EACH(&nd->d.map, k, v) {
+					free_json_pair(k, v);
+				}
 				table_free(&nd->d.map);
 				nd->kind = JN_ERROR;
 				return;
@@ -224,8 +228,12 @@ int parse_json_tree(const char *name, FILE *file, struct logger *log,
 void free_json_tree(struct json_node *nd)
 {
 	switch (nd->kind) {
+		const char *k;
+		void **v;
 	case JN_MAP:
-		table_each(&nd->d.map, free_json_pair);
+		TABLE_FOR_EACH(&nd->d.map, k, v) {
+			free_json_pair(k, v);
+		}
 		table_free(&nd->d.map);
 		break;
 	case JN_LIST:

@@ -76,15 +76,6 @@ size_t table_count(const table *tbl)
 	return tbl->len;
 }
 
-int table_each(table *tbl, int (*item)(const char *, void **))
-{
-	for (size_t i = 0; i < tbl->len; ++i) {
-		int retval = item(tbl->items[i].key, &tbl->items[i].val);
-		if (retval) return retval;
-	}
-	return 0;
-}
-
 void table_free(table *tbl)
 {
 	free(tbl->items);
@@ -149,28 +140,22 @@ CTF_TEST(table_get_freeze,
 	table_free(&tab);
 )
 
-static int set_value_for_key(const char *key, void **item_)
-{
-	intptr_t *item = (intptr_t *)item_;
-	if (!strcmp(key, "foo")) {
-		*item = 2;
-	} else if (!strcmp(key, "bar")) {
-		*item = 3;
-	} else if (!strcmp(key, "baz")) {
-		*item = 5;
-	} else {
-		assert(!"Bad key");
-	}
-	return 0;
-}
-
 CTF_TEST(table_for_visits_all,
 	table tab;
 	set_up_table(&tab, 0, 0, 0);
 	const char *key;
 	void **val;
 	TABLE_FOR_EACH(&tab, key, val) {
-		set_value_for_key(key, val);
+		intptr_t *item = (intptr_t *)val;
+		if (!strcmp(key, "foo")) {
+			*item = 2;
+		} else if (!strcmp(key, "bar")) {
+			*item = 3;
+		} else if (!strcmp(key, "baz")) {
+			*item = 5;
+		} else {
+			assert(!"Bad key");
+		}
 	}
 	int product = 1;
 	product *= *(intptr_t *)table_get(&tab, "foo");
@@ -189,38 +174,6 @@ CTF_TEST(table_empty_for_visits_all,
 		++count;
 	}
 	assert(count == 0);
-	table_free(&tab);
-)
-
-CTF_TEST(table_each_visits_all,
-	table tab;
-	set_up_table(&tab, 0, 0, 0);
-	int product = 1;
-	table_each(&tab, set_value_for_key);
-	product *= *(intptr_t *)table_get(&tab, "foo");
-	product *= *(intptr_t *)table_get(&tab, "bar");
-	product *= *(intptr_t *)table_get(&tab, "baz");
-	assert(product == 2 * 3 * 5);
-	table_free(&tab);
-)
-
-static int set_value_for_key_return_1(const char *key, void **item)
-{
-	set_value_for_key(key, item);
-	return 1;
-}
-
-CTF_TEST(table_each_returns_right,
-	table tab;
-	set_up_table(&tab, 0, 0, 0);
-	assert(!table_each(&tab, set_value_for_key));
-	int product = 1;
-	set_up_table(&tab, 0, 0, 0);
-	assert(table_each(&tab, set_value_for_key_return_1) == 1);
-	product *= *(intptr_t *)table_get(&tab, "foo");
-	product *= *(intptr_t *)table_get(&tab, "bar");
-	product *= *(intptr_t *)table_get(&tab, "baz");
-	assert(product == 0);
 	table_free(&tab);
 )
 

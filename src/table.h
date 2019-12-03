@@ -36,11 +36,6 @@ void *table_remove(table *tbl, const char *key);
 // Count the number of unique keys added to the table.
 size_t table_count(const table *tbl);
 
-// Iterate through all the entries. The first argument to the given function is
-// the key, and the second is the mutable pointer to the corresponding value.
-// The order is undefined.
-int table_each(table *tbl, int (*item)(const char *, void **));
-
 // Creates a for loop header to go through each key and value in the table. k
 // and v are names of variables pre-declared, k having type const char * and v
 // having type void **.
