@@ -1,9 +1,11 @@
 #ifndef TICKER_H_
 #define TICKER_H_
 
+#include <time.h>
+
 #if __APPLE__ /* Mac OS doesn't support clock_gettime etc. */
+
 #	include <mach/mach_time.h>
-#	include <time.h>
 #	include <stdint.h>
 
 struct ticker {
@@ -11,13 +13,14 @@ struct ticker {
 	uint64_t last_tick;
 	uint64_t interval;
 };
+
 #else
-#	include <time.h>
 
 struct ticker {
 	struct timespec last_tick;
 	long interval;
 };
+
 #endif /* !__APPLE__ */
 
 // Initialize a given ticker with interval in milliseconds from 1 to 999.
