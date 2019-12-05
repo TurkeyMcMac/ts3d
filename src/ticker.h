@@ -12,7 +12,6 @@ struct ticker {
 	uint64_t interval;
 };
 #else
-#	define TICKER_WITH_CLOCK
 #	include <time.h>
 
 struct ticker {
