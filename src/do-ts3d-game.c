@@ -222,6 +222,9 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// Log in with the given save name, or anonymously if NULL is given.
 	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
 		state_file, &saves, log);
+	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
+	// This here is lowered from "1000":
+	setenv("ESCDELAY", "30", 0);
 	initscr();
 	if (set_up_colors())
 		logger_printf(log, LOGGER_WARNING,
