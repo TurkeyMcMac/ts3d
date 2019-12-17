@@ -4,8 +4,8 @@
 sub print_help {
     my ($file) = @_;
     print $file <<HELP;
-TS3D texture utilities.
 Usage: $0 <sub-command> [arguments]
+TS3D texture utilities.
 Sub-commands:
   help              Print this help.
   table             Print a table of characters corresponding to texture pixels.
