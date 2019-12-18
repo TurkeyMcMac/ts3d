@@ -195,8 +195,11 @@ void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp);
  * calculated. This must be the distance from the camera to the sprite. */
 void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist);
 
+#endif /* D3D_H_ */
+
 /* Complete structure definitions. */
-#ifdef D3D_USE_INTERNAL_STRUCTS
+#if defined(D3D_USE_INTERNAL_STRUCTS) && !defined(D3D_INTERNAL_H_)
+#define D3D_INTERNAL_H_
 
 #define D3D_SIZED_TEXTURE(name, arr_size) struct name { \
 	/* Width and height in pixels */ \
@@ -257,6 +260,4 @@ struct d3d_board_s {
 	const d3d_block_s *blocks[];
 };
 
-#endif /* D3D_USE_INTERNAL_STRUCTS */
-
-#endif /* D3D_H_ */
+#endif /* defined(D3D_USE_INTERNAL_STRUCTS) && !defined(D3D_INTERNAL_H_) */
