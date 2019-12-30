@@ -114,7 +114,8 @@ sub animate_ent {
 my $subcmd;
 if ( $#ARGV >= 0 ) {
     $subcmd = $ARGV[0];
-} else {
+}
+else {
     print_help(*STDERR);
     exit 1;
 }
