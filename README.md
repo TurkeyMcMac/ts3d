@@ -9,6 +9,12 @@ terminal-based 3D graphics.
 session showing some of the mechanics. The video may play choppily the first
 time through.
 
+The fastest way to install the game is with Homebrew:
+
+```
+brew install turkeymcmac/tap/ts3d
+```
+
 ## Building
 
 Run make in the project root. This does not account for updates to dependencies.
@@ -26,7 +32,13 @@ call `ceeteef` directly.
 
 ## Installation
 
-To install, run `make install exe-dir=</usr/bin or something>
+Again, the fastest installation procedure is this:
+
+```
+brew install turkeymcmac/tap/ts3d
+```
+
+To install after cloning, run `make install exe-dir=</usr/bin or something>
 man-dir=</usr/share/man/man6 or whatever>`. A script will be launched taking you
 through the installation procedure. If something goes wrong, run `make uninstall
 <same parameters as before>`. You may be asked to type your password to move
