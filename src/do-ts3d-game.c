@@ -79,9 +79,10 @@ static struct save_state *get_save_state(const char *name,
 {
 	FILE *from = fopen(state_file, "r");
 	if (from && !save_states_init(saves, from, log)) {
+		save_states_add(saves, ANONYMOUS);
 		struct save_state *save = save_states_get(saves, name);
-		struct save_state *anon = save_states_add(saves, ANONYMOUS);
-		return save ? save : anon;
+		if (!save) save = save_states_add(saves, name);
+		return save;
 	} else {
 		logger_printf(log, LOGGER_WARNING,
 			"Unable to load save state from %s; "
