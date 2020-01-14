@@ -80,16 +80,16 @@ static struct save_state *get_save_state(const char *name,
 	FILE *from = fopen(state_file, "r");
 	if (from && !save_states_init(saves, from, log)) {
 		struct save_state *save = save_states_get(saves, name);
-		if (save) return save;
-		// from closed by save_state_init
+		struct save_state *anon = save_states_add(saves, ANONYMOUS);
+		return save ? save : anon;
 	} else {
 		logger_printf(log, LOGGER_WARNING,
 			"Unable to load save state from %s; "
 			"creating empty state\n", state_file);
 		save_states_empty(saves);
-		// from closed by save_state_init
+		return save_states_add(saves, ANONYMOUS);
 	}
-	return save_states_add(saves, name);
+	// from closed by save_state_init
 }
 
 // Add any links present in the save state list but absent in the items list to
