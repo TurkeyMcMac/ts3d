@@ -1,6 +1,7 @@
-version = 1.3.15
 exe = ts3d
 exe-dir = $(HOME)/bin
+version-file = version
+version = `cat $(version-file)`
 tests = tests
 data-dir = data
 man-page = ts3d.6
@@ -14,14 +15,14 @@ sources = src/*.c
 headers = src/*.h
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DJSON_WITH_STDIO \
-	 -DTS3D_VERSION='"$(version)"' ${CFLAGS}
+	 -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
 linkage = -lm -lcurses
 test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 
 CC ?= cc
 RM ?= rm -f
 
-$(exe): $(sources) $(headers)
+$(exe): $(sources) $(headers) $(version-file)
 	$(CC) $(cflags) -o $@ $(sources) $(linkage)
 
 $(tests): $(sources) $(headers)
