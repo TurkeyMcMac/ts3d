@@ -192,7 +192,7 @@ static const d3d_block_s *hit_wall(
 		size_t x, y;
 		d3d_direction inverted;
 		const d3d_block_s * const *blk = NULL;
-		d3d_vec_s tonext = {INFINITY, INFINITY};
+		d3d_vec_s tonext;
 		d3d_direction ns = D3D_DNORTH, ew = D3D_DWEST;
 		if (dpos->x < 0.0) {
 			// The ray is going west
@@ -210,13 +210,20 @@ static const d3d_block_s *hit_wall(
 			ns = D3D_DSOUTH;
 			tonext.y = revmod1(pos->y);
 		}
+		if (dpos->x == 0.0) {
+			goto hit_ns;
+		} else if (dpos->y == 0.0) {
+			goto hit_ew;
+		}
 		if (tonext.x / dpos->x < tonext.y / dpos->y) {
 			// The ray will hit a east/west wall first
+	hit_ew:
 			*dir = ew;
 			pos->x += tonext.x;
 			pos->y += tonext.x / dpos->x * dpos->y;
 		} else {
 			// The ray will hit a north/south wall first
+	hit_ns:
 			*dir = ns;
 			pos->y += tonext.y;
 			pos->x += tonext.y / dpos->y * dpos->x;
