@@ -192,7 +192,7 @@ static const d3d_block_s *hit_wall(
 		size_t x, y;
 		d3d_direction inverted;
 		const d3d_block_s * const *blk = NULL;
-		d3d_vec_s tonext;
+		d3d_vec_s tonext = {0, 0};
 		d3d_direction ns = D3D_DNORTH, ew = D3D_DWEST;
 		if (dpos->x < 0.0) {
 			// The ray is going west
