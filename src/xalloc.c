@@ -1,15 +1,17 @@
 #include "xalloc.h"
 #include "util.h"
 #include <stdio.h>
+#include <stdarg.h>
 #include <unistd.h>
+
+static void die(const char *fmt, ...)
+	ATTRIBUTE(format(printf, 1, 2));
 
 void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
 	if (!ptr && size != 0) {
-		dprintf(STDERR_FILENO,
-			"malloc(%zu) failed. Aborting.\n", size);
-		abort();
+		die("malloc(%zu) failed. Aborting.\n", size);
 	}
 	return ptr;
 }
@@ -18,9 +20,7 @@ void *xcalloc(size_t count, size_t size)
 {
 	void *ptr = calloc(count, size);
 	if (!ptr && count * size != 0) {
-		dprintf(STDERR_FILENO,
-			"calloc(%zu, %zu) failed. Aborting.\n", count, size);
-		abort();
+		die("calloc(%zu, %zu) failed. Aborting.\n", count, size);
 	}
 	return ptr;
 }
@@ -29,11 +29,21 @@ void *xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (!ptr && size != 0) {
-		dprintf(STDERR_FILENO,
-			"realloc(%p, %zu) failed. Aborting.\n", ptr, size);
-		abort();
+		die("realloc(%p, %zu) failed. Aborting.\n", ptr, size);
 	}
 	return ptr;
+}
+
+static void die(const char *fmt, ...)
+{
+	// Probably thread-unsafety is OK.
+	static char msg_buf[128];
+	va_list va;
+	va_start(va, fmt);
+	// Hopefully snprintf doesn't allocate.
+	vsnprintf(msg_buf, sizeof(msg_buf), fmt, va);
+	va_end(va);
+	abort();
 }
 
 #if CTF_TESTS_ENABLED

@@ -289,7 +289,7 @@ void menu_draw(struct menu *menu)
 		mvwprintw(menu->win, 2, 1, "%*.*s",
 			-(int)current->n_items, (int)current->n_items,
 			current->tag);
-		size_t last = strnlen(current->tag, current->n_items);
+		size_t last = strlen_max(current->tag, current->n_items);
 		if (last < current->n_items) {
 			mvwaddch(menu->win, 2, (int)last + 1, A_REVERSE | ' ');
 		}

@@ -196,7 +196,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 		wrefresh(menu->win);
 		tick_title(title_cam, title_board, title_win);
 		tick(timer);
-		size_t len = strnlen(name_buf, buf_size);
+		size_t len = strlen_max(name_buf, buf_size);
 		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
 			// Delete a character.
 			if (len > 0)
