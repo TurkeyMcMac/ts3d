@@ -63,6 +63,7 @@ done:
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
+#	include "test-file.h"
 #	include <assert.h>
 #	include <unistd.h>
 
@@ -74,7 +75,7 @@ static void dump_line(const struct string *lines, size_t i)
 
 CTF_TEST(read_lines_final_newline,
 	char str[] = "a\nb\nc\n";
-	FILE *source = fmemopen(str, 6, "r");
+	FILE *source = test_input(str, 6);
 	size_t nlines;
 	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
@@ -87,7 +88,7 @@ CTF_TEST(read_lines_final_newline,
 
 CTF_TEST(read_lines_no_final_newline,
 	char str[] = "a\nb\nc";
-	FILE *source = fmemopen(str, 5, "r");
+	FILE *source = test_input(str, 5);
 	size_t nlines;
 	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
@@ -99,11 +100,7 @@ CTF_TEST(read_lines_no_final_newline,
 )
 
 CTF_TEST(read_lines_empty,
-	// Use a pipe since fmemopen doesn't support size zero.
-	int pipefds[2];
-	assert(!pipe(pipefds));
-	close(pipefds[1]);
-	FILE *source = fdopen(pipefds[0], "r");
+	FILE *source = test_input("", 0);
 	size_t nlines;
 	read_lines(source, &nlines);
 	assert(nlines == 0);
@@ -111,7 +108,7 @@ CTF_TEST(read_lines_empty,
 
 CTF_TEST(read_lines_just_newline,
 	char str[] = "\n";
-	FILE *source = fmemopen(str, 1, "r");
+	FILE *source = test_input(str, 1);
 	size_t nlines;
 	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 1);

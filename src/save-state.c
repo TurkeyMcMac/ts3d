@@ -152,6 +152,7 @@ void save_states_destroy(struct save_states *saves)
 
 #	include "libctf.h"
 #	include "logger.h"
+#	include "test-file.h"
 #	include <assert.h>
 #	include <string.h>
 
@@ -162,7 +163,7 @@ static void setup_saves(struct save_states *saves)
 		"\"PLAYER_1\":{\"complete\":[]},"
 		"\"PLAYER_2\":{\"complete\":[\"a\",\"b\",1]}"
 	"}}";
-	FILE *from = fmemopen(from_text, sizeof(from_text), "r");
+	FILE *from = test_input(from_text, sizeof(from_text));
 	struct logger logger;
 	logger_init(&logger);
 	assert(!save_states_init(saves, from, &logger));
@@ -171,9 +172,11 @@ static void setup_saves(struct save_states *saves)
 char *saves_to_string(struct save_states *saves, size_t *n_writ)
 {
 	char *writ;
-	FILE *to = open_memstream(&writ, n_writ);
+	int out_fd;
+	FILE *to = test_output(&out_fd);
 	save_states_write(saves, to);
 	fclose(to);
+	test_read_output(out_fd, &writ, n_writ);
 	writ = xrealloc(writ, *n_writ + 1);
 	writ[*n_writ] = '\0';
 	return writ;
@@ -187,7 +190,7 @@ CTF_TEST(write_save_valid,
 	struct logger logger;
 	logger_init(&logger);
 	struct json_node root;
-	FILE *source = fmemopen(writ, n_writ, "r");
+	FILE *source = test_input(writ, n_writ);
 	assert(parse_json_tree("(memory)", source, &logger, &root) == 0);
 	logger_free(&logger);
 	free_json_tree(&root);

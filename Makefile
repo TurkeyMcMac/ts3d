@@ -17,8 +17,7 @@ headers = src/*.h
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
 linkage = -lm -lcurses
-test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED \
-	-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L # tests need POSIX 2008.
+test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 
 CC ?= cc
 RM ?= rm -f

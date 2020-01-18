@@ -341,6 +341,7 @@ int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
 #if CTF_TESTS_ENABLED
 
 #	include "libctf.h"
+#	include "test-file.h"
 #	include <assert.h>
 
 #	define SOURCE(text) \
@@ -349,7 +350,7 @@ int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
 	logger_init(&logger); \
 	do { \
 		char str[] = text; \
-		FILE *source = fmemopen(str, sizeof(str), "r"); \
+		FILE *source = test_input(str, sizeof(str)); \
 		parse_json_tree("(memory)", source, &logger, &root); \
 	} while (0)
 
@@ -401,9 +402,11 @@ CTF_TEST(escapes_text_json,
 	const char expected[] = "ABC\\n\\\"\\u001BZ";
 	size_t n_escaped = 0;
 	char *escaped = NULL;
-	FILE *to = open_memstream(&escaped, &n_escaped);
+	int out_fd;
+	FILE *to = test_output(&out_fd);
 	assert(!escape_text_json(text, to));
 	fclose(to);
+	test_read_output(out_fd, &escaped, &n_escaped);
 	printf("escaped: \"%.*s\"\n", (int)n_escaped, escaped);
 	assert(n_escaped == sizeof(expected) - 1);
 	assert(!memcmp(escaped, expected, n_escaped));
