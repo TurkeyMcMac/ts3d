@@ -13,16 +13,11 @@ struct logger {
 	int do_free;
 };
 
-// Flags for use with logger_printf.
+// Flags specifying different log levels.
 #define LOGGER_INFO		0x0001
 #define LOGGER_WARNING		0x0002
 #define LOGGER_ERROR		0x0004
 #define LOGGER_ALL		(LOGGER_INFO | LOGGER_WARNING | LOGGER_ERROR)
-#define LOGGER_NO_PREFIX	0x0008 // To remove "[INFO] " etc.
-// Flags for use with logger_set_color
-#define LOGGER_COLOR		0x0010
-#define LOGGER_NO_COLOR		0x0020
-#define LOGGER_AUTO_COLOR	0 // Not actually a flag
 
 /*
  * All the following functions accept NULL as a log in which case they do
@@ -43,14 +38,8 @@ FILE *logger_get_output(struct logger *log, int which);
 // LOGGER_ALL is a valid which, and sets the information for all levels.
 void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free);
 
-// Set colorization, which for now affects all three log types. `color` is COLOR
-// for color always, NO_COLOR for color never, or AUTO_COLOR for color when the
-// output is a terminal.
-void logger_set_color(struct logger *log, int color);
-
-// Print a formatted message. `flags` contains one of the log types along with
-// perhaps NO_PREFIX, indicating that "[INFO]", "[WARNING]", etc. should not be
-// printed at the start of the message.
+// Print a formatted message. `flags` contains one of the log types, and cannot
+// be LOGGER_ALL.
 void logger_printf(struct logger *log, int flags, const char *format, ...)
 	ATTRIBUTE(format(printf, 3, 4));
 

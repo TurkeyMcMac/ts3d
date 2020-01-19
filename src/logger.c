@@ -31,20 +31,6 @@ static FILE **get_filep(struct logger *log, int mode)
 	}
 }
 
-static const char *get_color(struct logger *log, int mode)
-{
-	(void)log;
-	switch (mode) {
-	default:
-	case LOGGER_INFO:
-		return "";
-	case LOGGER_WARNING:
-		return "\x1B[1;35m";
-	case LOGGER_ERROR:
-		return "\x1B[1;31m";
-	}
-}
-
 static const char *get_prefix(struct logger *log, int mode)
 {
 	(void)log;
@@ -96,37 +82,17 @@ void logger_set_output(struct logger *log, int which, FILE *dest, bool do_free)
 		}
 	}
 }
-
-void logger_set_color(struct logger *log, int color)
-{
-	if (!log) return;
-	log->flags &= ~(LOGGER_NO_COLOR | LOGGER_COLOR);
-	log->flags |= color & (LOGGER_NO_COLOR | LOGGER_COLOR);
-}
-
 void logger_printf(struct logger *log, int flags, const char *format, ...)
 {
 	if (!log) return;
 	int mode = get_mode(flags);
 	if (!(log->flags & mode)) return;
 	FILE *file = *get_filep(log, mode);
-	const char *color = get_color(log, mode);
-	bool colored = !(log->flags & LOGGER_NO_COLOR)
-	            && ((log->flags & LOGGER_COLOR) || isatty(fileno(file)))
-	            && *color != '\0';
-	if (colored) {
-		fprintf(file, "%s", color);
-	}
-	if (!(flags & LOGGER_NO_PREFIX)) {
-		fprintf(file, "%s", get_prefix(log, mode));
-	}
+	fputs(get_prefix(log, mode), file);
 	va_list args;
 	va_start(args, format);
 	vfprintf(file, format, args);
 	va_end(args);
-	if (colored) {
-		fprintf(file, "\x1B[0m");
-	}
 	fflush(file);
 }
 
