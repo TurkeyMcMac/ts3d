@@ -249,6 +249,7 @@ int play_level(const char *root_dir, struct save_state *save,
 	int translation = '\0'; // No initial translation
 	int turn_duration = 0; // No initial turning
 	bool won = false;
+	clear();
 	for (;;) {
 		player_move_camera(&player, cam);
 		d3d_draw_walls(cam, board);
@@ -283,9 +284,11 @@ int play_level(const char *root_dir, struct save_state *save,
 		} else if (lowkey == 'p') {
 			// Pause game
 			if (do_pause_popup(timer)) goto quit;
+			clear();
 		} else if (lowkey == 'x' || key == ESC) {
 			// Quit game
 			if (prompt_quit_popup(timer)) goto quit;
+			clear();
 		} else {
 			// Otherwise, let the player be controlled.
 			move_player(&player,
@@ -305,6 +308,7 @@ int play_level(const char *root_dir, struct save_state *save,
 		tick(timer);
 	}
 quit:
+	clear();
 	refresh();
 	delwin(dead_popup);
 	d3d_free_camera(cam);
