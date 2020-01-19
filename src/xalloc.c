@@ -37,12 +37,15 @@ void *xrealloc(void *ptr, size_t size)
 static void die(const char *fmt, ...)
 {
 	// Probably thread-unsafety is OK.
-	static char msg_buf[128];
+	static char msgbuf[128];
 	va_list va;
 	va_start(va, fmt);
 	// Hopefully snprintf doesn't allocate.
-	vsnprintf(msg_buf, sizeof(msg_buf), fmt, va);
+	int l = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
 	va_end(va);
+	if (l > 0) {
+		ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msgbuf, (size_t)l);
+	}
 	abort();
 }
 
