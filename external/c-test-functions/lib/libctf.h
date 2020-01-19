@@ -42,15 +42,15 @@
 #endif
 
 /* The part of a test symbol before the identifier. */
-#define CTF_PREFIX CTf__
+#define CTF_PREFIX CTf6_
 /* The part of a test symbol after the identifier. */
-#define CTF_SUFFIX CtF__
+#define CTF_SUFFIX Ct5F_
 
 /* All that follows is not a public interface. */
 
 #define CTF_CIRCUMFIX(name) CTF_CIRCUMFIX_(CTF_PREFIX, name, CTF_SUFFIX)
-#define CTF_CIRCUMFIX_(pfx, name, sfx) CTF_CIRCUMFIX__(pfx, name, sfx)
-#define CTF_CIRCUMFIX__(pfx, name, sfx) pfx##name##sfx
+#define CTF_CIRCUMFIX_(pfx, name, sfx) CTF_CIRCUMFIX_2(pfx, name, sfx)
+#define CTF_CIRCUMFIX_2(pfx, name, sfx) pfx##name##sfx
 #ifdef __cplusplus
 #	define CTF_EXTERN_C extern "C"
 #else
