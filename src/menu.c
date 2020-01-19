@@ -94,7 +94,7 @@ int menu_init(struct menu *menu, const char *root_dir, WINDOW *win,
 	FILE *file = fopen(fname, "r");
 	if (!file) {
 		logger_printf(log, LOGGER_ERROR,
-			"Menu file \"%s\" not found\n", fname);
+			"Menu file \"%s\" could not be opened\n", fname);
 		goto error_fopen;
 	}
 	struct json_node jtree;
