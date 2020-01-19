@@ -46,7 +46,7 @@ uninstall:
 
 .PHONY: run-tests
 run-tests: $(tests)
-	ceeteef $(tests)
+	ceeteef -t8 $(tests)
 
 .PHONY: clean
 clean:
