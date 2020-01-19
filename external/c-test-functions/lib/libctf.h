@@ -42,7 +42,7 @@
 #endif
 
 /* The part of a test symbol before the identifier. */
-#define CTF_PREFIX CTf6_
+#define CTF_PREFIX CT9f6
 /* The part of a test symbol after the identifier. */
 #define CTF_SUFFIX Ct5F_
 
