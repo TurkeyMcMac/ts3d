@@ -81,15 +81,18 @@ void display_frame(d3d_camera *cam, WINDOW *win)
 
 d3d_camera *camera_with_dims(int width, int height)
 {
+	d3d_camera *cam;
 	if (width <= 0) width = 1;
 	if (height <= 0) height = 1;
 	if (width >= height) {
-		return d3d_new_camera(FOV_X,
+		cam = d3d_new_camera(FOV_X,
 			FOV_X / PIXEL_ASPECT * height / width, width, height);
 	} else {
-		return d3d_new_camera(FOV_X * width / height,
+		cam = d3d_new_camera(FOV_X * width / height,
 			FOV_X / PIXEL_ASPECT, width, height);
 	}
+	*d3d_camera_empty_pixel(cam) = pixel(PC_BLACK, PC_BLACK);
+	return cam;
 }
 
 int set_up_colors(void)
