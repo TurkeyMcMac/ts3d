@@ -9,6 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Gets the memory alignment of the given type.
+#define ALIGNOF(type) offsetof(struct { char c; type t; }, t)
+
+// Increments size until a value of type could be stored at the offset size from
+// an aligned pointer.
+#define ALIGN_SIZE(size, type) \
+	((size) = ((size) + ALIGNOF(type) - 1) / ALIGNOF(type) * ALIGNOF(type))
+
 // get a pointer to a coordinate in a grid. A grid is any structure with members
 // 'width' and 'height' and another member 'member' which is a buffer containing
 // all items in column-major organization. Parameters may be evaluated multiple
@@ -27,6 +35,12 @@ void *(*d3d_malloc)(size_t) = malloc;
 void *(*d3d_realloc)(void *, size_t) = realloc;
 void (*d3d_free)(void *) = free;
 #endif
+
+static size_t texture_size(size_t width, size_t height)
+{
+	return offsetof(d3d_texture, pixels)
+		+ width * height * sizeof(d3d_pixel);
+}
 
 // Computes fmod(n, 1.0) if n >= 0, or 1.0 + fmod(n, 1.0) if n < 0
 // Returns in the range [0, 1)
@@ -105,34 +119,43 @@ d3d_camera *d3d_new_camera(
 		size_t width,
 		size_t height)
 {
-	size_t base_size, pixels_size, tans_size, dists_size, size;
+	size_t size;
+	size_t pixels_size;
+	size_t txtr_offset, tans_offset, dists_offset;
+	d3d_texture *empty_txtr;
 	d3d_camera *cam;
-	base_size = offsetof(d3d_camera, pixels);
 	pixels_size = width * height * sizeof(d3d_pixel);
-	pixels_size += sizeof(double) - pixels_size % sizeof(double);
-	tans_size = height * sizeof(double);
-	dists_size = width * sizeof(double);
-	size = base_size + pixels_size + tans_size + dists_size;
+	size = offsetof(d3d_camera, pixels) + pixels_size;
+	ALIGN_SIZE(size, d3d_texture);
+	txtr_offset = size;
+	size += texture_size(1, 1);
+	ALIGN_SIZE(size, double);
+	tans_offset = size;
+	size += height * sizeof(double);
+	dists_offset = size;
+	size += width * sizeof(double);
 	cam = d3d_malloc(size);
 	if (!cam) return NULL;
 	// The members 'tans' and 'dists' are actually pointers to parts of the
-	// same allocation:
-	cam->tans = (void *)((char *)cam + size - dists_size - tans_size);
-	cam->dists = (void *)((char *)cam + size - dists_size);
+	// same allocation. 'empty_txtr' is glued on before them, but is not a
+	// member.
+	empty_txtr = (void *)((char *)cam + txtr_offset);
+	cam->tans = (void *)((char *)cam + tans_offset);
+	cam->dists = (void *)((char *)cam + dists_offset);
 	cam->facing = 0.0;
 	cam->fov.x = fovx;
 	cam->fov.y = fovy;
 	cam->width = width;
 	cam->height = height;
-	cam->empty_texture.width = 1;
-	cam->empty_texture.height = 1;
-	cam->empty_texture.pixels[0] = 0;
+	empty_txtr->width = 1;
+	empty_txtr->height = 1;
+	empty_txtr->pixels[0] = 0;
 	cam->blank_block.faces[D3D_DNORTH] =
 	cam->blank_block.faces[D3D_DSOUTH] =
 	cam->blank_block.faces[D3D_DEAST] =
 	cam->blank_block.faces[D3D_DWEST] =
 	cam->blank_block.faces[D3D_DUP] =
-	cam->blank_block.faces[D3D_DDOWN] = (d3d_texture *)&cam->empty_texture;
+	cam->blank_block.faces[D3D_DDOWN] = empty_txtr;
 	cam->order = NULL;
 	cam->order_buf_cap = 0;
 	memset(cam->pixels, 0, pixels_size);
@@ -153,13 +176,12 @@ void d3d_free_camera(d3d_camera *cam)
 
 d3d_texture *d3d_new_texture(size_t width, size_t height)
 {
-	size_t pixels_size = width * height * sizeof(d3d_pixel *);
-	d3d_texture *txtr =
-		d3d_malloc(offsetof(d3d_texture, pixels) + pixels_size);
+	size_t size = texture_size(width, height);
+	d3d_texture *txtr = d3d_malloc(size);
 	if (!txtr) return NULL;
 	txtr->width = width;
 	txtr->height = height;
-	memset(txtr->pixels, 0, pixels_size);
+	memset(txtr->pixels, 0, size - offsetof(d3d_texture, pixels));
 	return txtr;
 }
 
@@ -274,7 +296,7 @@ void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
 	block = hit_wall(board, &pos, &dpos, &face, &drawing);
 	if (!block) {
 		block = &cam->blank_block;
-		drawing = (d3d_texture *)&cam->empty_texture;
+		drawing = (d3d_texture *)block->faces[0];
 	}
 	disp.x = pos.x - cam->pos.x;
 	disp.y = pos.y - cam->pos.y;
@@ -461,7 +483,7 @@ size_t d3d_camera_height(const d3d_camera *cam)
 
 d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam)
 {
-	return &cam->empty_texture.pixels[0];
+	return (d3d_pixel *)&cam->blank_block.faces[0]->pixels[0];
 }
 
 d3d_vec_s *d3d_camera_position(d3d_camera *cam)

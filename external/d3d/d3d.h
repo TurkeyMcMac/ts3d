@@ -201,17 +201,12 @@ void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist);
 #if defined(D3D_USE_INTERNAL_STRUCTS) && !defined(D3D_INTERNAL_H_)
 #define D3D_INTERNAL_H_
 
-#define D3D_SIZED_TEXTURE(name, arr_size) struct name { \
-	/* Width and height in pixels */ \
-	size_t width, height; \
-	/* Column-major pixels */ \
-	d3d_pixel pixels arr_size; \
-}
-
-D3D_SIZED_TEXTURE(d3d_texture_s, [/* size is width * height */]);
-
-// Meant for internal use only
-D3D_SIZED_TEXTURE(d3d_texture_one_pixel, [1]);
+struct d3d_texture_s {
+	// Width and height in pixels.
+	size_t width, height;
+	// Column-major pixels.
+	d3d_pixel pixels[];
+};
 
 // This is for drawing multiple sprites.
 struct d3d_sprite_order {
@@ -232,8 +227,6 @@ struct d3d_camera_s {
 	double facing;
 	// The width and height of the camera screen, in pixels.
 	size_t width, height;
-	// The 1x1 texture containing the empty pixel.
-	struct d3d_texture_one_pixel empty_texture;
 	// The block containing all empty textures.
 	d3d_block_s blank_block;
 	// The last buffer used when sorting sprites, or NULL the first time.
