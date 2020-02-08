@@ -1,5 +1,7 @@
 ![TS3D](./logo.gif)
 
+**This branch is a usage example of `jdibs`. See the Makefile for its usage.**
+
 ## Overview
 
 Thing Shooter 3D is a mostly finished first-person shooter. It uses
