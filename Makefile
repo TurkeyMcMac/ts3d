@@ -1,4 +1,5 @@
 exe = ts3d
+dev-exe = dev
 exe-dir = $(HOME)/bin
 version-file = version
 version = `cat $(version-file)`
@@ -13,20 +14,31 @@ man-install = $(man-dir)/$(man-page).gz
 data-install = $(TS3D_DATA)
 sources = src/*.c
 headers = src/*.h
+version-header = src/version.h
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
-	 -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
+	 ${CFLAGS}
 linkage = -lm -lcurses
-test-flags = -shared -fPIC -Og -g3 -DCTF_TESTS_ENABLED
+test-flags = -fPIC -Og -g3 -DCTF_TESTS_ENABLED
 
 CC ?= cc
 RM ?= rm -f
 
-$(exe): $(sources) $(headers) $(version-file)
-	$(CC) $(cflags) -o $@ $(sources) $(linkage)
+$(dev-exe): $(sources) $(headers)
+	./compile -t $@ -c $(CC) -b build/dev -j 4 -F $(cflags) -- -L $(linkage)
+
+$(exe): $(sources) $(headers)
+	./compile -t $@ -c $(CC) -b build/release -j 4 \
+		-F $(cflags) -O2 -flto -- \
+		-L $(linkage)
 
 $(tests): $(sources) $(headers)
-	$(CC) $(cflags) $(test-flags) -o $@ $(sources) $(linkage)
+	./compile -t $@ -c $(CC) -b build/test -j 4 \
+		-J $(CC) $(test-flags) -fPIC -o {o} {i} $(linkage) -- \
+		-F $(cflags) $(test-flags)
+
+$(version-header): $(version-file)
+	echo "#define TS3D_VERSION \"$(version)\"" > $@
 
 .PHONY: install
 install: $(exe)
@@ -50,4 +62,4 @@ run-tests: $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) $(exe) $(tests)
+	$(RM) -r $(exe) $(dev-exe) $(tests) build

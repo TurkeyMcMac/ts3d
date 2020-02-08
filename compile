@@ -1,0 +1,325 @@
+#!/usr/bin/perl
+#
+# This file implements Jude's Drop In Build Script (jdibs), a simple
+# dependency-aware build script for C/C++ projects.
+#
+# MIT License
+#
+# Copyright (c) 2020 Jude Melton-Houghton
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+use strict;
+use warnings;
+
+my $conf_target = 'a.out';
+my $conf_build_dir = 'build';
+my $conf_src_dir = 'src';
+my $conf_cc = 'cc';
+my $conf_parallel = 1;
+my @conf_flags = ();
+my @conf_libs = ();
+my @conf_comp_argv = ();
+my @conf_link_argv = ();
+my @conf_pp_argv = ();
+
+sub main {
+	while (scalar @ARGV) {
+		my ($arg, @args);
+		if (arg_opt('-t', \$arg)) {
+			$conf_target = $arg;
+		} elsif (arg_opt('-b', \$arg)) {
+			$conf_build_dir = $arg;
+		} elsif (arg_opt('-s', \$arg)) {
+			$conf_src_dir = $arg;
+		} elsif (arg_opt('-c', \$arg)) {
+			$conf_cc = $arg;
+		} elsif (arg_opt('-j', \$arg)) {
+			fatal("$0: -j takes a positive integer argument")
+				unless ($arg =~ /^[0-9]+$/ && +$arg > 0);
+			$conf_parallel = +$arg;
+		} elsif (args_opt('-F', \@args)) {
+			@conf_flags = @args;
+		} elsif (args_opt('-L', \@args)) {
+			@conf_libs = @args;
+		} elsif (args_opt('-C', \@args)) {
+			@conf_comp_argv = @args;
+		} elsif (args_opt('-J', \@args)) {
+			@conf_link_argv = @args;
+		} elsif (args_opt('-P', \@args)) {
+			@conf_pp_argv = @args;
+		} else {
+			my $opt = shift @ARGV;
+			if ($opt eq '-h' || $opt eq '-?' || $opt eq '--help') {
+				print <<EOT;
+Usage: $0 [options]
+Compile dependencies.
+Options:
+  -t <target>     Build the executable <target>. Default is 'a.out'.
+  -b <dir>        Use the directory <dir> to store build information. The
+                  default is 'build'.
+  -s <dir>        Look for sources in the directory <dir>. The default is 'src'.
+  -c <cc>         Use the compiler <cc>. The default is 'cc'.
+  -j <number>     Compile <number> files in parallel. The default is 1.
+  -F <arg>... --  Pass <arg>... as flags to all invocations of the compiler. The
+                  default is nothing.
+  -L <arg>... --  Pass linking options <arg>... after source files when linking.
+                  The default is nothing.
+  -C <arg>... --  Use <arg>... as the entire argv of compilation processes. The
+                  string '{i}' is replaced with the source input and '{o}'
+                  becomes the output. The default is '<cc> <flags> -c -o {o}
+                  {i}'.
+  -J <arg>... --  Specify argv when linking. '{i}' is replaced by all inputs and
+                  '{o}' is the output. The default is '<cc> <flags> -o {o} {i}
+                  <linking-options>'.
+  -P <arg>... --  Give the argv when preprocessing. '{i}' becomes the input. The
+                  default is '<cc> <flags> -E {i}'.
+  -h              Display this help.
+This project is hosted at https://github.com/TurkeyMcMac/jdibs
+EOT
+				exit 0;
+			} else {
+				say STDERR "$0: Invalid option $opt; try $0 -h";
+				exit 1;
+			}
+		}
+	}
+	@conf_comp_argv = ($conf_cc, @conf_flags, '-c', '-o', '{o}', '{i}')
+		unless (@conf_comp_argv);
+	@conf_link_argv = ($conf_cc, @conf_flags, '-o', '{o}', '{i}',
+		@conf_libs) unless (@conf_link_argv);
+	@conf_pp_argv = ($conf_cc, @conf_flags, '-E', '{i}')
+		unless (@conf_pp_argv);
+	my @rebuilds = ();
+	my @check_deps = ();
+	opendir(my $src_dir, $conf_src_dir)
+		or fatal("Unable to open source directory $conf_src_dir; $!");
+	my @sources = ();
+	my @changed_includes = ();
+	my $timestamp = "$conf_build_dir/.timestamp";
+	my $rebuild_inc_after = mtime($timestamp);
+	$rebuild_inc_after = 0 if (!defined($rebuild_inc_after));
+	for my $file (readdir $src_dir) {
+		next if (-d $file);
+		if ($file =~ /\.(?:c|cc|cpp|cxx|C|CPP|m)$/) {
+			push @sources, $file;
+		} elsif (mtime("$conf_src_dir/$file") > $rebuild_inc_after) {
+			push @changed_includes, $file;
+		}
+	}
+	closedir $src_dir;
+	system "mkdir", "-p", $conf_build_dir
+		and fatal("Unable to make directory $conf_build_dir");
+	for my $source (@sources) {
+		my $object = "$source.o";
+		my $source_path = "$conf_src_dir/$source";
+		my $object_path = "$conf_build_dir/$object";
+		if (!-e $object_path
+		 || mtime($source_path) > mtime($object_path)) {
+			push @rebuilds, $source;
+		} else {
+			push @check_deps, $source;
+		}
+	}
+	my @pids = ();
+	start_dep_check(\@check_deps, \@pids, @changed_includes);
+	compile_sources(@rebuilds);
+	wait_dep_check(\@check_deps, \@pids, @changed_includes);
+	if (scalar @rebuilds > 0 || scalar @check_deps > 0
+	 || !-e $conf_target || mtime($conf_src_dir) > mtime($conf_target)) {
+		compile_sources(@check_deps);
+		system "touch", $timestamp;
+		link_target(map { "$_.o" } @sources)
+			and fatal("Compilation failed");
+		print "Compilation of $conf_target completed.\n";
+	} else {
+		print "$conf_target is already up-to-date.\n";
+	}
+}
+
+sub fatal {
+	say STDERR "@_";
+	$SIG{TERM} = sub { };
+	kill 'SIGTERM', 0; # Kill compilation processes
+	exit 1;
+}
+
+sub arg_opt {
+	my ($name, $argp) = @_;
+	my $opt = shift @ARGV;
+	if ($opt eq $name) {
+		fatal("$0: Option $name needs an argument") if ($#ARGV < 0);
+		$$argp = shift @ARGV;
+	} elsif (index($opt, $name) == 0) {
+		$$argp = substr($opt, length $name);
+	} else {
+		unshift @ARGV, $opt;
+		return 0;
+	}
+	return 1;
+}
+
+sub args_opt {
+	my ($name, $argsp) = @_;
+	my $opt = shift @ARGV;
+	if ($opt eq $name) {
+		while (scalar @ARGV) {
+			my $next = shift @ARGV;
+			last if ($next eq '--');
+			push @$argsp, $next;
+		}
+		return 1;
+	} else {
+		unshift @ARGV, $opt;
+		return 0;
+	}
+}
+
+sub mtime {
+	my @stat = stat shift;
+	return @stat ? $stat[9] : undef;
+}
+
+sub basename {
+	my ($path) = @_;
+	local ($0, $1);
+	return $path =~ m%^(?:.*/)?([^/]+)/*$% ? $1 : '/';
+}
+
+sub grep_pattern {
+	return '^\s*#\s+1\s+"(.*/)?(' .
+		(join '|', map { grep_escape(c_escape($_)) } @_) . ')"[^3]*$';
+}
+
+sub c_escape {
+	# There is no guarantee that the preprocessor will escape strings the
+	# same way; one can only hope.
+	my ($str) = @_;
+	local ($0, $1);
+	$str =~ s/\\/\\\\/g;
+	$str =~ s/"/\\"/g;
+	$str =~ s/\n/\\n/g;
+	$str =~ s/\r/\\r/g;
+	$str =~ s/\t/\\t/g;
+	$str =~ s/\x08/\\b/g;
+	$str =~ s/\f/\\f/g;
+	$str =~ s/\v/\\v/g;
+	$str =~ s/([\x00-\x1F\x7F-\xFF])/sprintf '\\%03o', ord($1)/eg;
+	return $str;
+}
+
+sub grep_escape {
+	my ($str) = @_;
+	local ($0, $1);
+	$str =~ s/([\\.()?*+{}\[\]|^\$])/\\$1/g;
+	return $str;
+}
+
+sub dep_argv {
+	my ($grep_pattern, $file) = @_;
+	return ('/bin/sh', '-c', '"$@" 2>/dev/null | grep -Eq "$0"',
+		$grep_pattern, map {
+			$_ eq '{i}' ? "$conf_src_dir/$file" : $_
+		} @conf_pp_argv);
+}
+
+sub start_dep_check {
+	my ($files, $pids, @deps) = @_;
+	@$pids = ();
+	if (scalar @$files == 0 || scalar @deps == 0) {
+		@$files = ();
+		return;
+	}
+	my $grep_pattern = grep_pattern(@deps);
+	for (my $i = 0; $i <= $#$files; ++$i) {
+		$pids->[$i] = fork();
+		if ($pids->[$i] == 0) {
+			# New process group to keep compile_sources() from
+			# waiting for this:
+			setpgrp();
+			exec dep_argv($grep_pattern, $files->[$i]);
+			exit 1;
+		} elsif ($pids->[$i] < 0) {
+			$#$pids = $i - 1;
+			last;
+		}
+	}
+}
+
+sub wait_dep_check {
+	my ($files, $pids, @deps) = @_;
+	for (my $j = $#$pids; $j >= 0; --$j) {
+		waitpid $pids->[$j], 0;
+		splice @$files, $j, 1 if ($? != 0);
+	}
+	if (scalar @$files == 0 || scalar @deps == 0) {
+		@$files = ();
+		return;
+	}
+	my $grep_pattern = grep_pattern(@deps);
+	for (my $j = $#$files; $j >= 0; --$j) {
+		my $exit = system dep_argv($grep_pattern, $files->[$j]);
+		splice @$files, $j, 1 if ($exit != 0);
+	}
+}
+
+sub compile_sources {
+	my @sources = @_;
+	# Ignore preprocessor processes that are outside this group:
+	my $pgroup = getpgrp();
+	my $n_procs = 0;
+	my $i = 0;
+	while ($i <= $#sources) {
+		if ($n_procs >= $conf_parallel) {
+			waitpid -$pgroup, 0;
+			--$n_procs;
+			fatal("Compilation failed") if ($? != 0);
+		}
+		my $pid = fork();
+		if ($pid == 0) {
+			my $file = $sources[$i];
+			my @cc_argv = map {
+				$_ eq '{i}' ? "$conf_src_dir/$file" :
+				$_ eq '{o}' ? "$conf_build_dir/$file.o" : $_
+			} @conf_comp_argv;
+			print((join ' ', @cc_argv), "\n");
+			exec @cc_argv;
+		} elsif ($pid < 0) {
+			fatal("Out of processes");
+		}
+		++$n_procs;
+		++$i;
+	}
+	while ($n_procs > 0) {
+		waitpid -$pgroup, 0;
+		fatal("Compilation failed") if ($? != 0);
+		--$n_procs;
+	}
+}
+
+sub link_target {
+	my @object_files = map { "$conf_build_dir/$_" } @_;
+	my @cc_argv = map {
+		$_ eq '{i}' ? @object_files : $_ eq '{o}' ? $conf_target : $_
+	} @conf_link_argv;
+	print((join ' ', @cc_argv), "\n");
+	return system @cc_argv;
+}
+
+main()

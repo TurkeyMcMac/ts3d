@@ -1,6 +1,7 @@
 #include "do-ts3d-game.h"
 #include "logger.h"
 #include "util.h"
+#include "version.h"
 #include "xalloc.h"
 #include <errno.h>
 #include <stdio.h>
