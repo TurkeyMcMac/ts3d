@@ -141,8 +141,8 @@ EOT
 	start_dep_check(\@check_deps, \@pids, @changed_includes);
 	compile_sources(@rebuilds);
 	wait_dep_check(\@check_deps, \@pids, @changed_includes);
-	if (scalar @rebuilds > 0 || scalar @check_deps > 0
-	 || !-e $conf_target || mtime($conf_src_dir) > mtime($conf_target)) {
+	if (scalar @rebuilds > 0 || scalar @check_deps > 0 || !-e $conf_target)
+	{
 		compile_sources(@check_deps);
 		system "touch", $timestamp;
 		link_target(map { "$_.o" } @sources)
