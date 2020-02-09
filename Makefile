@@ -31,14 +31,14 @@ RM ?= rm -f
 # dependency of $(dev-exe) on things in the source directory. The Makefile, not
 # ./compile, does the automatic generation of version.h.
 $(dev-exe): $(sources) $(headers)
-	# -t sets the output destination.
-	# -c sets the compiler.
-	# -b sets the build directory (which will be automatically created.)
-	# -j sets the number of compilation processes in parallel.
-	# -F sets the flags to pass to every compiler invocation. The list is
-	#    terminated by '--'.
-	# -L sets the linking arguments passed after the sources when linking.
-	#    It is not terminated by '--' since the argument list ends here.
+	@# -t sets the output destination.
+	@# -c sets the compiler.
+	@# -b sets the build directory (which will be automatically created.)
+	@# -j sets the number of compilation processes in parallel.
+	@# -F sets the flags to pass to every compiler invocation. The list is
+	@#    terminated by '--'.
+	@# -L sets the linking arguments passed after the sources when linking.
+	@#    It is not terminated by '--' since the argument list ends here.
 	./compile -t $@ -c $(CC) -b build/dev -j 4 -F $(cflags) -- -L $(linkage)
 
 # Optimized build.
@@ -49,9 +49,9 @@ $(exe): $(sources) $(headers)
 
 # Tests binary (running tests requires c-test-functions.)
 $(tests): $(sources) $(headers)
-	# -J overrides the entire argument vector for the linking stage. Here it
-	#    is used to produce a shared object. The {o} will be replaced with
-	#    the output and the {i} will be replaced with all input files.
+	@# -J overrides the entire argument vector for the linking stage. Here
+	@#    it is used to produce a shared object. The {o} will be replaced
+	@#    with the output and the {i} will be replaced with all input files.
 	./compile -t $@ -c $(CC) -b build/test -j 4 \
 		-J $(CC) $(test-flags) -fPIC -o {o} {i} $(linkage) -- \
 		-F $(cflags) $(test-flags)
