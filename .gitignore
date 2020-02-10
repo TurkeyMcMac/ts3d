@@ -1,6 +1,8 @@
 build
 dev
+log
 src/version.h
+state.json
 ts3d
 tests
 tests.dSYM

@@ -36,7 +36,7 @@ cyan, white.
 
 Both sprite textures and wall textures are included. Wall textures cannot have
 any transparent pixels and are stretched to fit a square space. Sprite textures
-can have transparency and stretched to fit the "width" and "height" of their
+can have transparency and are stretched to fit the "width" and "height" of their
 entities.
 
 data/ents/
