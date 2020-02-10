@@ -15,9 +15,10 @@ exe-install = $(exe-dir)/$(exe)
 man-install = $(man-dir)/$(man-page).gz
 data-install = $(TS3D_DATA)
 sources = src/*.c
-headers = src/*.h
 # Contains the version of the program:
 version-header = src/version.h
+# src/*.h will not include src/version.h if it has not been made yet:
+headers = src/*.h $(version-header)
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 ${CFLAGS}
