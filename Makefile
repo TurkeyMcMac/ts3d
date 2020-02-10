@@ -82,4 +82,4 @@ run-tests: $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) -r $(exe) $(dev-exe) $(tests) build
+	$(RM) -r $(exe) $(dev-exe) $(tests) $(version-header) build
