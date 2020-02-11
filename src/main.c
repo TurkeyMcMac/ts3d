@@ -115,16 +115,16 @@ static int remove_log_dest(const char *progname, struct logger *log,
 	const char *arg)
 {
 	int which;
-	if (!strcmp("all", arg)) {
+	if (!strcasecmp("all", arg)) {
 		remove_log_dest(progname, log, "info");
 		remove_log_dest(progname, log, "warning");
 		remove_log_dest(progname, log, "error");
 		return 0;
-	} else if (!strcmp("info", arg)) {
+	} else if (!strcasecmp("info", arg)) {
 		which = LOGGER_INFO;
-	} else if (!strcmp("warning", arg)) {
+	} else if (!strcasecmp("warning", arg)) {
 		which = LOGGER_WARNING;
-	} else if (!strcmp("error", arg)) {
+	} else if (!strcasecmp("error", arg)) {
 		which = LOGGER_ERROR;
 	} else {
 		fprintf(stderr, "%s: Invalid log name: %s\n", progname, arg);
