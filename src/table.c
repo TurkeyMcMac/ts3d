@@ -20,7 +20,7 @@ static bool find(table *tbl, struct item **found, const char *key)
 	long start = 0, end = tbl->len - 1;
 	while (start <= end) {
 		long mid = (start + end) / 2;
-		int cmp = (strcmp)(key, tbl->items[mid].key);
+		int cmp = strcmp(key, tbl->items[mid].key);
 		if (cmp > 0) {
 			start = mid + 1;
 		} else if (cmp < 0) {
