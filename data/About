@@ -5,7 +5,7 @@ In making  this game,  I set out  not to
 make a game, but to design a system. The
 external  libraries I  used  so far  are
 only the C Standard Library, Curses, and
-a  bunch of  stuff  from  POSIX 2008  or
+a  bunch of  stuff  from  POSIX 2001  or
 so.  I  myself  wrote  the  JSON  parser
 (called json,)  the 3D  renderer (called
 d3d,) and the  testing framework (called
