@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 		if (err_log) {
 			fflush(err_log);
 			rewind(err_log);
-			fprintf(stderr, "%s: An error occurred:\n", progname);
+			fprintf(stderr, "%s: An error occurred.\n", progname);
 			// Copy the error log to stderr:
 			int c;
 			while ((c = getc(err_log)) != EOF) {
