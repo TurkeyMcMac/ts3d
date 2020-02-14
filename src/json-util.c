@@ -244,6 +244,7 @@ void free_json_tree(struct json_node *nd)
 		break;
 	case JN_STRING:
 		free(nd->d.str);
+		break;
 	default:
 		break;
 	}
