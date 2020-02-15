@@ -19,8 +19,8 @@ brew install turkeymcmac/tap/ts3d
 
 ## Building
 
-Run make in the project root. This does not account for updates to dependencies.
-To update those, see **Dependencies**.
+Run `make ts3d` in the project root. This does not account for updates to
+dependencies. To update those, see **Dependencies**.
 
 To build the tests, run `make tests`. A binary `tests` will be produced.
 
