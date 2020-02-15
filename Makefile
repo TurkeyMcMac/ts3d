@@ -54,7 +54,7 @@ $(tests): $(sources) $(headers)
 	@#    it is used to produce a shared object. The {o} will be replaced
 	@#    with the output and the {i} will be replaced with all input files.
 	./compile -t $@ -c $(CC) -b build/test -j 4 \
-		-J $(CC) $(test-flags) -fPIC -o {o} {i} $(linkage) -- \
+		-J $(CC) $(test-flags) -shared -o {o} {i} $(linkage) -- \
 		-F $(cflags) $(test-flags)
 
 $(version-header): $(version-file)
