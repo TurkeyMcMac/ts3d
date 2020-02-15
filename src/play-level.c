@@ -161,6 +161,8 @@ static bool prompt_quit_popup(struct ticker *timer)
 	WINDOW *quit_popup = popup_window(
 		"Are you sure you want to quit?\n"
 		"Press Y to confirm or N to cancel.");
+	// If it can't be shown, just quit; the user would probably want it:
+	if (!quit_popup) return true;
 	touchwin(quit_popup);
 	wrefresh(quit_popup);
 	delwin(quit_popup);
@@ -178,25 +180,29 @@ static bool prompt_quit_popup(struct ticker *timer)
 static bool do_pause_popup(struct ticker *timer)
 {
 	WINDOW *pause_popup = popup_window("Game paused.\nPress P to resume.");
-	touchwin(pause_popup);
-	wrefresh(pause_popup);
+	if (pause_popup) {
+		touchwin(pause_popup);
+		wrefresh(pause_popup);
+	}
 	int key;
 	while ((key = tolower(getch())) != 'p') {
 		if (key == 'x' || key == ESC) {
 			touchwin(stdscr);
 			refresh();
 			if (prompt_quit_popup(timer)) {
-				delwin(pause_popup);
+				if (pause_popup) delwin(pause_popup);
 				return true;
 			}
 			touchwin(stdscr);
 			refresh();
-			touchwin(pause_popup);
-			wrefresh(pause_popup);
+			if (pause_popup) {
+				touchwin(pause_popup);
+				wrefresh(pause_popup);
+			}
 		}
 		tick(timer);
 	}
-	delwin(pause_popup);
+	if (pause_popup) delwin(pause_popup);
 	return false;
 }
 
@@ -279,8 +285,10 @@ int play_level(const char *root_dir, struct save_state *save,
 		} else if (!won && player_is_dead(&player)) {
 			// Player lost, entities still simulated. Y to quit.
 			if (lowkey == 'y') goto quit;
-			touchwin(dead_popup);
-			wrefresh(dead_popup);
+			if (dead_popup) {
+				touchwin(dead_popup);
+				wrefresh(dead_popup);
+			}
 		} else if (lowkey == 'p') {
 			// Pause game
 			if (do_pause_popup(timer)) goto quit;
@@ -310,7 +318,7 @@ int play_level(const char *root_dir, struct save_state *save,
 quit:
 	clear();
 	refresh();
-	delwin(dead_popup);
+	if (dead_popup) delwin(dead_popup);
 	d3d_free_camera(cam);
 	// Record the player's winning:
 	if (won) save_state_mark_complete(save, map_name);

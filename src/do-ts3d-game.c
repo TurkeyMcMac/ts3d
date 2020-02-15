@@ -28,6 +28,9 @@
 // The "name" of an anonymous player whose progress is not saved.
 #define ANONYMOUS ""
 
+// Character cell width of menu. Must be enough to fit width 40 text.
+#define MENU_WIDTH 41
+
 // The prefix to menu item tags referring to save names, not including the final
 // slash.
 #define SAVE_PFX_NO_SLASH "save"
@@ -230,10 +233,11 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	if (set_up_colors())
 		logger_printf(log, LOGGER_WARNING,
 			"Terminal colors not properly supported\n");
+	int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
 	// Window to draw the menu on:
-	WINDOW *menuwin = newwin(LINES, 41, 0, 0);
+	WINDOW *menuwin = newwin(LINES, menu_width, 0, 0);
 	// Window to draw the screensaver on:
-	WINDOW *titlewin = newwin(LINES, COLS - 41, 0, 41);
+	WINDOW *titlewin = newwin(LINES, COLS - menu_width, 0, 41);
 	// The item to menu_redirect to. NULL means not to redirect:
 	struct menu_item *redirect = NULL;
 	// A synthetic input element for the New Game link. This can only be

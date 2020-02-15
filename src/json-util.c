@@ -244,6 +244,7 @@ void free_json_tree(struct json_node *nd)
 		break;
 	case JN_STRING:
 		free(nd->d.str);
+		break;
 	default:
 		break;
 	}
@@ -326,6 +327,9 @@ int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
 			break;
 		case JSON_EMPTY:
 			depth = 0;
+			break;
+		case JSON_STRING:
+			free(item->val.str.bytes);
 			break;
 		default:
 			break;
