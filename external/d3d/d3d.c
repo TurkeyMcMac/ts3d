@@ -396,19 +396,6 @@ static int compar_sprite_order(const void *a, const void *b)
 	return 0;
 }
 
-static void gnome_sort(struct d3d_sprite_order *order, size_t num)
-{
-	for (size_t stop = 1; stop < num; ++stop) {
-		size_t i = stop;
-		while (i > 0 && order[i].dist < order[i - 1].dist) {
-			struct d3d_sprite_order temp = order[i];
-			order[i] = order[i - 1];
-			order[i - 1] = temp;
-			--i;
-		}
-	}
-}
-
 void d3d_draw_sprites(
 	d3d_camera *cam,
 	size_t n_sprites,
@@ -416,16 +403,23 @@ void d3d_draw_sprites(
 {
 	size_t i;
 	if (n_sprites == cam->last_n_sprites && sprites == cam->last_sprites) {
-		// Assume the sprites didn't move/change in order much.
-		// Optimized Gnome Sort (which is pretty much Insertion Sort) is
-		// used since it is good with mostly sorted lists.
+		// This assumes the sprites didn't move much, and are mostly
+		// sorted. Therefore, insertion sort is used.
 		for (i = 0; i < n_sprites; ++i) {
-			struct d3d_sprite_order *ord = &cam->order[i];
-			size_t s = ord->index;
-			ord->dist = hypot(sprites[s].pos.x - cam->pos.x,
+			size_t move_to;
+			struct d3d_sprite_order ord = cam->order[i];
+			size_t s = ord.index;
+			ord.dist = hypot(sprites[s].pos.x - cam->pos.x,
 				sprites[s].pos.y - cam->pos.y);
-		}
-		gnome_sort(cam->order, n_sprites);
+			move_to = i;
+			for (long j = (long)i - 1; j >= 0; --j) {
+				if (cam->order[j].dist <= ord.dist) break;
+				move_to = j;
+			}
+			memmove(cam->order + move_to + 1, cam->order + move_to,
+				(i - move_to) * sizeof(*cam->order));
+			cam->order[move_to] = ord;
+	       }
 	} else {
 		if (n_sprites > cam->order_buf_cap) {
 			struct d3d_sprite_order *new_order = d3d_realloc(
