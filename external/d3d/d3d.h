@@ -48,8 +48,8 @@ struct d3d_texture_s;
 typedef struct d3d_texture_s d3d_texture;
 
 /* A block on a board consisting of 6 face textures. The indices correspond with
- * the values of d3d_direction. Vertical sides are oriented the same to the
- * viewer (i.e. not mirrored) no matter the viewer position. */
+ * the values of d3d_direction. Vertical sides are mirrored if the viewer is
+ * looking from the inside of a block outward. */
 typedef struct {
 	const d3d_texture *faces[6];
 } d3d_block_s;
