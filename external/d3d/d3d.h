@@ -48,8 +48,8 @@ struct d3d_texture_s;
 typedef struct d3d_texture_s d3d_texture;
 
 /* A block on a board consisting of 6 face textures. The indices correspond with
- * the values of d3d_direction. Vertical sides are oriented the same to the
- * viewer (i.e. not mirrored) no matter the viewer position. */
+ * the values of d3d_direction. Vertical sides are mirrored if the viewer is
+ * looking from the inside of a block outward. */
 typedef struct {
 	const d3d_texture *faces[6];
 } d3d_block_s;
@@ -233,6 +233,10 @@ struct d3d_camera_s {
 	struct d3d_sprite_order *order;
 	// The capacity (allocation size) of the field above.
 	size_t order_buf_cap;
+	// The last sprites drawn.
+	const d3d_sprite_s *last_sprites;
+	// The number of sprites last drawn.
+	size_t last_n_sprites;
 	// For each row of the screen, the tangent of the angle of that row
 	// relative to the center of the screen, in radians
 	// For example, the 0th item is tan(fov.y / 2)
