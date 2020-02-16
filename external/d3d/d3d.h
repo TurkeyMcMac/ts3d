@@ -233,6 +233,10 @@ struct d3d_camera_s {
 	struct d3d_sprite_order *order;
 	// The capacity (allocation size) of the field above.
 	size_t order_buf_cap;
+	// The last sprites drawn.
+	const d3d_sprite_s *last_sprites;
+	// The number of sprites last drawn.
+	size_t last_n_sprites;
 	// For each row of the screen, the tangent of the angle of that row
 	// relative to the center of the screen, in radians
 	// For example, the 0th item is tan(fov.y / 2)
