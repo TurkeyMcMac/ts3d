@@ -1,15 +1,15 @@
 {
- "prereq": "dancefloor",
+ "prereq": "dance-off",
  "blocks": [
   {
    "name": "wall",
    "all_solid": true,
-   "all": "tiles-blue-cyan"
+   "all": "tiles-blue"
   },
   {
    "name": "floor",
-   "top": "square-magenta-blue",
-   "bottom": "square-magenta-blue"
+   "top": "center-square",
+   "bottom": "center-square"
   }
  ],
  "layout": [

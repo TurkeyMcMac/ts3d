@@ -23,8 +23,8 @@
   },
   {
    "name": "floor",
-   "top": "tiles-blue-cyan",
-   "bottom": "square-magenta-blue"
+   "top": "tiles-blue",
+   "bottom": "center-square"
   },
   {
    "name": "T",

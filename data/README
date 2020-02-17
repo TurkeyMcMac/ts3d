@@ -1,6 +1,9 @@
 ./
 --
-This directory contains game data for the game Thing Shooter 3D (ts3d.)
+This directory contains game data for the game Thing Shooter 3D (ts3d.) Some
+file names are shortened and are thus different than their labels. This is
+because the maximum POSIX file name length is technically 14 bytes. Shortening
+the names has no practical value; I'm just a bit obsessed.
 
 ./menu.json
 -----------
@@ -131,8 +134,8 @@ Map attributes are as follows:
  - "player": An object with the same format as an item of "ents". It describes
    how the player starts out.
 
-./maps/title-screen.json
-------------------------
+./maps/title.json
+-----------------
 This is the map that is loaded to produce the screensaver next to the menu. You
 may notice that its player kind is "health", not "player". This is because the
 map is not meant to be played. "health" is used because it does not require

@@ -1,5 +1,5 @@
 {
- "prereq": "gobstopper",
+ "prereq": "gobstop",
  "blocks": [
   {
    "name": "wall",
@@ -8,8 +8,8 @@
   },
   {
    "name": "floor",
-   "top": "tiles-blue-cyan",
-   "bottom": "tiles-blue-cyan"
+   "top": "tiles-blue",
+   "bottom": "tiles-blue"
   },
   {
    "name": "pillar",

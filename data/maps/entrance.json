@@ -30,13 +30,13 @@
   {
    "name": "south-wall",
    "south": "brick-red",
-   "top": "tiles-blue-cyan",
-   "bottom": "tiles-blue-cyan"
+   "top": "tiles-blue",
+   "bottom": "tiles-blue"
   },
   {
    "name": "floor",
-   "top": "tiles-blue-cyan",
-   "bottom": "tiles-blue-cyan"
+   "top": "tiles-blue",
+   "bottom": "tiles-blue"
   },
   {
    "name": "wall",
@@ -58,8 +58,8 @@
   {
    "name": "floor-blocking-west",
    "west": "brick-red",
-   "top": "tiles-blue-cyan",
-   "bottom": "tiles-blue-cyan"
+   "top": "tiles-blue",
+   "bottom": "tiles-blue"
   },
   {
    "name": "lilypad",
@@ -76,8 +76,8 @@
    "name": "inside-entrance",
    "east": "brick-red",
    "west": "cave-entrance",
-   "top": "tiles-blue-cyan",
-   "bottom": "tiles-blue-cyan",
+   "top": "tiles-blue",
+   "bottom": "tiles-blue",
    "east_solid": true
   }
  ],

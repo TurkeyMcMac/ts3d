@@ -6,7 +6,7 @@
  "team_override": "ally",
  "health": 999,
  "damage": 999,
- "death_spawn": "eyeball-4-frogger",
+ "death_spawn": "eye-frog",
  "lifetime": 6,
  "frames": [
   ["cyan",  2],
