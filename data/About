@@ -9,10 +9,9 @@ a  bunch of  stuff  from  POSIX 2001  or
 so.  I  myself  wrote  the  JSON  parser
 (called json,)  the 3D  renderer (called
 d3d,) and the  testing framework (called
-c-test-functions.) The language being C,
-I  also had  to reimplement  a bunch  of
-basic stuff such  as growable arrays and
-dictionaries.
+ctf.)  The language being C,  I also had
+to  reimplement  a bunch of basic  stuff
+such as dynamic arrays and dictionaries.
 
 I  have tried  to  make  most game  data
 configurable   with  JSON   rather  than

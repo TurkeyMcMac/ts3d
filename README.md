@@ -61,8 +61,8 @@ the frog animation, use `./texture animate data/ents/frog.json`.
 
 The external/ folder holds dependencies to other projects, with source code and
 such bundled here. There are currently three dependencies, all of which I myself
-created. d3d/ is the 3D graphics library. json/ is the JSON parser.
-c-test-functions/ (or ctf) is the testing framework.
+created. d3d/ is the 3D graphics library. json/ is the JSON parser. ctf/ is the
+testing framework.
 
 The ctf API is included, but not the executable. To run the tests, you will need
 to install that in your PATH yourself.
