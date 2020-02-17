@@ -1,15 +1,15 @@
 {
- "prereq": "double-trouble",
+ "prereq": "2-trouble",
  "blocks": [
   {
    "name": "wall",
    "all_solid": true,
-   "all": "tiles-blue-cyan"
+   "all": "tiles-blue"
   },
   {
    "name": "floor",
-   "top": "square-magenta-blue",
-   "bottom": "square-magenta-blue"
+   "top": "center-square",
+   "bottom": "center-square"
   },
   {
    "name": "column",

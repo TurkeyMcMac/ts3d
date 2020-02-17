@@ -54,7 +54,7 @@ static void title_cam_pos(d3d_camera *cam, const d3d_board *board)
 static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 	struct loader *ldr)
 {
-	struct map *map = load_map(ldr, "title-screen");
+	struct map *map = load_map(ldr, "title");
 	if (!map) return -1;
 	int width, height;
 	getmaxyx(win, height, width);

@@ -3,17 +3,16 @@
 # Sync all the external projects with the versions hosted on Github and update
 # various source files accordingly.
 
-base_url=https://raw.githubusercontent.com/TurkeyMcMac
-
 cd "`dirname "$0"`"
 
 for project in ./*/; do
 	name="`basename "$project"`"
 	echo "Updating $name"
-	cat "$project/FETCH" | while read filename; do
+	url="`head -n1 "$project/FETCH"`"
+	sed '1d' "$project/FETCH" | while read filename; do
 		path="$project/$filename"
 		mkdir -p "`dirname "$path"`"
-		curl -s "$base_url/$name/master/$filename" > "$path"
+		curl -s "$url/$filename" > "$path"
 		cd ../src
 		case "$filename" in
 			*.[ch]) ln -fs "../external/$path" ;;

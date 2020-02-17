@@ -1,5 +1,5 @@
 {
- "name": "Death Effect of Stage 3 Eyeball",
+ "name": "Death Effect of Stage 2 Eyeball",
  "width": 999,
  "height": 999,
  "wall_block": false,
@@ -8,7 +8,7 @@
  "damage": 999,
  "shoot_chance": 100,
  "bullet": "health",
- "death_spawn": "eyeball-4",
+ "death_spawn": "eye-3",
  "lifetime": 6,
  "frames": [
   ["cyan",  2],
