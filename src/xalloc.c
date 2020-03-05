@@ -45,6 +45,9 @@ static void die(const char *fmt, ...)
 	va_end(va);
 	if (l > 0) {
 		ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msgbuf, (size_t)l);
+	} else {
+		static const char msg[] = "Out of memory. Aborting.\n";
+		ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msg, sizeof(msg));
 	}
 	abort();
 }
