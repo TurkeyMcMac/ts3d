@@ -103,20 +103,26 @@ size_t d3d_camera_width(const d3d_camera *cam);
 size_t d3d_camera_height(const d3d_camera *cam);
 
 /* Return a pointer to the empty pixel. This is the pixel value set in the
- * camera when a cast ray hits nothing (it gets off the edge of the board.) */
+ * camera when a cast ray hits nothing (it gets off the edge of the board.) The
+ * pointer is valid for the lifetime of the camera. */
 d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam);
 
 /* Return a pointer to the camera's position. It is UNDEFINED BEHAVIOR for this
  * to be outside the limits of the board that is passed when d3d_draw_walls or
- * d3d_draw_column is called. */
+ * d3d_draw_column is called. The pointer is valid for the lifetime of the
+ * camera, but the position may be changed when other functions modify the
+ * camera. */
 d3d_vec_s *d3d_camera_position(d3d_camera *cam);
 
 /* Return a pointer to the camera's direction (in radians). This can be changed
- * without regard for any range. */
+ * without regard for any range. The pointer is valid for the lifetime of the
+ * camera, but the angle may be changed when other functions modify the camera.
+ */
 double *d3d_camera_facing(d3d_camera *cam);
 
 /* Get a pixel in the camera's view, AFTER a drawing function is called on the
- * camera. This returns NULL if the coordinates are out of range. */
+ * camera. This returns NULL if the coordinates are out of range. Otherwise, the
+ * pointer is valid until another function modifies the camera. */
 const d3d_pixel *d3d_camera_get(const d3d_camera *cam, size_t x, size_t y);
 
 /* Destroy a camera object. It shall never be used again. */
@@ -133,11 +139,13 @@ size_t d3d_texture_height(const d3d_texture *txtr);
 
 /* Return the texture's pixel buffer, the size of its width times its height.
  * The pixels can be initialized in this way. Columns are contiguous, not rows.
- */
+ * The pointer is valid until the texture is used in a d3d_block_s or a
+ * d3d_sprite_s. */
 d3d_pixel *d3d_get_texture_pixels(d3d_texture *txtr);
 
 /* Get a pixel at a coordinate on a texture. NULL is returned if the coordinates
- * are out of range. */
+ * are out of range. The pointer is valid until the texture is used in a
+ * d3d_block_s or a d3d_sprite_s. */
 d3d_pixel *d3d_texture_get(d3d_texture *txtr, size_t x, size_t y);
 
 /* Permanently destroy a texture. */
@@ -155,7 +163,8 @@ size_t d3d_board_height(const d3d_board *board);
 
 /* Get a block in a board. If the coordinates are out of range, NULL is
  * returned. Otherwise, a pointer to a block POINTER is returned. This pointed-
- * to pointer can be modified with a new block pointer. */
+ * to pointer can be modified with a new block pointer. The outer pointer is
+ * valid until the board is used in d3d_draw_column or d3d_draw_walls. */
 const d3d_block_s **d3d_board_get(d3d_board *board, size_t x, size_t y);
 
 /* Permanently destroy a board. */
@@ -164,9 +173,10 @@ void d3d_free_board(d3d_board *board);
 /* FRAMES
  * ------
  * Drawing a frame consists of
- *  - d3d_start_frame
- *  - d3d_draw_walls or d3d_draw_column for each column
- *  - Possibly d3d_draw_sprites or d3d_draw_sprite */
+ *  1. Calling either d3d_draw_walls or d3d_start_frame then d3d_draw_column for
+ *     each column.
+ *  2. Calling d3d_draw_sprite/d3d_draw_sprite/d3d_draw_sprite_dist if you need
+ *     to draw some sprites. */
 
 /* Begin drawing a frame. This is only necessary if d3d_draw_walls is not
  * called. */
