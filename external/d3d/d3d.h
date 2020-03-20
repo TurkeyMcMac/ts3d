@@ -91,10 +91,10 @@ typedef enum {
 /* Allocate a new camera with given field of view in the x and y directions (in
  * radians) and a given view width and height in pixels. */
 d3d_camera *d3d_new_camera(
-		double fovx,
-		double fovy,
-		size_t width,
-		size_t height);
+	double fovx,
+	double fovy,
+	size_t width,
+	size_t height);
 
 /* Get the view width of a camera in pixels. */
 size_t d3d_camera_width(const d3d_camera *cam);
