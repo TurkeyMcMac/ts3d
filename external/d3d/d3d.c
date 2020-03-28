@@ -118,10 +118,10 @@ static const d3d_block_s empty_block = {{
 }};
 
 d3d_camera *d3d_new_camera(
-		double fovx,
-		double fovy,
-		size_t width,
-		size_t height)
+	double fovx,
+	double fovy,
+	size_t width,
+	size_t height)
 {
 	size_t size;
 	size_t pixels_size;
