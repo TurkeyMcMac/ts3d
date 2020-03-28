@@ -318,6 +318,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
+			menu_clear_message(&menu);
 			switch (redirect ? menu_redirect(&menu, redirect)
 				: menu_enter(&menu))
 			{
