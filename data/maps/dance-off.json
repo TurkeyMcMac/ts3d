@@ -1,5 +1,5 @@
 {
- "prereq": "halls",
+ "prereq": "all-sides",
  "blocks": [
   {
    "name": "wall",
