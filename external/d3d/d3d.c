@@ -540,11 +540,6 @@ size_t d3d_texture_height(const d3d_texture *txtr)
 	return txtr->height;
 }
 
-d3d_pixel *d3d_get_texture_pixels(d3d_texture *txtr)
-{
-	return txtr->pixels;
-}
-
 d3d_pixel *d3d_texture_get(d3d_texture *txtr, size_t x, size_t y)
 {
 	return GET(txtr, pixels, x, y);
