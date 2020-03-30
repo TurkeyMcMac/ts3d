@@ -267,6 +267,10 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
 		goto early_end;
 	}
+	if (!play_as) {
+		strcpy(msg_buf, "Select a game BEFORE playing to save!");
+		menu_set_message(&menu, msg_buf);
+	}
 	d3d_malloc = xmalloc;
 	d3d_realloc = xrealloc;
 	d3d_camera *title_cam;
@@ -314,6 +318,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
+			menu_clear_message(&menu);
 			switch (redirect ? menu_redirect(&menu, redirect)
 				: menu_enter(&menu))
 			{
