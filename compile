@@ -253,8 +253,8 @@ sub start_dep_check {
 			# New process group to keep compile_sources() from
 			# waiting for this:
 			setpgrp();
-			exec dep_argv($grep_pattern, $files->[$i]);
-			exit 1;
+			exec dep_argv($grep_pattern, $files->[$i])
+				or fatal("Failed to exec dependency checker");
 		} elsif ($pids->[$i] < 0) {
 			$#$pids = $i - 1;
 			last;
@@ -299,7 +299,8 @@ sub compile_sources {
 				$_ eq '{o}' ? "$conf_build_dir/$file.o" : $_
 			} @conf_comp_argv;
 			print((join ' ', @cc_argv), "\n");
-			exec @cc_argv;
+			exec @cc_argv
+				or fatal("Failed to exec compiler");
 		} elsif ($pid < 0) {
 			fatal("Out of processes");
 		}
