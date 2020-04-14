@@ -347,8 +347,6 @@ int play_level(const char *root_dir, struct save_state *save,
 		tick(timer);
 	}
 quit:
-	fprintf(stderr, "start\n");
-	fflush(stderr);
 	clear();
 	refresh();
 	if (pause_popup) delwin(pause_popup);
@@ -359,8 +357,6 @@ quit:
 	if (won) save_state_mark_complete(save, map_name);
 	ents_destroy(&ents);
 	loader_free(&ldr);
-	fprintf(stderr, "end\n");
-	fflush(stderr);
 	return 0;
 
 error_map:
