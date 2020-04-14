@@ -237,7 +237,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(1, 1, 0, 0);
 	// Window to draw the screensaver on:
-	WINDOW *titlewin = newwin(1, 1, 0, MENU_WIDTH);
+	WINDOW *titlewin = newwin(1, 1, 0, 0);
 	// The item to menu_redirect to. NULL means not to redirect:
 	struct menu_item *redirect = NULL;
 	// A synthetic input element for the New Game link. This can only be
@@ -314,6 +314,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
 			wresize(menuwin, LINES, menu_width);
 			wresize(titlewin, LINES, COLS - menu_width);
+			mvwin(titlewin, 0, menu_width);
 			title_cam = camera_with_dims(COLS - menu_width, LINES);
 			*d3d_camera_facing(title_cam) = old_facing;
 			first_tick = false;
