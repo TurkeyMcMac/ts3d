@@ -110,3 +110,9 @@ int set_up_colors(void)
 	}
 	return 0;
 }
+
+bool sync_screen_size(int known_lines, int known_cols)
+{
+	doupdate();
+	return known_lines != LINES || known_cols != COLS;
+}
