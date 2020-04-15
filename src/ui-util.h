@@ -43,4 +43,8 @@ d3d_camera *camera_with_dims(int width, int height);
 // success, or -1 if not enough colors are supported.
 int set_up_colors(void);
 
+// Synchronizes Curses with the actual size of the screen. Returns whether the
+// screen size was updated.
+bool sync_screen_size(int known_lines, int known_cols);
+
 #endif /* UI_UTIL_H_ */

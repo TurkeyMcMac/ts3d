@@ -1,4 +1,4 @@
-.TH ts3d 6 "15 Jan. 2020" "version @@VERSION@@"
+.TH ts3d 6 "14 Apr. 2020" "version @@VERSION@@"
 
 
 .SH NAME
@@ -74,9 +74,12 @@ keep the entire screen from being drawn upon.
 \fBts3d\fR at the moment does not work with unicode because Curses does not
 support doing so.
 
-Window resizing is not handled well. It may be possible to trigger a
-segmentation fault with the right resizing, but the bug has proven hard to
-reproduce.
+The resizing of the window is picked up by TS3D, and this works most of the
+time. However, it seems possible to cause a crash by doing the following:
+First, die in-game. Then, resize the screen to be less than 40 columns wide.
+Finally, exit the level. This will sometimes crash the game. I can't for the
+life of me tell why this crash is happening. It might be a bug in NCurses, even.
+To avoid this, keep the screen at a size of 80x24 or larger.
 
 The main performance bottleneck is Curses. To run the game on a large screen, a
 fast terminal emulator may be needed. The hardware text mode will probably work.

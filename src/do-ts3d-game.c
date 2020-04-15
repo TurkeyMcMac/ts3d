@@ -68,11 +68,11 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 // must the same as from load_title above.
 static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 {
+	title_cam_pos(cam, board);
+	*d3d_camera_facing(cam) -= 0.003;
 	d3d_draw_walls(cam, board);
 	display_frame(cam, win);
 	wrefresh(win);
-	title_cam_pos(cam, board);
-	*d3d_camera_facing(cam) -= 0.003;
 }
 
 // Load the save state list and log in as the one with the given name. If that
@@ -233,11 +233,11 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	if (set_up_colors())
 		logger_printf(log, LOGGER_WARNING,
 			"Terminal colors not properly supported\n");
-	int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
+	// Windows will be resized at the beginning of the first tick:
 	// Window to draw the menu on:
-	WINDOW *menuwin = newwin(LINES, menu_width, 0, 0);
+	WINDOW *menuwin = newwin(1, 1, 0, 0);
 	// Window to draw the screensaver on:
-	WINDOW *titlewin = newwin(LINES, COLS - menu_width, 0, 41);
+	WINDOW *titlewin = newwin(1, 1, 0, 0);
 	// The item to menu_redirect to. NULL means not to redirect:
 	struct menu_item *redirect = NULL;
 	// A synthetic input element for the New Game link. This can only be
@@ -299,11 +299,27 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		SWITCHING,
 		DELETING
 	} save_managing = SWITCHING;
+	bool first_tick = true;
+	int known_lines, known_cols;
 	for (;;) {
 		// The selected menu item (used later):
 		struct menu_item *selected;
 		// The map prerequisite found (used later):
 		char *prereq;
+		// Resize screen structures if needed:
+		if (first_tick || sync_screen_size(known_lines, known_cols)) {
+			known_lines = LINES;
+			known_cols = COLS;
+			double old_facing = *d3d_camera_facing(title_cam);
+			d3d_free_camera(title_cam);
+			int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
+			wresize(menuwin, LINES, menu_width);
+			wresize(titlewin, LINES, COLS - menu_width);
+			mvwin(titlewin, 0, menu_width);
+			title_cam = camera_with_dims(COLS - menu_width, LINES);
+			*d3d_camera_facing(title_cam) = old_facing;
+			first_tick = false;
+		}
 		tick_title(title_cam, title_board, titlewin);
 		menu_draw(&menu);
 		wrefresh(menuwin);

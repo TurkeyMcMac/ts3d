@@ -154,58 +154,6 @@ static int get_remaining(struct ents *ents)
 	return remaining;
 }
 
-// Display a popup window mid-screen asking if the player wants to quit. The
-// decision is returned when it is made.
-static bool prompt_quit_popup(struct ticker *timer)
-{
-	WINDOW *quit_popup = popup_window(
-		"Are you sure you want to quit?\n"
-		"Press Y to confirm or N to cancel.");
-	// If it can't be shown, just quit; the user would probably want it:
-	if (!quit_popup) return true;
-	touchwin(quit_popup);
-	wrefresh(quit_popup);
-	delwin(quit_popup);
-	int key;
-	while ((key = tolower(getch())) != 'n') {
-		if (key == 'y') return true;
-		tick(timer);
-	}
-	return false;
-}
-
-// Display a popup mind-screen saying the game is paused. The game will resume
-// when the user is ready. If the player quits from the pause menu, true is
-// returned, or false otherwise.
-static bool do_pause_popup(struct ticker *timer)
-{
-	WINDOW *pause_popup = popup_window("Game paused.\nPress P to resume.");
-	if (pause_popup) {
-		touchwin(pause_popup);
-		wrefresh(pause_popup);
-	}
-	int key;
-	while ((key = tolower(getch())) != 'p') {
-		if (key == 'x' || key == ESC) {
-			touchwin(stdscr);
-			refresh();
-			if (prompt_quit_popup(timer)) {
-				if (pause_popup) delwin(pause_popup);
-				return true;
-			}
-			touchwin(stdscr);
-			refresh();
-			if (pause_popup) {
-				touchwin(pause_popup);
-				wrefresh(pause_popup);
-			}
-		}
-		tick(timer);
-	}
-	if (pause_popup) delwin(pause_popup);
-	return false;
-}
-
 int play_level(const char *root_dir, struct save_state *save,
 	const char *map_name, struct ticker *timer, struct logger *log)
 {
@@ -228,26 +176,17 @@ int play_level(const char *root_dir, struct save_state *save,
 	struct meter health_meter = {
 		.label = "HEALTH",
 		.style = pixel_style(pixel(PC_BLACK, PC_GREEN)),
-		// Takes up the left half of the bottom:
-		.x = 0,
-		.y = LINES - 1,
-		.width = COLS / 2,
-		.win = stdscr,
+		// Position and size not initialized yet.
 	};
 	struct meter reload_meter = {
 		.label = "RELOAD",
 		.style = pixel_style(pixel(PC_BLACK, PC_RED)),
-		// Takes up the right half of the bottom:
-		.x = health_meter.width,
-		.y = LINES - 1,
-		.width = COLS - health_meter.width,
-		.win = stdscr,
+		// Position and size not initialized yet.
 	};
-	WINDOW *dead_popup = popup_window(
-		"You died.\n"
-		"Press Y to return to the menu.");
-	// LINES - 1 so that one is reserved for the health and reload meters:
-	d3d_camera *cam = camera_with_dims(COLS, LINES - 1);
+	WINDOW *dead_popup = NULL;
+	WINDOW *pause_popup = NULL;
+	WINDOW *quit_popup = NULL;
+	d3d_camera *cam = NULL;
 	struct player player;
 	player_init(&player, map);
 	timeout(0);
@@ -255,48 +194,144 @@ int play_level(const char *root_dir, struct save_state *save,
 	int translation = '\0'; // No initial translation
 	int turn_duration = 0; // No initial turning
 	bool won = false;
+	bool paused = false;
+	bool quitting = false;
+	bool do_redraw = true;
+	int known_lines, known_cols;
 	clear();
 	for (;;) {
-		player_move_camera(&player, cam);
-		d3d_draw_walls(cam, board);
-		d3d_draw_sprites(cam, ents_num(&ents), ents_sprites(&ents));
-		display_frame(cam, stdscr);
-		health_meter.fraction = player_health_fraction(&player);
-		meter_draw(&health_meter);
-		reload_meter.fraction = player_reload_fraction(&player);
-		meter_draw(&reload_meter);
+		static const char dead_msg[] =
+			"You died.\n"
+			"Press Y to return to the menu.";
+		static const char pause_msg[] =
+			"Game paused.\n"
+			"Press P to resume.";
+		static const char quit_msg[] =
+			"Are you sure you want to quit?\n"
+			"Press Y to confirm or N to cancel.";
+		bool resized = !cam ||
+			sync_screen_size(known_lines, known_cols);
+		if (resized) {
+			known_lines = LINES;
+			known_cols = COLS;
+			d3d_free_camera(cam);
+			// LINES - 1 so that one is reserved for the health and
+			// reload meters:
+			cam = camera_with_dims(COLS, LINES > 0 ? LINES - 1 : 0);
+			// Takes up the left half of the bottom:
+			health_meter.x = 0;
+			health_meter.y = LINES - 1;
+			health_meter.width = COLS / 2;
+			health_meter.win = stdscr;
+			// Takes up the right half of the bottom:
+			reload_meter.x = health_meter.width;
+			reload_meter.y = LINES - 1;
+			reload_meter.width = COLS - health_meter.width;
+			reload_meter.win = stdscr;
+			if (dead_popup) {
+				delwin(dead_popup);
+				dead_popup = popup_window(dead_msg);
+			}
+			if (pause_popup) {
+				delwin(pause_popup);
+				pause_popup = popup_window(pause_msg);
+			}
+			if (quit_popup) {
+				delwin(quit_popup);
+				quit_popup = popup_window(quit_msg);
+			}
+			do_redraw = true;
+		}
 		int remaining = get_remaining(&ents);
 		// Player wins if all targets gone and they are not, or if they
 		// won already:
 		won = won || (remaining <= 0 && !player_is_dead(&player));
-		attron(A_BOLD);
-		if (won) {
-			mvaddstr(0, 0, "YOU WIN! Press Y to return to menu.");
-		} else {
-			mvprintw(0, 0, "TARGETS LEFT: %d", remaining);
+		bool lost = !won && player_is_dead(&player);
+		if (do_redraw) {
+			player_move_camera(&player, cam);
+			d3d_draw_walls(cam, board);
+			d3d_draw_sprites(cam, ents_num(&ents),
+					ents_sprites(&ents));
+			display_frame(cam, stdscr);
+			health_meter.fraction = player_health_fraction(&player);
+			meter_draw(&health_meter);
+			reload_meter.fraction = player_reload_fraction(&player);
+			meter_draw(&reload_meter);
+			attron(A_BOLD);
+			if (won) {
+				mvaddstr(0, 0,
+					"YOU WIN! Press Y to return to menu.");
+			} else {
+				mvprintw(0, 0, "TARGETS LEFT: %d", remaining);
+			}
+			attroff(A_BOLD);
+			refresh();
 		}
-		attroff(A_BOLD);
+		do_redraw = resized;
 		int key = getch();
 		int lowkey = tolower(key);
-		refresh();
+		if (dead_popup) {
+			// Display the death popup if possible.
+			touchwin(dead_popup);
+			wrefresh(dead_popup);
+		} else if (!lost && quitting) {
+			if (quit_popup) {
+				// Display the quit popup if possible.
+				touchwin(quit_popup);
+				wrefresh(quit_popup);
+			}
+			switch (lowkey) {
+			case 'y':
+				goto quit;
+			case 'n':
+				if (quit_popup) {
+					delwin(quit_popup);
+					quit_popup = NULL;
+					do_redraw = true;
+				}
+				quitting = false;
+				break;
+			}
+			continue;
+		} else if (!lost && paused) {
+			if (pause_popup) {
+				// Display the pause popup if possible.
+				touchwin(pause_popup);
+				wrefresh(pause_popup);
+			}
+			switch (lowkey) {
+			case 'p':
+				if (pause_popup) {
+					delwin(pause_popup);
+					pause_popup = NULL;
+					do_redraw = true;
+				}
+				paused = false;
+				break;
+			case 'x':
+				quit_popup = popup_window(quit_msg);
+				quitting = true;
+				break;
+			}
+			continue;
+		}
+		// After this point, a redraw is needed next time:
+		do_redraw = true;
 		if (won && lowkey == 'y') {
 			// Player quits after winning.
 			goto quit;
-		} else if (!won && player_is_dead(&player)) {
+		} else if (lost) {
 			// Player lost, entities still simulated. Y to quit.
 			if (lowkey == 'y') goto quit;
-			if (dead_popup) {
-				touchwin(dead_popup);
-				wrefresh(dead_popup);
-			}
+			if (!dead_popup) dead_popup = popup_window(dead_msg);
 		} else if (lowkey == 'p') {
-			// Pause game
-			if (do_pause_popup(timer)) goto quit;
-			clear();
+			paused = true;
+			pause_popup = popup_window(pause_msg);
+			continue;
 		} else if (lowkey == 'x' || key == ESC) {
-			// Quit game
-			if (prompt_quit_popup(timer)) goto quit;
-			clear();
+			quitting = true;
+			quit_popup = popup_window(quit_msg);
+			continue;
 		} else {
 			// Otherwise, let the player be controlled.
 			move_player(&player,
@@ -318,6 +353,8 @@ int play_level(const char *root_dir, struct save_state *save,
 quit:
 	clear();
 	refresh();
+	if (pause_popup) delwin(pause_popup);
+	if (quit_popup) delwin(quit_popup);
 	if (dead_popup) delwin(dead_popup);
 	d3d_free_camera(cam);
 	// Record the player's winning:
