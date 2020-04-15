@@ -464,9 +464,8 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					menu_clear_message(&menu);
 				}
 				free(prereq);
-				// Mark redrawing as required:
-				redrawwin(menuwin);
-				redrawwin(titlewin);
+				// Redraw the screen next time:
+				clear();
 				break;
 			}
 			break;
