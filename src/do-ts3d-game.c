@@ -306,6 +306,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		struct menu_item *selected;
 		// The map prerequisite found (used later):
 		char *prereq;
+		// Resize screen structures if needed:
 		if (first_tick || sync_screen_size(known_lines, known_cols)) {
 			known_lines = LINES;
 			known_cols = COLS;

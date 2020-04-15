@@ -271,10 +271,12 @@ int play_level(const char *root_dir, struct save_state *save,
 		int key = getch();
 		int lowkey = tolower(key);
 		if (dead_popup) {
+			// Display the death popup if possible.
 			touchwin(dead_popup);
 			wrefresh(dead_popup);
 		} else if (!lost && quitting) {
 			if (quit_popup) {
+				// Display the quit popup if possible.
 				touchwin(quit_popup);
 				wrefresh(quit_popup);
 			}
@@ -293,6 +295,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			continue;
 		} else if (!lost && paused) {
 			if (pause_popup) {
+				// Display the pause popup if possible.
 				touchwin(pause_popup);
 				wrefresh(pause_popup);
 			}
@@ -312,6 +315,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			}
 			continue;
 		}
+		// After this point, a redraw is needed next time:
 		do_redraw = true;
 		if (won && lowkey == 'y') {
 			// Player quits after winning.
