@@ -465,7 +465,8 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				}
 				free(prereq);
 				// Redraw the screen next time:
-				clear();
+				touchwin(menuwin);
+				touchwin(titlewin);
 				break;
 			}
 			break;
