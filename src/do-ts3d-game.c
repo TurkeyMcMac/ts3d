@@ -68,11 +68,13 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 // must the same as from load_title above.
 static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 {
-	title_cam_pos(cam, board);
-	*d3d_camera_facing(cam) -= 0.003;
-	d3d_draw_walls(cam, board);
-	display_frame(cam, win);
-	wrefresh(win);
+	if (cam && win) {
+		title_cam_pos(cam, board);
+		*d3d_camera_facing(cam) -= 0.003;
+		d3d_draw_walls(cam, board);
+		display_frame(cam, win);
+		wrefresh(win);
+	}
 }
 
 // Load the save state list and log in as the one with the given name. If that
@@ -238,6 +240,10 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	WINDOW *menuwin = newwin(1, 1, 0, 0);
 	// Window to draw the screensaver on:
 	WINDOW *titlewin = newwin(1, 1, 0, 0);
+	if (!menuwin || !titlewin) {
+		logger_printf(log, LOGGER_ERROR, "Cannot allocate windows\n");
+		goto error_windows;
+	}
 	// The item to menu_redirect to. NULL means not to redirect:
 	struct menu_item *redirect = NULL;
 	// A synthetic input element for the New Game link. This can only be
@@ -265,7 +271,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	struct menu menu;
 	if (menu_init(&menu, data_dir, menuwin, log)) {
 		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
-		goto early_end;
+		goto error_menu;
 	}
 	if (!play_as) {
 		strcpy(msg_buf, "Select a game BEFORE playing to save!");
@@ -276,9 +282,10 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	d3d_camera *title_cam;
 	d3d_board *title_board;
 	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {
-		logger_printf(log, LOGGER_ERROR,
+		logger_printf(log, LOGGER_WARNING,
 			"Failed to load title screensaver\n");
-		goto early_end;
+		title_cam = NULL;
+		titlewin = NULL;
 	}
 	loader_print_summary(&ldr);
 	curs_set(0); // Hide the cursor.
@@ -310,14 +317,19 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		if (first_tick || sync_screen_size(known_lines, known_cols)) {
 			known_lines = LINES;
 			known_cols = COLS;
-			double old_facing = *d3d_camera_facing(title_cam);
-			d3d_free_camera(title_cam);
 			int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
 			wresize(menuwin, LINES, menu_width);
-			wresize(titlewin, LINES, COLS - menu_width);
-			mvwin(titlewin, 0, menu_width);
-			title_cam = camera_with_dims(COLS - menu_width, LINES);
-			*d3d_camera_facing(title_cam) = old_facing;
+			if (title_cam && titlewin) {
+				int title_width = COLS - menu_width;
+				double old_facing =
+					*d3d_camera_facing(title_cam);
+				d3d_free_camera(title_cam);
+				title_cam =
+					camera_with_dims(title_width, LINES);
+				*d3d_camera_facing(title_cam) = old_facing;
+				wresize(titlewin, LINES, title_width);
+				mvwin(titlewin, 0, menu_width);
+			}
 			first_tick = false;
 		}
 		tick_title(title_cam, title_board, titlewin);
@@ -526,13 +538,16 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 end:
 	d3d_free_camera(title_cam);
 	menu_destroy(&menu);
-	free_save_links(&game_list);
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
 	ret = write_save_states(&saves, state_file, log);
+error_menu:
+	free_save_links(&game_list);
+error_windows:
+	if (menuwin) delwin(menuwin);
+	if (titlewin) delwin(titlewin);
+	endwin();
 	save_states_destroy(&saves);
 	loader_free(&ldr);
-early_end:
-	endwin();
 	return ret;
 }
