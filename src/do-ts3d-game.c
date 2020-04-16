@@ -514,7 +514,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		default:
 			if (isdigit(key)) {
 				// Goto nth menu item.
-				int to = key - '0' - 1;
+				int to = key == '0' ? 9 : key - '0' - 1;
 				menu_scroll(&menu, -999);
 				if (menu_scroll(&menu, to) != to) beep();
 				break;
