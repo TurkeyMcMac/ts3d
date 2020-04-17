@@ -3,6 +3,7 @@
 
 #include "d3d.h"
 #include "table.h"
+#include "ui-util.h"
 #include <stdio.h>
 
 // Weak dependencies
@@ -19,6 +20,7 @@ struct loader {
 	char *ents_dir;
 	table maps;
 	char *maps_dir;
+	struct color_map colors;
 	struct logger *log;
 };
 
@@ -47,6 +49,9 @@ const d3d_texture *loader_empty_texture(struct loader *ldr);
 
 // Print to the INFO log a count of all that has been loaded thus far.
 void loader_print_summary(struct loader *ldr);
+
+// Get a non-owned reference to the loader's current color map.
+struct color_map *loader_color_map(struct loader *ldr);
 
 // Get a pointer to a loader's logger. Initially, this will have the default
 // settings.

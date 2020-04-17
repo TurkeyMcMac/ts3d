@@ -17,6 +17,7 @@ void loader_init(struct loader *ldr, const char *root)
 	table_init(&ldr->ents, 16);
 	ldr->maps_dir = mid_cat(root, '/', "maps");
 	table_init(&ldr->maps, 16);
+	color_map_init(&ldr->colors);
 	ldr->log = NULL;
 	ldr->empty_txtr = NULL;
 }
@@ -98,10 +99,17 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 void loader_print_summary(struct loader *ldr)
 {
 	logger_printf(ldr->log, LOGGER_INFO,
-		"Load summary: %zu maps, %zu entity types, %zu textures\n",
+		"Load summary: %zu maps, %zu entity types, %zu textures, "
+		"%zu color pairs\n",
 		table_count(&ldr->maps),
 		table_count(&ldr->ents),
-		table_count(&ldr->txtrs));
+		table_count(&ldr->txtrs),
+		color_map_count_pairs(&ldr->colors));
+}
+
+struct color_map *loader_color_map(struct loader *ldr)
+{
+	return &ldr->colors;
 }
 
 struct logger *loader_logger(struct loader *ldr)
@@ -139,6 +147,7 @@ void loader_free(struct loader *ldr)
 	}
 	table_free(&ldr->maps);
 	free(ldr->maps_dir);
+	color_map_destroy(&ldr->colors);
 }
 
 #if CTF_TESTS_ENABLED

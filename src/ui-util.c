@@ -3,6 +3,58 @@
 #include "util.h"
 #include <string.h>
 
+void color_map_init(struct color_map *map)
+{
+	map->pair_num = 0;
+	memset(map->pixel2pair, 0, sizeof(map->pixel2pair));
+}
+
+int color_map_add_pair(struct color_map *map, d3d_pixel pix)
+{
+	if (pix >= sizeof(map->pixel2pair)) return 0;
+	if (map->pixel2pair[pix] == 0) {
+		if (map->pair_num >= COLOR_PAIRS - 1) return 0;
+		++map->pair_num;
+		map->pixel2pair[pix] = map->pair_num;
+	}
+	return map->pixel2pair[pix];
+}
+
+int color_map_apply(struct color_map *map)
+{
+	static const short colors[] = {
+		COLOR_BLACK, COLOR_RED, COLOR_GREEN, COLOR_YELLOW,
+		COLOR_BLUE, COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE
+	};
+	int ret = 0;
+	for (d3d_pixel p = 0; p < sizeof(map->pixel2pair); ++p) {
+		int pair = map->pixel2pair[p];
+		if (pair > 0) {
+			int fg = colors[pixel_fg(p)];
+			int bg = colors[pixel_bg(p)];
+			if (init_pair(pair, fg, bg) == ERR) {
+				map->pixel2pair[p] = 0;
+				ret = -1;
+			}
+		}
+	}
+	return ret;
+}
+
+size_t color_map_count_pairs(struct color_map *map)
+{
+	return (size_t)map->pair_num;
+}
+
+int color_map_get_pair(struct color_map *map, d3d_pixel pix)
+{
+	return pix < sizeof(map->pixel2pair) ? map->pixel2pair[pix] : 0;
+}
+
+void color_map_destroy(struct color_map *UNUSED_VAR(map))
+{
+}
+
 void meter_draw(const struct meter *meter)
 {
 	int full = meter->width * meter->fraction;
@@ -48,8 +100,10 @@ WINDOW *popup_window(const char *text)
 	}
 	width += 2;
 	height += 2;
+	if (height > LINES || width > COLS) return NULL;
 	WINDOW *win = newwin(height, width,
 		(LINES - height) / 2, (COLS - width) / 2);
+	if (!win) return NULL;
 	const char *line = text;
 	for (int y = 1; y < height - 1; ++y) {
 		const char *nl = strchr(line, '\n');
@@ -60,12 +114,13 @@ WINDOW *popup_window(const char *text)
 	return win;
 }
 
-void display_frame(d3d_camera *cam, WINDOW *win)
+void display_frame(d3d_camera *cam, WINDOW *win, struct color_map *colors)
 {
 	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
-			mvwaddch(win, y, x, pixel_style(pix) | '#');
+			int pair = color_map_get_pair(colors, pix);
+			mvwaddch(win, y, x, COLOR_PAIR(pair) | '#');
 		}
 	}
 }
@@ -93,22 +148,6 @@ d3d_camera *camera_with_dims(int width, int height)
 	}
 	*d3d_camera_empty_pixel(cam) = pixel(PC_BLACK, PC_BLACK);
 	return cam;
-}
-
-int set_up_colors(void)
-{
-	static const short colors[] = {
-		COLOR_BLACK, COLOR_RED, COLOR_GREEN, COLOR_YELLOW, COLOR_BLUE,
-		COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE
-	};
-	if (start_color() == ERR) return -1;
-	for (size_t fg = 0; fg < ARRSIZE(colors); ++fg) {
-		for (size_t bg = 0; bg < ARRSIZE(colors); ++bg) {
-			if (init_pair(pixel_pair(pixel(fg, bg)),
-				colors[fg], colors[bg]) == ERR) return -1;
-		}
-	}
-	return 0;
 }
 
 bool sync_screen_size(int known_lines, int known_cols)
