@@ -68,7 +68,7 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 // must the same as from load_title above.
 static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
 {
-	if (cam && win) {
+	if (cam && board && win) {
 		title_cam_pos(cam, board);
 		*d3d_camera_facing(cam) -= 0.003;
 		d3d_draw_walls(cam, board);
@@ -285,6 +285,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		logger_printf(log, LOGGER_WARNING,
 			"Failed to load title screensaver\n");
 		title_cam = NULL;
+		title_board = NULL;
 		titlewin = NULL;
 	}
 	loader_print_summary(&ldr);
