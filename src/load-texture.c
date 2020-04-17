@@ -37,14 +37,21 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 	for (size_t y = 0; y < height; ++y) {
 		if (lines[y].len > width) width = lines[y].len;
 	}
+	struct color_map *colors = loader_color_map(ldr);
 	if (width > 0 && height > 0) {
 		txtr = d3d_new_texture(width, height);
 		for (size_t y = 0; y < height; ++y) {
 			struct string *line = &lines[y];
 			size_t x;
 			for (x = 0; x < line->len; ++x) {
-				*d3d_texture_get(txtr, x, y) =
-					pixel_from_char(line->text[x]);
+				d3d_pixel pix = pixel_from_char(line->text[x]);
+				int pair = color_map_add_pair(colors, pix);
+				if (pair <= 0 && pix != EMPTY_PIXEL)
+					logger_printf(loader_logger(ldr),
+						LOGGER_WARNING,
+						"Pixel not registered: %c\n",
+						line->text[x]);
+				*d3d_texture_get(txtr, x, y) = pix;
 			}
 			for (; x < width; ++x) {
 				*d3d_texture_get(txtr, x, y) = EMPTY_PIXEL;

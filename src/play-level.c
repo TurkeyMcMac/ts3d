@@ -168,21 +168,24 @@ int play_level(const char *root_dir, struct save_state *save,
 	}
 	if (map->prereq && !save_state_is_complete(save, map->prereq))
 		goto error_map; // Map not unlocked.
+	struct meter health_meter = {
+		.label = "HEALTH",
+		.style = COLOR_PAIR(color_map_add_pair(loader_color_map(&ldr),
+			pixel(PC_BLACK, PC_GREEN))),
+		// Position and size not initialized yet.
+	};
+	struct meter reload_meter = {
+		.label = "RELOAD",
+		.style = COLOR_PAIR(color_map_add_pair(loader_color_map(&ldr),
+			pixel(PC_BLACK, PC_RED))),
+		// Position and size not initialized yet.
+	};
+	color_map_apply(loader_color_map(&ldr));
 	loader_print_summary(&ldr);
 	srand(time(NULL)); // For random_start_frame
 	struct ents ents;
 	init_entities(&ents, map);
 	d3d_board *board = map->board;
-	struct meter health_meter = {
-		.label = "HEALTH",
-		.style = pixel_style(pixel(PC_BLACK, PC_GREEN)),
-		// Position and size not initialized yet.
-	};
-	struct meter reload_meter = {
-		.label = "RELOAD",
-		.style = pixel_style(pixel(PC_BLACK, PC_RED)),
-		// Position and size not initialized yet.
-	};
 	WINDOW *dead_popup = NULL;
 	WINDOW *pause_popup = NULL;
 	WINDOW *quit_popup = NULL;
@@ -252,7 +255,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			d3d_draw_walls(cam, board);
 			d3d_draw_sprites(cam, ents_num(&ents),
 					ents_sprites(&ents));
-			display_frame(cam, stdscr);
+			display_frame(cam, stdscr, loader_color_map(&ldr));
 			health_meter.fraction = player_health_fraction(&player);
 			meter_draw(&health_meter);
 			reload_meter.fraction = player_reload_fraction(&player);

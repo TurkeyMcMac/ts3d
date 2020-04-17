@@ -66,13 +66,14 @@ static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
 
 // Move the screensaver forward a tick and draw it on the window. The parameters
 // must the same as from load_title above.
-static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win)
+static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win,
+	struct loader *ldr)
 {
 	if (cam && board && win) {
 		title_cam_pos(cam, board);
 		*d3d_camera_facing(cam) -= 0.003;
 		d3d_draw_walls(cam, board);
-		display_frame(cam, win);
+		display_frame(cam, win, loader_color_map(ldr));
 		wrefresh(win);
 	}
 }
@@ -183,7 +184,7 @@ static int write_save_states(struct save_states *saves, const char *state_file,
 // while waiting for input. An empty name signifies entry cancellation.
 static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 	d3d_camera *title_cam, d3d_board *title_board, WINDOW *title_win,
-	struct ticker *timer)
+	struct loader *ldr, struct ticker *timer)
 {
 	int key;
 	--buf_size; // Make space for the NUL-terminator from now on.
@@ -199,7 +200,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 		}
 		menu_draw(menu);
 		wrefresh(menu->win);
-		tick_title(title_cam, title_board, title_win);
+		tick_title(title_cam, title_board, title_win, ldr);
 		tick(timer);
 		size_t len = strlen_max(name_buf, buf_size);
 		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
@@ -232,9 +233,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// This here is lowered from "1000":
 	setenv("ESCDELAY", "30", 0);
 	initscr();
-	if (set_up_colors())
-		logger_printf(log, LOGGER_WARNING,
-			"Terminal colors not properly supported\n");
+	start_color();
 	// Windows will be resized at the beginning of the first tick:
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(1, 1, 0, 0);
@@ -288,6 +287,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		title_board = NULL;
 		titlewin = NULL;
 	}
+	color_map_apply(loader_color_map(&ldr));
 	loader_print_summary(&ldr);
 	curs_set(0); // Hide the cursor.
 	noecho(); // Hide input characters.
@@ -333,7 +333,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			}
 			first_tick = false;
 		}
-		tick_title(title_cam, title_board, titlewin);
+		tick_title(title_cam, title_board, titlewin, &ldr);
 		menu_draw(&menu);
 		wrefresh(menuwin);
 		tick(&timer);
@@ -361,7 +361,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				for (;;) {
 					get_input(name_buf, sizeof(name_buf),
 						&menu, title_cam, title_board,
-						titlewin, &timer);
+						titlewin, &ldr, &timer);
 					if (*name_buf
 					 && save_states_get(&saves, name_buf)) {
 						menu_set_message(&menu,
@@ -477,6 +477,8 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					menu_clear_message(&menu);
 				}
 				free(prereq);
+				// Reset colors:
+				color_map_apply(loader_color_map(&ldr));
 				// Redraw the screen next time:
 				touchwin(menuwin);
 				touchwin(titlewin);

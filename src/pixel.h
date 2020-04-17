@@ -1,7 +1,8 @@
 #ifndef PIXEL_H_
 #define PIXEL_H_
 
-// A pixel is an integer from 0-63 of type d3d_pixel.
+// A pixel is an integer of type d3d_pixel. A value from 0-63 is opaque and has
+// a specific color. A larger value is transparent.
 
 #include "d3d.h"
 #include <curses.h>
@@ -21,11 +22,6 @@
 
 // Create a pixel with foreground and background colors described above.
 #define pixel(fg, bg) (((fg) << 3) | (bg))
-
-// Convert a pixel to a number to be passed to curses COLOR_PAIR.
-#define pixel_pair(pix) ((pix) + 1)
-// Convert a pixel to a style to be used with mvaddch or something.
-#define pixel_style(pix) COLOR_PAIR(pixel_pair(pix))
 
 // The foreground value of the pixel from 0-7.
 #define pixel_fg(pix) ((pix) >> 3 & 7)
