@@ -192,7 +192,6 @@ int play_level(const char *root_dir, struct save_state *save,
 	d3d_camera *cam = NULL;
 	struct player player;
 	player_init(&player, map);
-	timeout(0);
 	keypad(stdscr, TRUE);
 	int translation = '\0'; // No initial translation
 	int turn_duration = 0; // No initial turning

@@ -234,6 +234,10 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	setenv("ESCDELAY", "30", 0);
 	initscr();
 	start_color();
+	// For some reason, NetBSD Curses requires these two extra calls to keep
+	// the program from waiting for user input in the menu:
+	timeout(0);
+	getch();
 	// Windows will be resized at the beginning of the first tick:
 	// Window to draw the menu on:
 	WINDOW *menuwin = newwin(1, 1, 0, 0);
