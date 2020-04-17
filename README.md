@@ -74,4 +74,6 @@ implement POSIX.1-2001. The only shared library dependencies are the standard
 library, the standard math library, and libcurses. The two standard libraries,
 as their names suggest, are required to be installed by the POSIX/C standard.
 libcurses will almost definitely by installed on your system. If it is not, it
-should be available through your package manager.
+should be available through your package manager. The game seems to work with
+NCurses, PDCurses, and NetBSD Curses. Theoretically, it works with any
+implementation.
