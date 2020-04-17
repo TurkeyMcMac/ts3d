@@ -48,8 +48,10 @@ WINDOW *popup_window(const char *text)
 	}
 	width += 2;
 	height += 2;
+	if (height > LINES || width > COLS) return NULL;
 	WINDOW *win = newwin(height, width,
 		(LINES - height) / 2, (COLS - width) / 2);
+	if (!win) return NULL;
 	const char *line = text;
 	for (int y = 1; y < height - 1; ++y) {
 		const char *nl = strchr(line, '\n');
