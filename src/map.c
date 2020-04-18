@@ -345,6 +345,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 
 format_error:
 	free_json_tree(&jtree);
+	map_free(map);
 parse_error:
 	return NULL;
 }

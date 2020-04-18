@@ -57,10 +57,9 @@ static void parse_frame(struct json_node *node, struct ent_frame *frame,
 	default:
 		break;
 	}
-	if (!txtr_name || !(frame->txtr = load_texture(ldr, txtr_name))) {
-		free(txtr_name);
+	if (!txtr_name || !(frame->txtr = load_texture(ldr, txtr_name)))
 		frame->txtr = loader_empty_texture(ldr);
-	}
+	free(txtr_name);
 }
 
 struct ent_type *load_ent_type(struct loader *ldr, const char *name)
