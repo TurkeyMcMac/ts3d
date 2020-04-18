@@ -71,7 +71,7 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 	if (!entp) return NULL;
 	ent = *entp;
 	if (ent) return ent;
-	ent = malloc(sizeof(*ent));
+	ent = xmalloc(sizeof(*ent));
 	struct json_node jtree;
 	ent->name = str_dup(name);
 	ent->frames = NULL;

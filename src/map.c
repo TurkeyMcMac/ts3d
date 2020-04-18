@@ -234,7 +234,7 @@ struct map *load_map(struct loader *ldr, const char *name)
 	if (!mapp) return NULL;
 	struct map *map = *mapp;
 	if (map) return map;
-	map = malloc(sizeof(*map));
+	map = xmalloc(sizeof(*map));
 	struct json_node jtree;
 	map->name = str_dup(name);
 	map->prereq = NULL;
