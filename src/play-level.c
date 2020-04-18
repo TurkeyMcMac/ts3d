@@ -213,6 +213,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Press Y to confirm or N to cancel.";
 		bool resized = !cam ||
 			sync_screen_size(known_lines, known_cols);
+		tick(timer);
 		if (resized) {
 			known_lines = LINES;
 			known_cols = COLS;
@@ -350,7 +351,6 @@ int play_level(const char *root_dir, struct save_state *save,
 		player_tick(&player);
 		ents_tick(&ents);
 		ents_clean_up_dead(&ents);
-		tick(timer);
 	}
 quit:
 	clear();
