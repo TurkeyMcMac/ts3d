@@ -264,15 +264,12 @@ struct map *load_map(struct loader *ldr, const char *name)
 		goto format_error;
 	}
 	union json_node_data *got;
-	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
+	if ((got = json_map_get(&jtree, "name", TAKE_NODE | JN_STRING))) {
 		free(map->name);
 		map->name = got->str;
-		got->str = NULL;
 	}
-	if ((got = json_map_get(&jtree, "prereq", JN_STRING))) {
+	if ((got = json_map_get(&jtree, "prereq", TAKE_NODE | JN_STRING)))
 		map->prereq = got->str;
-		got->str = NULL;
-	}
 	uint8_t *walls = NULL;
 	size_t n_blocks = 0;
 	if ((got = json_map_get(&jtree, "blocks", JN_LIST))) {

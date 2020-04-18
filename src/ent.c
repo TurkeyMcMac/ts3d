@@ -43,13 +43,13 @@ static void parse_frame(struct json_node *node, struct ent_frame *frame,
 	switch (node->kind) {
 	case JN_STRING:
 		txtr_name = node->d.str;
-		node->d.str = NULL;
+		node->taken = true;
 		break;
 	case JN_LIST:
 		if (node->d.list.n_vals < 1
 		 || node->d.list.vals[0].kind != JN_STRING) break;
 		txtr_name = node->d.list.vals[0].d.str;
-		node->d.list.vals[0].d.str = NULL;
+		node->d.list.vals[0].taken = true;
 		if (node->d.list.n_vals < 2
 		 || node->d.list.vals[1].kind != JN_NUMBER) break;
 		frame->duration = node->d.list.vals[1].d.num;
@@ -97,10 +97,9 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 		goto end;
 	}
 	union json_node_data *got;
-	if ((got = json_map_get(&jtree, "name", JN_STRING))) {
+	if ((got = json_map_get(&jtree, "name", TAKE_NODE | JN_STRING))) {
 		free(ent->name);
 		ent->name = got->str;
-		got->str = NULL;
 	}
 	ent->width = 1.0;
 	if ((got = json_map_get(&jtree, "width", JN_NUMBER)))
