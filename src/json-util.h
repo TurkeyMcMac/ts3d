@@ -27,6 +27,8 @@ struct json_node {
 		JN_ERROR,
 		JN_END_
 	} kind;
+	// Whether the node is to be disposed of by other code.
+	bool taken;
 	// The type-specific node data.
 	union json_node_data {
 		// A JSON map from allocated NUL-terminated keys to node
@@ -50,8 +52,13 @@ struct json_node {
 //  1. The map node is not actually a map.
 //  2. The key is not present in the map.
 //  3. The node found is not of the desired kind.
+//  4. The node has already been taken (see below.)
+// The last argument is a value of json_node_kind (the desired kind) possibly
+// ORed with TAKE_NODE. TAKE_NODE specifies that the caller will take ownership
+// of a node if it is found.
+#define TAKE_NODE 0x1000
 union json_node_data *json_map_get(struct json_node *map, const char *key,
-	enum json_node_kind kind);
+	int kind);
 
 // Parse a JSON tree from the file given into the root. Negative is returned if
 // a system error occurred, but otherwise returned is zero. The name is used for

@@ -97,13 +97,15 @@ static void print_json_error(const json_reader *rdr,
 }
 
 union json_node_data *json_map_get(struct json_node *map, const char *key,
-	enum json_node_kind kind)
+	int kind)
 {
 	if (map->kind != JN_MAP) return NULL;
 	void **got = table_get(&map->d.map, key);
 	if (!got) return NULL;
 	struct json_node *nd = *got;
-	if (nd->kind != kind) return NULL;
+	if (nd->taken) return NULL;
+	if (nd->kind != (enum json_node_kind)(kind & ~TAKE_NODE)) return NULL;
+	nd->taken = (kind & TAKE_NODE) != 0;
 	return &nd->d;
 }
 
@@ -125,6 +127,7 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 		return;
 	}
 	*keyp = item.key.bytes;
+	nd->taken = false;
 	switch (item.type) {
 	case JSON_EMPTY:
 		nd->kind = JN_EMPTY;
@@ -227,6 +230,7 @@ int parse_json_tree(const char *name, FILE *file, struct logger *log,
 
 void free_json_tree(struct json_node *nd)
 {
+	if (nd->taken) return;
 	switch (nd->kind) {
 		const char *k;
 		void **v;
@@ -399,6 +403,19 @@ CTF_TEST(json_tree_nested,
 	assert(list->list.vals[0].d.num == 2);
 	assert(list->list.vals[1].d.num == 3);
 	free_json_tree(&root);
+)
+
+CTF_TEST(json_node_taken,
+	SOURCE("{\"a\":\"a\",\"b\":\"b\"}");
+	union json_node_data *borrowed, *take_1, *take_2;
+	borrowed = json_map_get(&root, "a", JN_STRING);
+	take_1 = json_map_get(&root, "a", TAKE_NODE | JN_STRING);
+	take_2 = json_map_get(&root, "a", TAKE_NODE | JN_STRING);
+	assert(borrowed != NULL);
+	assert(take_1 != NULL);
+	assert(take_2 == NULL);
+	free_json_tree(&root);
+	free(take_1->str);
 )
 
 CTF_TEST(escapes_text_json,

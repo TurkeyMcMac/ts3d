@@ -35,9 +35,8 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 		goto error_kind;
 	}
 	union json_node_data *got;
-	if ((got = json_map_get(json, "title", JN_STRING))) {
+	if ((got = json_map_get(json, "title", TAKE_NODE | JN_STRING))) {
 		item->title = got->str;
-		got->str = NULL;
 	} else {
 		logger_printf(log, LOGGER_ERROR,
 			"Menu item has no or invalid \"title\" attribute\n");
@@ -55,20 +54,18 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 				goto error_item;
 			++item->n_items;
 		}
-	} else if ((got = json_map_get(json, "text", JN_STRING))) {
+	} else if ((got = json_map_get(json, "text", TAKE_NODE | JN_STRING))) {
 		item->kind = ITEM_TEXT;
 		item->tag = got->str;
 		item->n_items = 0;
-		got->str = NULL;
 	} else if ((got = json_map_get(json, "input", JN_BOOLEAN))
 			&& got->boolean) {
 		item->kind = ITEM_INPUT;
 		item->n_items = 0;
 		item->tag = "";
-	} else if ((got = json_map_get(json, "tag", JN_STRING))) {
+	} else if ((got = json_map_get(json, "tag", TAKE_NODE | JN_STRING))) {
 		item->kind = ITEM_TAG;
 		item->tag = got->str;
-		got->str = NULL;
 	} else {
 		item->kind = ITEM_INERT;
 	}

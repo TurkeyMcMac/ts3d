@@ -36,6 +36,7 @@ struct string *read_lines(FILE *file, size_t *nlines)
 				&& feof(file))
 			{
 				--*nlines;
+				free(line->text);
 				goto done;
 			} else {
 				nl = buf + nread;
