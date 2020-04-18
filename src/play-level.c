@@ -168,16 +168,18 @@ int play_level(const char *root_dir, struct save_state *save,
 	}
 	if (map->prereq && !save_state_is_complete(save, map->prereq))
 		goto error_map; // Map not unlocked.
+	int health_meter_color = color_map_add_pair(loader_color_map(&ldr),
+		pixel(PC_BLACK, PC_GREEN));
 	struct meter health_meter = {
 		.label = "HEALTH",
-		.style = COLOR_PAIR(color_map_add_pair(loader_color_map(&ldr),
-			pixel(PC_BLACK, PC_GREEN))),
+		.style = COLOR_PAIR(health_meter_color),
 		// Position and size not initialized yet.
 	};
+	int reload_meter_color = color_map_add_pair(loader_color_map(&ldr),
+		pixel(PC_BLACK, PC_RED));
 	struct meter reload_meter = {
 		.label = "RELOAD",
-		.style = COLOR_PAIR(color_map_add_pair(loader_color_map(&ldr),
-			pixel(PC_BLACK, PC_RED))),
+		.style = COLOR_PAIR(reload_meter_color),
 		// Position and size not initialized yet.
 	};
 	color_map_apply(loader_color_map(&ldr));
