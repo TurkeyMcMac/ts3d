@@ -38,26 +38,29 @@ struct ent {
 static void parse_frame(struct json_node *node, struct ent_frame *frame,
 	struct loader *ldr)
 {
-	const char *txtr_name = "";
-	long duration = 1;
+	char *txtr_name = NULL;
+	frame->duration = 1;
 	switch (node->kind) {
 	case JN_STRING:
 		txtr_name = node->d.str;
+		node->d.str = NULL;
 		break;
 	case JN_LIST:
 		if (node->d.list.n_vals < 1
 		 || node->d.list.vals[0].kind != JN_STRING) break;
 		txtr_name = node->d.list.vals[0].d.str;
+		node->d.list.vals[0].d.str = NULL;
 		if (node->d.list.n_vals < 2
 		 || node->d.list.vals[1].kind != JN_NUMBER) break;
-		duration = node->d.list.vals[1].d.num;
+		frame->duration = node->d.list.vals[1].d.num;
 		break;
 	default:
 		break;
 	}
-	d3d_texture *txtr = load_texture(ldr, txtr_name);
-	frame->txtr = txtr ? txtr : loader_empty_texture(ldr);
-	frame->duration = duration;
+	if (!txtr_name || !(frame->txtr = load_texture(ldr, txtr_name))) {
+		free(txtr_name);
+		frame->txtr = loader_empty_texture(ldr);
+	}
 }
 
 struct ent_type *load_ent_type(struct loader *ldr, const char *name)
