@@ -113,10 +113,6 @@ struct ent_type *load_ent_type(struct loader *ldr, const char *name)
 		ent->turn_chance = chance_from_percent(got->num);
 	if ((got = json_map_get(&jtree, "shoot_chance", JN_NUMBER)))
 		ent->shoot_chance = chance_from_percent(got->num);
-	ent->transparent = EMPTY_PIXEL;
-	if ((got = json_map_get(&jtree, "transparent", JN_STRING))
-			&& *got->str)
-		ent->height = *got->str;
 	ent->random_start_frame =
 		(got = json_map_get(&jtree, "random_start_frame", JN_BOOLEAN))
 		&& got->boolean;
@@ -183,7 +179,7 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 	ent->body.health = type->health;
 	ent->body.damage = type->damage;
 	sprite->txtr = type->frames[0].txtr;
-	sprite->transparent = type->transparent;
+	sprite->transparent = TRANSPARENT_PIXEL;
 	sprite->scale.x = type->width;
 	sprite->scale.y = type->height;
 }
