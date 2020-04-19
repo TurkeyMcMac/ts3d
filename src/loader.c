@@ -91,7 +91,7 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 {
 	if (!ldr->empty_txtr) {
 		ldr->empty_txtr = d3d_new_texture(1, 1);
-		*d3d_texture_get(ldr->empty_txtr, 0, 0) = EMPTY_PIXEL;
+		*d3d_texture_get(ldr->empty_txtr, 0, 0) = TRANSPARENT_PIXEL;
 	}
 	return ldr->empty_txtr;
 }

@@ -7,8 +7,8 @@
 #include "d3d.h"
 #include <curses.h>
 
-// Default transparent pixel when loading textures.
-#define EMPTY_PIXEL pixel_from_char(' ')
+// The transparent pixel when loading textures.
+#define TRANSPARENT_PIXEL pixel_from_char(' ')
 
 // Pixel colors for foreground or background.
 #define PC_BLACK 0
@@ -29,6 +29,6 @@
 #define pixel_bg(pix) ((pix) & 7)
 
 // Convert a character to a pixel.
-#define pixel_from_char(ch) ((d3d_pixel)((ch) - ' ' - 1))
+#define pixel_from_char(ch) ((d3d_pixel)(ch) - (d3d_pixel)' ' - (d3d_pixel)1)
 
 #endif /* PIXEL_H_ */

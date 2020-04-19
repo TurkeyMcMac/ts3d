@@ -22,8 +22,6 @@ struct ent_type {
 	double width;
 	// The height of the entity in blocks.
 	double height;
-	// The transparent pixel in the frames, or -1 for none.
-	int transparent;
 	// The number of frames.
 	size_t n_frames;
 	// The allocated list of n_frames frames.

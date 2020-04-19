@@ -13,7 +13,7 @@
 static d3d_texture *new_empty_texture(void)
 {
 	d3d_texture *empty = d3d_new_texture(1, 1);
-	*d3d_texture_get(empty, 0, 0) = EMPTY_PIXEL;
+	*d3d_texture_get(empty, 0, 0) = TRANSPARENT_PIXEL;
 	return empty;
 }
 
@@ -46,7 +46,7 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 			for (x = 0; x < line->len; ++x) {
 				d3d_pixel pix = pixel_from_char(line->text[x]);
 				int pair = color_map_add_pair(colors, pix);
-				if (pair <= 0 && pix != EMPTY_PIXEL)
+				if (pair <= 0 && pix != TRANSPARENT_PIXEL)
 					logger_printf(loader_logger(ldr),
 						LOGGER_WARNING,
 						"Pixel not registered: %c\n",
@@ -54,7 +54,8 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 				*d3d_texture_get(txtr, x, y) = pix;
 			}
 			for (; x < width; ++x) {
-				*d3d_texture_get(txtr, x, y) = EMPTY_PIXEL;
+				*d3d_texture_get(txtr, x, y) =
+					TRANSPARENT_PIXEL;
 			}
 		}
 	} else {
