@@ -29,6 +29,6 @@
 #define pixel_bg(pix) ((pix) & 7)
 
 // Convert a character to a pixel.
-#define pixel_from_char(ch) ((d3d_pixel)(ch) - (d3d_pixel)' ' - (d3d_pixel)1)
+#define pixel_from_char(ch) ((d3d_pixel)((d3d_pixel)(ch) - (d3d_pixel)' ' - 1u))
 
 #endif /* PIXEL_H_ */
