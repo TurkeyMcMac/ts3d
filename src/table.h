@@ -40,12 +40,12 @@ size_t table_count(const table *tbl);
 // and v are names of variables pre-declared, k having type const char * and v
 // having type void **.
 #define TABLE_FOR_EACH(tbl, k, v) \
-	for (size_t i__ = 0; \
-	i__ < (tbl)->len && ( \
-		k = (tbl)->items[i__].key, \
-		v = &(tbl)->items[i__].val, \
+	for (size_t i_ = 0; \
+	i_ < (tbl)->len && ( \
+		k = (tbl)->items[i_].key, \
+		v = &(tbl)->items[i_].val, \
 		1); \
-	i__++)
+	i_++)
 
 // Free all memory allocated for a table.
 void table_free(table *tbl);
