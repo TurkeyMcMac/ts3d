@@ -89,7 +89,7 @@ void json_source_string(json_reader *reader, const char *str, size_t len)
 	reader->bufsiz = len;
 	reader->head = 0;
 	reader->refill = refill_dont;
-	reader->flags = SOURCE_DEPLETED;
+	reader->flags |= SOURCE_DEPLETED;
 }
 
 #ifdef JSON_WITH_STDIO
