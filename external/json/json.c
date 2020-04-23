@@ -859,9 +859,10 @@ int json_read_item(json_reader *reader, struct json_item *result)
 	result->key.bytes = NULL;
 	if (!is_in_range(reader)) {
 		if (reader->flags & SOURCE_DEPLETED) {
-			if (((reader->flags & SMALL_STACK)
+			if (((reader->flags & SMALL_STACK) != 0
 					&& reader->stack.small.size == 0)
-				|| reader->stack.big.size == 0)
+				|| ((reader->flags & SMALL_STACK) == 0
+					&& reader->stack.big.size == 0))
 			{
 				/* All brackets have been closed. */
 				return 0;
