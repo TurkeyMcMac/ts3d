@@ -1,4 +1,5 @@
 #include "json.h"
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 #ifdef JSON_WITH_FD
@@ -12,6 +13,7 @@
 /* Flags for reader::flags */
 #define SOURCE_DEPLETED  0x0100
 #define STARTED_COMPOUND 0x0200
+#define SMALL_STACK      0x0400
 
 /* reader::alloc compatible function which always fails. */
 static void *alloc_fail(size_t size)
@@ -39,16 +41,21 @@ int json_alloc(json_reader *reader,
 	void  (*dealloc)(void *),
 	void *(*resize)(void *, size_t))
 {
-	reader->stackcap = stacksiz;
-	reader->stacksiz = 0;
 	reader->alloc = alloc ? alloc : alloc_fail;
 	reader->dealloc = dealloc ? dealloc : dealloc_noop;
 	reader->resize = resize ? resize : realloc_fail;
-	if (!stack) {
-		stack = reader->alloc(stacksiz);
-		if (!stack) return -1;
+	reader->flags = 0;
+	if (!stack && stacksiz <= sizeof(reader->stack.small.frames)
+		/* Just in case, make sure the small size can't overflow: */
+		&& (size_t)UCHAR_MAX >= sizeof(reader->stack.small.frames))
+	{
+		reader->flags |= SMALL_STACK;
+		reader->stack.small.size = 0;
+	} else {
+		if (!stack && !(stack = reader->alloc(stacksiz))) return -1;
+		reader->stack.big.cap = stacksiz;
+		reader->stack.big.size = 0;
 	}
-	reader->stack = stack;
 	return 0;
 }
 
@@ -69,10 +76,9 @@ void json_source(json_reader *reader,
 	reader->head = bufsiz;
 	if (refill) {
 		reader->refill = refill;
-		reader->flags = 0;
 	} else {
 		reader->refill = refill_dont;
-		reader->flags = SOURCE_DEPLETED;
+		reader->flags |= SOURCE_DEPLETED;
 	}
 }
 
@@ -146,7 +152,8 @@ void **json_get_ctx(json_reader *reader)
 
 void json_free(json_reader *reader)
 {
-	reader->dealloc(reader->stack);
+	if ((reader->flags & SMALL_STACK) == 0)
+		reader->dealloc(reader->stack.big.frames);
 }
 
 /* A type of frame on the stack. */
@@ -256,24 +263,60 @@ static int push_bytes(json_reader *reader, char **bytes,
 /* Push a frame to the reader's stack. */
 static int push_frame(json_reader *reader, int frame)
 {
-	push_byte(reader, &reader->stack, &reader->stacksiz, &reader->stackcap,
-		frame);
-	return 0;
+	if (reader->flags & SMALL_STACK) {
+		/* Temporary stack holding buffer: */
+		char tmp[sizeof(reader->stack.small.frames)];
+		if (reader->stack.small.size >= sizeof(tmp)) {
+			/* The small stack must be embiggened. */
+			memcpy(tmp, reader->stack.small.frames, sizeof(tmp));
+			size_t size = sizeof(tmp) + 1;
+			if (!(reader->stack.big.frames = reader->alloc(size))) {
+				/* Failure to allocate; revert and report. */
+				memcpy(reader->stack.small.frames, tmp,
+					sizeof(tmp));
+				reader->stack.small.size = sizeof(tmp);
+				set_error(reader, JSON_ERROR_MEMORY);
+				return -1;
+			}
+			memcpy(reader->stack.big.frames, tmp, sizeof(tmp));
+			reader->stack.big.frames[size - 1] = frame;
+			reader->stack.big.cap = size;
+			reader->stack.big.size = size;
+			reader->flags &= ~SMALL_STACK;
+		} else {
+			reader->stack.small.frames[reader->stack.small.size++] =
+				frame;
+		}
+		return 0;
+	} else {
+		return push_byte(reader, &reader->stack.big.frames,
+			&reader->stack.big.size, &reader->stack.big.cap, frame);
+	}
 }
 
 /* Take off and return the top stack frame, or FRAME_EMPTY if the stack is
  * empty. */
 static int pop_frame(json_reader *reader)
 {
-	if (reader->stacksiz == 0) return FRAME_EMPTY;
-	return reader->stack[--reader->stacksiz];
+	if (reader->flags & SMALL_STACK) {
+		if (reader->stack.small.size == 0) return FRAME_EMPTY;
+		return reader->stack.small.frames[--reader->stack.small.size];
+	} else {
+		if (reader->stack.big.size == 0) return FRAME_EMPTY;
+		return reader->stack.big.frames[--reader->stack.big.size];
+	}
 }
 
 /* Return the top stack frame, or FRAME_EMPTY if the stack is empty. */
 static int peek_frame(const json_reader *reader)
 {
-	if (reader->stacksiz == 0) return FRAME_EMPTY;
-	return reader->stack[reader->stacksiz - 1];
+	if (reader->flags & SMALL_STACK) {
+		if (reader->stack.small.size == 0) return FRAME_EMPTY;
+		return reader->stack.small.frames[reader->stack.small.size - 1];
+	} else {
+		if (reader->stack.big.size == 0) return FRAME_EMPTY;
+		return reader->stack.big.frames[reader->stack.big.size - 1];
+	}
 }
 
 /* Return whether the current buffer has more to give or if it needs to be
@@ -428,6 +471,11 @@ static int parse_number(json_reader *reader, struct json_item *result)
 		}
 		while (is_digit(ch)) {
 			status = 0;
+			if (exponent > (LONG_MAX - 9) / 10) {
+				/* Avoid undefined signed overflow. */
+				status = JSON_ERROR_NUMBER_FORMAT;
+				goto error;
+			}
 			exponent *= 10;
 			exponent += to_digit(ch);
 			NEXT_CHAR(reader, ch,
@@ -811,7 +859,11 @@ int json_read_item(json_reader *reader, struct json_item *result)
 	result->key.bytes = NULL;
 	if (!is_in_range(reader)) {
 		if (reader->flags & SOURCE_DEPLETED) {
-			if (reader->stacksiz == 0) {
+			if (((reader->flags & SMALL_STACK)
+					&& reader->stack.small.size == 0)
+				|| reader->stack.big.size == 0)
+			{
+				/* All brackets have been closed. */
 				return 0;
 			} else {
 				set_error(reader, JSON_ERROR_BRACKETS);

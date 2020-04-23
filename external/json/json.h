@@ -30,12 +30,29 @@ typedef struct {
 	void   *ctx;
 	/* The index into the buffer of the next byte to be read. */
 	size_t  head;
-	/* The stack of list and map brackets. */
-	char   *stack;
-	/* The number of frames on the stack. */
-	size_t  stacksiz;
-	/* The size of the stack's memory area. */
-	size_t  stackcap;
+	/* The stack of containers. The small member is used if the SMALL_STACK
+	 * flag is set. The stack should usually have fewer than 23 or so items,
+	 * leading to the small stack to be used. The small stack is never used
+	 * if a buffer is given with json_alloc. */
+	union {
+		/* The big, heap allocated stack. */
+		struct json_big_stack {
+			/* The allocated stack frames. */
+			char  *frames;
+			/* The number of stack frames used. */
+			size_t size;
+			/* The size of the allocation. */
+			size_t cap;
+		} big;
+		/* The small, directly embedded stack. */
+		struct json_small_stack {
+			/* The embedded stack frames. */
+			char          frames[sizeof(struct json_big_stack) - 1];
+			/* The number of stack frames used. */
+			unsigned char size;
+			/* The capacity is always sizeof(frames). */
+		} small;
+	}       stack;
 	/* Internal bitflags. See json.c for more details. */
 	int     flags;
 	/* Hack to make reading from an fd work. */
