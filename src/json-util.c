@@ -414,8 +414,8 @@ CTF_TEST(json_node_taken,
 	assert(borrowed != NULL);
 	assert(take_1 != NULL);
 	assert(take_2 == NULL);
-	free_json_tree(&root);
 	free(take_1->str);
+	free_json_tree(&root);
 )
 
 CTF_TEST(escapes_text_json,
