@@ -14,7 +14,7 @@ fi
 if ! [ -f "$PDCURSES_DIR/wincon/pdcurses.a" ]; then
 	# Make sure ts3d.exe is rebuilt:
 	rm -f ts3d.exe
-	make -C "$PDCURSES_DIR/wincon" pdcurses.a || exit 1
+	make -C "$PDCURSES_DIR/wincon" CC="$CC" pdcurses.a || exit 1
 fi
 
 make exe=ts3d.exe \
