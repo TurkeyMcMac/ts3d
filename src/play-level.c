@@ -201,7 +201,7 @@ int play_level(const char *root_dir, struct save_state *save,
 	bool paused = false;
 	bool quitting = false;
 	bool do_redraw = true;
-	int known_lines, known_cols;
+	int known_lines = LINES, known_cols = COLS;
 	clear();
 	for (;;) {
 		static const char dead_msg[] =
