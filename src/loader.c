@@ -99,12 +99,12 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 void loader_print_summary(struct loader *ldr)
 {
 	logger_printf(ldr->log, LOGGER_INFO,
-		"Load summary: %zu maps, %zu entity types, %zu textures, "
-		"%zu color pairs\n",
-		table_count(&ldr->maps),
-		table_count(&ldr->ents),
-		table_count(&ldr->txtrs),
-		color_map_count_pairs(&ldr->colors));
+		"Load summary: %lu maps, %lu entity types, %lu textures, "
+		"%lu color pairs\n",
+		(unsigned long)table_count(&ldr->maps),
+		(unsigned long)table_count(&ldr->ents),
+		(unsigned long)table_count(&ldr->txtrs),
+		(unsigned long)color_map_count_pairs(&ldr->colors));
 }
 
 struct color_map *loader_color_map(struct loader *ldr)

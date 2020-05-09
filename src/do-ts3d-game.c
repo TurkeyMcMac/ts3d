@@ -231,7 +231,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		state_file, &saves, log);
 	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
 	// This here is lowered from "1000":
-	setenv("ESCDELAY", "30", 0);
+	try_setenv("ESCDELAY", "30", 0);
 	initscr();
 	start_color();
 	// For some reason, NetBSD Curses requires these two extra calls to keep

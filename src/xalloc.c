@@ -11,7 +11,7 @@ void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
 	if (!ptr && size != 0) {
-		die("malloc(%zu) failed. Aborting.\n", size);
+		die("malloc(%lu) failed. Aborting.\n", (unsigned long)size);
 	}
 	return ptr;
 }
@@ -20,7 +20,8 @@ void *xcalloc(size_t count, size_t size)
 {
 	void *ptr = calloc(count, size);
 	if (!ptr && count * size != 0) {
-		die("calloc(%zu, %zu) failed. Aborting.\n", count, size);
+		die("calloc(%lu, %lu) failed. Aborting.\n",
+			(unsigned long)count, (unsigned long)size);
 	}
 	return ptr;
 }
@@ -29,7 +30,8 @@ void *xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (!ptr && size != 0) {
-		die("realloc(%p, %zu) failed. Aborting.\n", ptr, size);
+		die("realloc(%p, %lu) failed. Aborting.\n",
+			ptr, (unsigned long)size);
 	}
 	return ptr;
 }
