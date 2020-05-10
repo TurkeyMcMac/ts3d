@@ -36,6 +36,14 @@ The statically linked `ts3d.exe` compiled with `CFLAGS='-O3 -flto'` is about
 ## Installation
 
 The default data path for TS3D on Windows is `%AppData%\ts3d` rather than
-`$HOME/.ts3d`. You will have to manually install the game data to
-`%AppData%\ts3d\data`. Then the executable should work. Launch it from the
-command prompt.
+`$HOME/.ts3d`. You may manually install the game data to `%AppData%\ts3d\data`.
+To bundle the executable and the data for transport, run this:
+
+```
+CC=... PDCURSES_DIR=... ./make-windows ts3d.zip
+```
+
+On Windows, extract the zip. It will create a folder `ts3d`. Run `install.bat`
+that is inside the folder. This will install the game data. After the game data
+is installed using whatever method, the executable should work. Launch it from
+the command prompt.
