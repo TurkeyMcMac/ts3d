@@ -28,16 +28,22 @@ d3d_direction flip_direction(d3d_direction dir);
 // NOTE: recalculates lengths, not efficient.
 char *mid_cat(const char *part1, int mid, const char *part2);
 
-// If the path exists, open it. If not, create it. The flags argument is used in
-// both cases, although O_CREAT is switched on or off as necessary. dir tells
-// whether the file should be a directory. On success, the file descriptor is
-// returned. On failure, -1 is returned and errno is set appropriately.
-int make_or_open_file(const char *path, int flags, bool dir);
-
 // Ensure a file exists or create it if it doesn't exist. dir tells whether a
 // directory should be searched for/created. 0 indicates success and -1 is for
 // failure (with errno being set.)
 int ensure_file(const char *path, bool dir);
+
+// Allocate and return the default path of some file. name is the file name. env
+// is the name an environment variable override would have; it is checked first.
+// The path of the file itself is not checked for existence, but the directory
+// path is unless the path was provided by the environment variable.
+char *default_file(const char *name, const char *env);
+
+// Call setenv() with the same arguments if it is supported, or fail otherwise.
+int try_setenv(const char *name, const char *value, int overwrite);
+
+// Substitute '/' for the native separator character in the path.
+void subst_native_dir_sep(char *path);
 
 // Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
 // is +x. Underflow in x or y is NOT accounted for.
@@ -70,5 +76,11 @@ void vec_norm_mul(d3d_vec_s *vec, double mag);
 // Wrap this around the name of a variable at its point of definition to
 // suppress warnings by the compiler that it is unused.
 #define UNUSED_VAR(var) var ATTRIBUTE(unused)
+
+#ifdef _WIN32
+#	define DIRSEP '\\'
+#else
+#	define DIRSEP '/'
+#endif
 
 #endif /* UTIL_H_ */

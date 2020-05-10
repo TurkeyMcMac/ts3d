@@ -68,10 +68,10 @@ done:
 #	include <assert.h>
 #	include <unistd.h>
 
-static void dump_line(const struct string *lines, size_t i)
+static void dump_line(const struct string *lines, unsigned long i)
 {
-	printf("%zu: (length %zu) %.*s\n",
-		i + 1, lines[i].len, (int)lines[i].len, lines[i].text);
+	printf("%lu: (length %lu) %.*s\n", i + 1, (long unsigned)lines[i].len,
+		(int)lines[i].len, lines[i].text);
 }
 
 CTF_TEST(read_lines_final_newline,
@@ -80,7 +80,7 @@ CTF_TEST(read_lines_final_newline,
 	size_t nlines;
 	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
-	for (size_t i = 0; i < nlines; ++i) {
+	for (unsigned long i = 0; i < nlines; ++i) {
 		dump_line(lines, i);
 		assert(lines[i].len == 1);
 		assert(*lines[i].text == str[i * 2]);
@@ -93,7 +93,7 @@ CTF_TEST(read_lines_no_final_newline,
 	size_t nlines;
 	struct string *lines = read_lines(source, &nlines);
 	assert(nlines == 3);
-	for (size_t i = 0; i < nlines; ++i) {
+	for (unsigned long i = 0; i < nlines; ++i) {
 		dump_line(lines, i);
 		assert(lines[i].len == 1);
 		assert(*lines[i].text == str[i * 2]);

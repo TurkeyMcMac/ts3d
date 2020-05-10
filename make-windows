@@ -1,0 +1,23 @@
+#!/bin/sh
+# Create binary ts3d.exe using MinGW. See windows.md.
+
+if [ -z "$CC" ]; then
+	CC=x86_64-w64-mingw32-gcc
+	export CC
+fi
+if [ -z "$PDCURSES_DIR" ]; then
+	echo >&2 'Set the PDCURSES_DIR environment variable to the root' \
+		'directory of PDCurses. Aborting.'
+	exit 1
+fi
+
+if ! [ -f "$PDCURSES_DIR/wincon/pdcurses.a" ]; then
+	# Make sure ts3d.exe is rebuilt:
+	rm -f ts3d.exe
+	make -C "$PDCURSES_DIR/wincon" CC="$CC" pdcurses.a || exit 1
+fi
+
+make exe=ts3d.exe \
+	CFLAGS="-I$PDCURSES_DIR $CFLAGS" \
+	linkage="$linkage -lm -static -L$PDCURSES_DIR/wincon -l:pdcurses.a" \
+	"$@"

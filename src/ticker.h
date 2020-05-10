@@ -14,6 +14,15 @@ struct ticker {
 	uint64_t interval;
 };
 
+#elif defined(_WIN32)
+
+#	include <stdint.h>
+
+struct ticker {
+	uint32_t last_tick;
+	uint32_t interval;
+};
+
 #else
 
 struct ticker {
@@ -21,7 +30,7 @@ struct ticker {
 	long interval;
 };
 
-#endif /* !__APPLE__ */
+#endif /* !__APPLE__ && !defined(_WIN32) */
 
 // Initialize a given ticker with interval in milliseconds from 1 to 999.
 void ticker_init(struct ticker *tkr, int interval);

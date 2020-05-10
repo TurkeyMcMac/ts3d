@@ -6,6 +6,7 @@ exe-dir = $(HOME)/bin
 version-file = version
 version = `cat $(version-file)`
 tests = tests
+windows-zip = ts3d.zip
 data-dir = data
 man-page = ts3d.6
 man-dir = /usr/share/man/man6
@@ -60,6 +61,9 @@ $(tests): $(sources) $(headers)
 $(version-header): $(version-file)
 	echo "#define TS3D_VERSION \"$(version)\"" > $@
 
+$(windows-zip): $(exe)
+	./zip-windows
+
 .PHONY: install
 install: $(exe)
 	MAKEFILE=yes VERSION=$(version) \
@@ -82,4 +86,5 @@ run-tests: $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) -r $(exe) $(dev-exe) $(tests) $(version-header) build
+	$(RM) -r $(exe) $(dev-exe) $(tests) $(windows-zip) $(version-header) \
+		build

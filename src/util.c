@@ -7,6 +7,11 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef _WIN32
+#	include <direct.h>
+#	include <stdio.h>
+#	include <windows.h>
+#endif
 
 char *str_dup(const char *str)
 {
@@ -47,12 +52,23 @@ char *mid_cat(const char *part1, int mid, const char *part2)
 	return cat;
 }
 
-int make_or_open_file(const char *path, int flags, bool dir)
+int ensure_file(const char *path, bool dir)
 {
+#ifdef _WIN32
+	if (dir) {
+		if (_mkdir(path) && errno != EEXIST) return -1;
+	} else {
+		FILE *f = fopen(path, "a");
+		if (!f) return -1;
+		fclose(f);
+	}
+	return 0;
+#else
+	int fd;
 	struct stat st;
 	if (stat(path, &st)) {
-		return dir ?
-			mkdir(path, 0775) : open(path, flags | O_CREAT, 0664);
+		fd = dir ? mkdir(path, 0775)
+			: open(path, O_RDONLY | O_CREAT, 0664);
 	} else {
 		if (dir) {
 			if (!S_ISDIR(st.st_mode)) {
@@ -63,16 +79,63 @@ int make_or_open_file(const char *path, int flags, bool dir)
 			errno = S_ISDIR(st.st_mode) ? EISDIR : EEXIST;
 			return -1;
 		}
-		return open(path, flags & ~O_CREAT);
+		fd = open(path, O_RDONLY);
 	}
-}
-
-int ensure_file(const char *path, bool dir)
-{
-	int fd;
-	TRY(fd = make_or_open_file(path, O_RDONLY, dir));
+	if (fd < 0) return -1;
 	close(fd);
 	return 0;
+#endif /* !defined(_WIN32) */
+}
+
+char *default_file(const char *name, const char *env)
+{
+#ifdef _WIN32
+	static const char env_storage_dir[] = "AppData", ts3d_dir[] = "ts3d";
+#else
+	static const char env_storage_dir[] = "HOME", ts3d_dir[] = ".ts3d";
+#endif
+	char *dot_dir = NULL, *path = NULL;
+	char *env_root, *env_path = getenv(env);
+	if (env_path) return str_dup(env_path);
+	env_root = getenv("TS3D_ROOT");
+	if (env_root) {
+		dot_dir = str_dup(env_root);
+	} else {
+		char *storage_dir = getenv(env_storage_dir);
+		if (storage_dir) {
+			dot_dir = mid_cat(storage_dir, DIRSEP, ts3d_dir);
+		} else {
+			errno = ENOENT;
+			return NULL;
+		}
+	}
+	if (!ensure_file(dot_dir, true))
+		path = mid_cat(dot_dir, DIRSEP, name);
+	free(dot_dir);
+	return path;
+}
+
+#ifdef _WIN32
+int try_setenv(const char *UNUSED_VAR(name), const char *UNUSED_VAR(value),
+	int UNUSED_VAR(overwrite))
+{
+	errno = ENOSYS;
+	return -1;
+}
+#else
+int try_setenv(const char *name, const char *value, int overwrite)
+{
+	return setenv(name, value, overwrite);
+}
+#endif
+
+void subst_native_dir_sep(char *path)
+{
+	if (DIRSEP != '/') {
+		while ((path = strchr(path, '/'))) {
+			*path = DIRSEP;
+		}
+	}
 }
 
 void move_direction(d3d_direction dir, size_t *x, size_t *y)

@@ -201,7 +201,7 @@ int play_level(const char *root_dir, struct save_state *save,
 	bool paused = false;
 	bool quitting = false;
 	bool do_redraw = true;
-	int known_lines, known_cols;
+	int known_lines = LINES, known_cols = COLS;
 	clear();
 	for (;;) {
 		static const char dead_msg[] =
@@ -213,9 +213,9 @@ int play_level(const char *root_dir, struct save_state *save,
 		static const char quit_msg[] =
 			"Are you sure you want to quit?\n"
 			"Press Y to confirm or N to cancel.";
-		bool resized = !cam ||
-			sync_screen_size(known_lines, known_cols);
 		tick(timer);
+		bool resized = sync_screen_size(known_lines, known_cols)
+			|| !cam;
 		if (resized) {
 			known_lines = LINES;
 			known_cols = COLS;
@@ -292,6 +292,7 @@ int play_level(const char *root_dir, struct save_state *save,
 				if (quit_popup) {
 					delwin(quit_popup);
 					quit_popup = NULL;
+					touchwin(stdscr);
 					do_redraw = true;
 				}
 				quitting = false;
@@ -309,6 +310,7 @@ int play_level(const char *root_dir, struct save_state *save,
 				if (pause_popup) {
 					delwin(pause_popup);
 					pause_popup = NULL;
+					touchwin(stdscr);
 					do_redraw = true;
 				}
 				paused = false;

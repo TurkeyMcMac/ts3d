@@ -17,6 +17,9 @@ The fastest way to install the game is with Homebrew:
 brew install turkeymcmac/tap/ts3d
 ```
 
+See [windows.md](./windows.md) for how to build TS3D with MinGW and use it on
+Windows. Most of the stuff in this README does not apply with Windows.
+
 ## Building
 
 Run `make ts3d` in the project root. This does not account for updates to

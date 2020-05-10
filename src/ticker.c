@@ -25,6 +25,26 @@ void tick(struct ticker *tkr)
 	}
 }
 
+#elif defined(_WIN32)
+
+#	include <windows.h>
+
+void ticker_init(struct ticker *tkr, int interval)
+{
+	tkr->last_tick = GetTickCount();
+	tkr->interval = interval;
+}
+
+void tick(struct ticker *tkr)
+{
+	DWORD now = GetTickCount();
+	DWORD deadline = tkr->last_tick + tkr->interval;
+	if (now < deadline) {
+		Sleep(deadline - now);
+	}
+	tkr->last_tick = deadline;
+}
+
 #else
 
 void ticker_init(struct ticker *tkr, int interval)
@@ -44,7 +64,7 @@ void tick(struct ticker *tkr)
 	clock_gettime(CLOCK_MONOTONIC, &tkr->last_tick);
 }
 
-#endif /* !__APPLE__ */
+#endif /* !__APPLE__ && !defined(_WIN32) */
 
 #if CTF_TESTS_ENABLED
 

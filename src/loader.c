@@ -11,11 +11,11 @@
 
 void loader_init(struct loader *ldr, const char *root)
 {
-	ldr->txtrs_dir = mid_cat(root, '/', "textures");
+	ldr->txtrs_dir = mid_cat(root, DIRSEP, "textures");
 	table_init(&ldr->txtrs, 16);
-	ldr->ents_dir = mid_cat(root, '/', "ents");
+	ldr->ents_dir = mid_cat(root, DIRSEP, "ents");
 	table_init(&ldr->ents, 16);
-	ldr->maps_dir = mid_cat(root, '/', "maps");
+	ldr->maps_dir = mid_cat(root, DIRSEP, "maps");
 	table_init(&ldr->maps, 16);
 	color_map_init(&ldr->colors);
 	ldr->log = NULL;
@@ -28,7 +28,7 @@ char *loader_map_path(const struct loader *ldr, const char *name)
 	struct string buf;
 	string_init(&buf, cap);
 	string_pushz(&buf, &cap, ldr->maps_dir);
-	string_pushc(&buf, &cap, '/');
+	string_pushc(&buf, &cap, DIRSEP);
 	string_pushz(&buf, &cap, name);
 	string_pushn(&buf, &cap, ".json", 6);
 	string_shrink_to_fit(&buf);
@@ -41,7 +41,7 @@ static void **load(table *tab, const char *root, const char *name, FILE **file,
 	void **item = table_get(tab, name);
 	*file = NULL;
 	if (!item) {
-		char *path = mid_cat(root, '/', name);
+		char *path = mid_cat(root, DIRSEP, name);
 		*file = fopen(path, "r");
 		if (*file) {
 			logger_printf(log, LOGGER_INFO, "Loading %s\n", path);
@@ -99,12 +99,12 @@ const d3d_texture *loader_empty_texture(struct loader *ldr)
 void loader_print_summary(struct loader *ldr)
 {
 	logger_printf(ldr->log, LOGGER_INFO,
-		"Load summary: %zu maps, %zu entity types, %zu textures, "
-		"%zu color pairs\n",
-		table_count(&ldr->maps),
-		table_count(&ldr->ents),
-		table_count(&ldr->txtrs),
-		color_map_count_pairs(&ldr->colors));
+		"Load summary: %lu maps, %lu entity types, %lu textures, "
+		"%lu color pairs\n",
+		(unsigned long)table_count(&ldr->maps),
+		(unsigned long)table_count(&ldr->ents),
+		(unsigned long)table_count(&ldr->txtrs),
+		(unsigned long)color_map_count_pairs(&ldr->colors));
 }
 
 struct color_map *loader_color_map(struct loader *ldr)

@@ -41,7 +41,9 @@ static void print_help(const char *progname)
 "respectively. The files will be created if they do not exist. The options\n"
 "can override the environment variables if given.\n"
 "ts3d by default logs to the file 'log' in the game's root directory, or to\n"
-"the $TS3D_LOG variable if it is set. Again, options override this.");
+"the $TS3D_LOG variable if it is set. Again, options override this.\n"
+"If you are using this on Windows, the default storage location is\n"
+"%AppData%\\ts3d, not $HOME/.ts3d. The other variables are mostly the same.");
 }
 
 static void print_version(const char *progname)
@@ -134,33 +136,6 @@ static int remove_log_dest(const char *progname, struct logger *log,
 	close_old_file(log, which);
 	logger_set_output(log, which, NULL, false);
 	return 0;
-}
-
-// Allocate and return the default path of some file. name is the file name. env
-// is the name an environment variable override would have; it is checked first.
-// The path of the file itself is not checked for existence, but the directory
-// path is unless the path was provided by the environment variable.
-static char *default_file(const char *name, const char *env)
-{
-	char *dot_dir = NULL, *path = NULL;
-	char *env_root, *env_path = getenv(env);
-	if (env_path) return str_dup(env_path);
-	env_root = getenv("TS3D_ROOT");
-	if (env_root) {
-		dot_dir = str_dup(env_root);
-	} else {
-		char *home = getenv("HOME");
-		if (home) {
-			dot_dir = mid_cat(home, '/', ".ts3d");
-		} else {
-			errno = ENOENT;
-			return NULL;
-		}
-	}
-	if (!ensure_file(dot_dir, true))
-		path = mid_cat(dot_dir, '/', name);
-	free(dot_dir);
-	return path;
 }
 
 int main(int argc, char *argv[])
