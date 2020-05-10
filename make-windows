@@ -6,7 +6,7 @@ if [ -z "$CC" ]; then
 	export CC
 fi
 if [ -z "$PDCURSES_DIR" ]; then
-	echo 2>&1 'Set the PDCURSES_DIR environment variable to the root' \
+	echo >&2 'Set the PDCURSES_DIR environment variable to the root' \
 		'directory of PDCurses. Aborting.'
 	exit 1
 fi
@@ -20,4 +20,4 @@ fi
 make exe=ts3d.exe \
 	CFLAGS="-I$PDCURSES_DIR $CFLAGS" \
 	linkage="$linkage -lm -static -L$PDCURSES_DIR/wincon -l:pdcurses.a" \
-	ts3d.exe
+	"$@"
