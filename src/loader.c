@@ -11,11 +11,11 @@
 
 void loader_init(struct loader *ldr, const char *root)
 {
-	ldr->txtrs_dir = mid_cat(root, '/', "textures");
+	ldr->txtrs_dir = mid_cat(root, DIRSEP, "textures");
 	table_init(&ldr->txtrs, 16);
-	ldr->ents_dir = mid_cat(root, '/', "ents");
+	ldr->ents_dir = mid_cat(root, DIRSEP, "ents");
 	table_init(&ldr->ents, 16);
-	ldr->maps_dir = mid_cat(root, '/', "maps");
+	ldr->maps_dir = mid_cat(root, DIRSEP, "maps");
 	table_init(&ldr->maps, 16);
 	color_map_init(&ldr->colors);
 	ldr->log = NULL;
@@ -28,7 +28,7 @@ char *loader_map_path(const struct loader *ldr, const char *name)
 	struct string buf;
 	string_init(&buf, cap);
 	string_pushz(&buf, &cap, ldr->maps_dir);
-	string_pushc(&buf, &cap, '/');
+	string_pushc(&buf, &cap, DIRSEP);
 	string_pushz(&buf, &cap, name);
 	string_pushn(&buf, &cap, ".json", 6);
 	string_shrink_to_fit(&buf);
@@ -41,7 +41,7 @@ static void **load(table *tab, const char *root, const char *name, FILE **file,
 	void **item = table_get(tab, name);
 	*file = NULL;
 	if (!item) {
-		char *path = mid_cat(root, '/', name);
+		char *path = mid_cat(root, DIRSEP, name);
 		*file = fopen(path, "r");
 		if (*file) {
 			logger_printf(log, LOGGER_INFO, "Loading %s\n", path);

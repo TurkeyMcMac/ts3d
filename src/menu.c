@@ -57,6 +57,7 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 	} else if ((got = json_map_get(json, "text", TAKE_NODE | JN_STRING))) {
 		item->kind = ITEM_TEXT;
 		item->tag = got->str;
+		subst_native_dir_sep(item->tag);
 		item->n_items = 0;
 	} else if ((got = json_map_get(json, "input", JN_BOOLEAN))
 			&& got->boolean) {
@@ -87,7 +88,7 @@ error_kind:
 int menu_init(struct menu *menu, const char *root_dir, WINDOW *win,
 	struct logger *log)
 {
-	char *fname = mid_cat(root_dir, '/', "menu.json");
+	char *fname = mid_cat(root_dir, DIRSEP, "menu.json");
 	FILE *file = fopen(fname, "r");
 	if (!file) {
 		logger_printf(log, LOGGER_ERROR,
@@ -200,7 +201,7 @@ enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
 		enter(menu, into);
 		return ACTION_WENT;
 	case ITEM_TEXT:
-		fname = mid_cat(menu->root_dir, '/', into->tag);
+		fname = mid_cat(menu->root_dir, DIRSEP, into->tag);
 		if (!(txtfile = fopen(fname, "r"))
 		 || !(menu->lines = read_lines(txtfile, &menu->n_lines))) {
 			free(fname);

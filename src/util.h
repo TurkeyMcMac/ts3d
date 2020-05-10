@@ -42,6 +42,9 @@ char *default_file(const char *name, const char *env);
 // Call setenv() with the same arguments if it is supported, or fail otherwise.
 int try_setenv(const char *name, const char *value, int overwrite);
 
+// Substitute '/' for the native separator character in the path.
+void subst_native_dir_sep(char *path);
+
 // Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
 // is +x. Underflow in x or y is NOT accounted for.
 void move_direction(d3d_direction dir, size_t *x, size_t *y);
@@ -73,5 +76,11 @@ void vec_norm_mul(d3d_vec_s *vec, double mag);
 // Wrap this around the name of a variable at its point of definition to
 // suppress warnings by the compiler that it is unused.
 #define UNUSED_VAR(var) var ATTRIBUTE(unused)
+
+#ifdef _WIN32
+#	define DIRSEP '\\'
+#else
+#	define DIRSEP '/'
+#endif
 
 #endif /* UTIL_H_ */

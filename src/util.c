@@ -103,14 +103,14 @@ char *default_file(const char *name, const char *env)
 	} else {
 		char *storage_dir = getenv(env_storage_dir);
 		if (storage_dir) {
-			dot_dir = mid_cat(storage_dir, '/', ts3d_dir);
+			dot_dir = mid_cat(storage_dir, DIRSEP, ts3d_dir);
 		} else {
 			errno = ENOENT;
 			return NULL;
 		}
 	}
 	if (!ensure_file(dot_dir, true))
-		path = mid_cat(dot_dir, '/', name);
+		path = mid_cat(dot_dir, DIRSEP, name);
 	free(dot_dir);
 	return path;
 }
@@ -128,6 +128,15 @@ int try_setenv(const char *name, const char *value, int overwrite)
 	return setenv(name, value, overwrite);
 }
 #endif
+
+void subst_native_dir_sep(char *path)
+{
+	if (DIRSEP != '/') {
+		while ((path = strchr(path, '/'))) {
+			*path = DIRSEP;
+		}
+	}
+}
 
 void move_direction(d3d_direction dir, size_t *x, size_t *y)
 {
