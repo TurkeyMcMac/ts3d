@@ -5,9 +5,8 @@
 Thing Shooter 3D is a mostly finished first-person shooter. It uses
 terminal-based 3D graphics.
 
-[Here](https://asciinema.org/a/whJby5PYMFqgirNOB3WQoXery) is a trailer/demo
-session showing some of the mechanics. The video may play choppily the first
-time through.
+[Here](https://asciinema.org/a/330110) is a trailer/demo session showing some of
+the mechanics. The video may play choppily the first time through.
 
 The fastest way to install the game is with Homebrew:
 
