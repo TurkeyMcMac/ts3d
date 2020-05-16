@@ -18,6 +18,8 @@ void loader_init(struct loader *ldr, const char *root)
 	ldr->maps_dir = mid_cat(root, DIRSEP, "maps");
 	table_init(&ldr->maps, 16);
 	color_map_init(&ldr->colors);
+	// Default background pixel:
+	color_map_add_pair(&ldr->colors, pixel(PC_BLACK, PC_BLACK));
 	ldr->log = NULL;
 	ldr->empty_txtr = NULL;
 }

@@ -87,64 +87,114 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 
 void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 {
+	/* Yes, I know this code repeats itself a lot. */
+	// Tile coordinates:
 	long x = floor(pos->x), y = floor(pos->y);
+	// xs (east, west) and ys (north, south) of 8 tiles around (x, y):
 	long west, north, east, south;
 	west = floor(pos->x - radius);
 	north = floor(pos->y - radius);
 	east = floor(pos->x + radius);
 	south = floor(pos->y + radius);
-	uint8_t ns_mask = 1 << D3D_DNORTH | 1 << D3D_DSOUTH;
-	uint8_t ew_mask = 1 << D3D_DEAST | 1 << D3D_DWEST;
+	// The wall bits here at (x, y):
 	uint8_t here = get_wall_ck(map, x, y);
-	uint8_t blocked = here;
 	if (north < y) {
-		blocked |= get_wall_ck(map, x, north) & ew_mask;
-	} else if (south > y) {
-		blocked |= get_wall_ck(map, x, south) & ew_mask;
-	}
-	if (west < x) {
-		blocked |= get_wall_ck(map, west, y) & ns_mask;
-	} else if (east > x) {
-		blocked |= get_wall_ck(map, east, y) & ns_mask;
-	}
-	bool correct_n = false, correct_s = false,
-	     correct_w = false, correct_e = false;
-	if (north < y) {
-		correct_n = bitat(blocked, D3D_DNORTH);
-	} else if (south > y) {
-		correct_s = bitat(blocked, D3D_DSOUTH);
-	}
-	if (west < x) {
-		correct_w = bitat(blocked, D3D_DWEST);
-	} else if (east > x) {
-		correct_e = bitat(blocked, D3D_DEAST);
-	}
-	if (correct_n) {
-		if (correct_e) {
-			(void)(	(correct_n = bitat(here, D3D_DNORTH))
-			&&	(correct_e = bitat(here, D3D_DEAST)));
-		} else if (correct_w) {
-			(void)(	(correct_n = bitat(here, D3D_DNORTH))
-			&&	(correct_w = bitat(here, D3D_DWEST)));
+		// Correct the north side and maybe east/west.
+		bool north_corrected = bitat(here, D3D_DNORTH);
+		double north_dist = pos->y - floor(pos->y);
+		if (north_corrected) pos->y = y + radius;
+		if (west < x) {
+			// Correct the west.
+			if (bitat(here, D3D_DWEST)) {
+				pos->x = x + radius;
+			} else if (!north_corrected) {
+				// Detect northwest corner collision.
+				uint8_t nw = get_wall_ck(map, west, north);
+				bool hit_outer_corner = bitat(nw, D3D_DSOUTH)
+					|| bitat(nw, D3D_DEAST);
+				if (hit_outer_corner) {
+					double west_dist = pos->x
+						- floor(pos->x);
+					// Do correction needing less movement.
+					if (north_dist > west_dist) {
+						pos->y = y + radius;
+					} else {
+						pos->x = x + radius;
+					}
+				}
+			}
+		} else if (east > x) {
+			// Correct the east.
+			if (bitat(here, D3D_DEAST)) {
+				pos->x = x + 1.0 - radius;
+			} else if (!north_corrected) {
+				// Detect northeast corner collision.
+				uint8_t ne = get_wall_ck(map, east, north);
+				bool hit_outer_corner = bitat(ne, D3D_DSOUTH)
+					|| bitat(ne, D3D_DWEST);
+				if (hit_outer_corner) {
+					// Do correction needing less movement.
+					double east_dist = ceil(pos->x)
+						- pos->x;
+					if (north_dist > east_dist) {
+						pos->y = y + radius;
+					} else {
+						pos->x = x + 1.0 - radius;
+					}
+				}
+			}
 		}
-	} else if (correct_s) {
-		if (correct_e) {
-			(void)(	(correct_s = bitat(here, D3D_DSOUTH))
-			&&	(correct_e = bitat(here, D3D_DEAST)));
-		} else if (correct_w) {
-			(void)(	(correct_s = bitat(here, D3D_DSOUTH))
-			&&	(correct_w = bitat(here, D3D_DWEST)));
+	} else if (south > y) {
+		// Correct the south side and maybe east/west.
+		bool south_corrected = bitat(here, D3D_DSOUTH);
+		double south_dist = ceil(pos->y) - pos->y;
+		if (south_corrected) pos->y = y + 1.0 - radius;
+		if (west < x) {
+			// Correct the west.
+			if (bitat(here, D3D_DWEST)) {
+				pos->x = x + radius;
+			} else if (!south_corrected) {
+				// Detect southwest corner collision.
+				uint8_t sw = get_wall_ck(map, west, south);
+				bool hit_outer_corner = bitat(sw, D3D_DNORTH)
+					|| bitat(sw, D3D_DEAST);
+				if (hit_outer_corner) {
+					double west_dist = pos->x
+						- floor(pos->x);
+					// Do correction needing less movement.
+					if (south_dist > west_dist) {
+						pos->y = y + 1.0 - radius;
+					} else {
+						pos->x = x + radius;
+					}
+				}
+			}
+		} else if (east > x) {
+			// Correct the east.
+			if (bitat(here, D3D_DEAST)) {
+				pos->x = x + 1.0 - radius;
+			} else if (!south_corrected) {
+				// Detect southeast corner collision.
+				uint8_t se = get_wall_ck(map, east, south);
+				bool hit_outer_corner = bitat(se, D3D_DNORTH)
+					|| bitat(se, D3D_DWEST);
+				if (hit_outer_corner) {
+					double east_dist = ceil(pos->x)
+						- pos->x;
+					if (south_dist > east_dist) {
+						pos->y = y + 1.0 - radius;
+					} else {
+						pos->x = x + 1.0 - radius;
+					}
+				}
+			}
 		}
-	}
-	if (correct_n) {
-		pos->y = y + radius;
-	} else if (correct_s) {
-		pos->y = y + 1 - radius;
-	}
-	if (correct_w) {
-		pos->x = x + radius;
-	} else if (correct_e) {
-		pos->x = x + 1 - radius;
+	} else if (west < x) {
+		// Correct only the west side.
+		if (bitat(here, D3D_DWEST)) pos->x = x + radius;
+	} else if (east > x) {
+		// Correct only the east side.
+		if (bitat(here, D3D_DEAST)) pos->x = x + 1.0 - radius;
 	}
 }
 

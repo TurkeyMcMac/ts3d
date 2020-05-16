@@ -120,7 +120,7 @@ void display_frame(d3d_camera *cam, WINDOW *win, struct color_map *colors)
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
 			int pair = color_map_get_pair(colors, pix);
-			mvwaddch(win, y, x, COLOR_PAIR(pair) | '#');
+			mvwaddch(win, y, x, COLOR_PAIR(pair) | ':');
 		}
 	}
 }
