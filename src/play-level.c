@@ -87,27 +87,25 @@ static void move_ents(struct ents *ents, struct map *map, struct player *player)
 		d3d_vec_s *evel = ents_vel(ents, e);
 		epos->x += evel->x;
 		epos->y += evel->y;
-		d3d_vec_s disp;
+		d3d_vec_s disp = { 0.0, 0.0 };
 		if (chance_decide(type->turn_chance)) {
 			disp.x = epos->x - player->body.pos.x;
 			disp.y = epos->y - player->body.pos.y;
 			vec_norm_mul(&disp, -type->speed);
-		} else {
-			disp.x = disp.y = 0;
 		}
 		d3d_vec_s move = *epos; // Movement due to wall collision.
-		map_check_walls(map, &move, ents_body(ents, e)->radius);
-		if (type->wall_die && (move.x != epos->x || move.y != epos->y))
-		{
-			ents_kill(ents, e);
+		if (type->wall_die) {
+			map_check_walls(map, &move, ents_body(ents, e)->radius);
+			if (move.x != epos->x || move.y != epos->y)
+				ents_kill(ents, e);
 		} else if (type->wall_block) {
+			map_check_walls(map, &move, ents_body(ents, e)->radius);
 			disp.x += move.x - epos->x;
 			disp.y += move.y - epos->y;
 			*epos = move;
-			// The entity will move from the wall later.
-			if (disp.x != 0.0) evel->x = disp.x;
-			if (disp.y != 0.0) evel->y = disp.y;
 		}
+		if (disp.x != 0.0) evel->x = disp.x;
+		if (disp.y != 0.0) evel->y = disp.y;
 	}
 }
 
