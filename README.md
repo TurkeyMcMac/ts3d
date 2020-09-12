@@ -1,4 +1,4 @@
-![TS3D](./logo.gif)
+![TS3D logo](./logo.gif)
 
 ## Overview
 
