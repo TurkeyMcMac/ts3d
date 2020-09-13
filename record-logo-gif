@@ -84,7 +84,6 @@ for i in 1 2 3 4 5 6 7 8; do
 	logo_frame="data/textures/logo-$i"
 	# Pad the left frog:
 	awk "{printf\"%-${FROG_WIDTH}s\n\",\$0}" "$frog_frame" > left-frog
-	#
 	paste -d ' ' left-frog banner "$frog_frame" > "$logo_frame"
 	# Extra line to hide the cursor:
 	printf '\n' >> "$logo_frame"
@@ -94,7 +93,7 @@ done
 ln -s "$ts3d_dir/texture" .
 
 # Record the GIF:
-asciinema rec -c  './texture animate data/ents/logo.json' logo.cast > /dev/null
+asciinema rec -c './texture animate data/ents/logo.json' logo.cast > /dev/null
 cd "$ts3d_dir"
 export GIFSICLE_OPTS='-O3 --scale 0.5'
 asciicast2gif -w "$GIF_WIDTH" -h "$GIF_HEIGHT" "$working_dir/logo.cast" "$gif"
