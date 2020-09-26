@@ -1,4 +1,4 @@
-![TS3D](./logo.gif)
+![TS3D logo](./logo.gif)
 
 **This branch is a usage example of `jdibs`. See the Makefile for its usage.**
 

@@ -41,8 +41,10 @@ void tick(struct ticker *tkr)
 	DWORD deadline = tkr->last_tick + tkr->interval;
 	if (now < deadline) {
 		Sleep(deadline - now);
+		tkr->last_tick = deadline;
+	} else {
+		tkr->last_tick = now;
 	}
-	tkr->last_tick = deadline;
 }
 
 #else

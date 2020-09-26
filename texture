@@ -61,10 +61,12 @@ sub colorize_pix {
 sub colorize_txtr {
     my ($path) = @_;
     if ( open( my $file, "<", $path ) ) {
+        my $print = '';
         while ( defined( my $pix = getc($file) ) ) {
-            print colorize_pix($pix);
+            $print .= colorize_pix($pix);
         }
         close($file);
+        print $print;
     }
     else {
         error("Can't open file $path");
