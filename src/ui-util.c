@@ -83,23 +83,22 @@ void meter_draw(const struct meter *meter)
 WINDOW *popup_window(const char *text)
 {
 	int width = 0, height = 0;
-	int lwidth = 0;
-	const char *chrp;
-	for (chrp = text; *chrp != '\0'; ++chrp) {
+	int line_width = 0;
+	for (const char *chrp = text; *chrp != '\0'; ++chrp) {
 		if (*chrp == '\n') {
 			++height;
-			lwidth = 0;
+			line_width = 0;
 		} else {
-			++lwidth;
-			if (lwidth > width) width = lwidth;
+			++line_width;
+			if (line_width > width) width = line_width;
 		}
 	}
-	if (chrp != text && chrp[-1] != '\n') {
-		++height;
-		if (lwidth > width) width = lwidth;
-	}
+	// Simulate a final newline if it's missing:
+	if (line_width != 0) ++height;
+	// Add one cell of padding to all sides:
 	width += 2;
 	height += 2;
+	// No popups larger than the screen are allowed:
 	if (height > LINES || width > COLS) return NULL;
 	WINDOW *win = newwin(height, width,
 		(LINES - height) / 2, (COLS - width) / 2);
@@ -107,7 +106,9 @@ WINDOW *popup_window(const char *text)
 	const char *line = text;
 	for (int y = 1; y < height - 1; ++y) {
 		const char *nl = strchr(line, '\n');
+		// Line length is remaining text length if there's no newline:
 		int len = nl ? nl - line : (int)strlen(line);
+		// Draw centered line of text:
 		mvwaddnstr(win, y, (width - len) / 2, line, len);
 		line += len + 1;
 	}
