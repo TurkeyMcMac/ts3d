@@ -251,10 +251,8 @@ int play_level(const char *root_dir, struct save_state *save,
 		won = won || (remaining <= 0 && !player_is_dead(&player));
 		bool lost = !won && player_is_dead(&player);
 		if (do_redraw) {
-			player_move_camera(&player, cam);
-			d3d_draw_walls(cam, board);
-			d3d_draw_sprites(cam, ents_num(&ents),
-					ents_sprites(&ents));
+			d3d_draw(cam, player.body.pos, player.facing, board,
+				ents_num(&ents), ents_sprites(&ents));
 			display_frame(cam, stdscr, loader_color_map(&ldr));
 			health_meter.fraction = player_health_fraction(&player);
 			meter_draw(&health_meter);

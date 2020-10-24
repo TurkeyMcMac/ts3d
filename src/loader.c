@@ -91,10 +91,9 @@ d3d_texture **loader_texture(struct loader *ldr, const char *name, FILE **file)
 
 const d3d_texture *loader_empty_texture(struct loader *ldr)
 {
-	if (!ldr->empty_txtr) {
-		ldr->empty_txtr = d3d_new_texture(1, 1);
-		*d3d_texture_get(ldr->empty_txtr, 0, 0) = TRANSPARENT_PIXEL;
-	}
+	if (!ldr->empty_txtr)
+		ldr->empty_txtr = assert_alloc(d3d_new_texture(1, 1,
+			TRANSPARENT_PIXEL));
 	return ldr->empty_txtr;
 }
 
@@ -161,7 +160,8 @@ CTF_TEST(loader_loads_only_once,
 	FILE *file;
 	struct loader ldr;
 	loader_init(&ldr, "data");
-	d3d_texture *empty = d3d_new_texture(0, 0);
+	d3d_texture *empty = assert_alloc(d3d_new_texture(0, 0,
+		TRANSPARENT_PIXEL));
 	d3d_texture **loaded = loader_texture(&ldr, "empty", &file);
 	*loaded = empty;
 	assert(*loader_texture(&ldr, "empty", &file) == empty);

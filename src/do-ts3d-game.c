@@ -39,43 +39,67 @@
 // The length of the above prefix, including the slash.
 #define SAVE_PFX_LEN 5
 
-// Position the camera in the title screensaver.
-static void title_cam_pos(d3d_camera *cam, const d3d_board *board)
-{
-	d3d_vec_s *pos = d3d_camera_position(cam);
-	double theta = *d3d_camera_facing(cam) + 1.0;
-	// Produces a cool turning effect:
-	pos->x = cos(PI * cos(theta)) + d3d_board_width(board) / 2.0;
-	pos->y = sin(PI * sin(theta)) + d3d_board_height(board) / 2.0;
-}
+struct title_state {
+	d3d_camera *cam;
+	d3d_vec_s pos;
+	double facing;
+	d3d_board *board;
+	WINDOW *win;
+	struct color_map *color_map;
+	struct ticker *timer;
+};
 
-// Load the title screensaver map with the given loader, putting the camera and
-// board into the given pointers. The window will be used to draw the scene.
-static int load_title(d3d_camera **cam, d3d_board **board, WINDOW *win,
-	struct loader *ldr)
+// Load the title screensaver map with the given loader, setting the camera and
+// board in the title state. The window will be used to draw the scene later.
+// -1 is returned for error.
+static int load_title(struct title_state *state, WINDOW *win,
+	struct ticker *timer, struct loader *ldr)
 {
 	struct map *map = load_map(ldr, "title");
 	if (!map) return -1;
 	int width, height;
 	getmaxyx(win, height, width);
-	*cam = camera_with_dims(width, height);
-	*board = map->board;
-	title_cam_pos(*cam, *board);
+	state->cam = camera_with_dims(width, height);
+	state->facing = 0.0;
+	state->board = map->board;
+	state->win = win;
+	state->color_map = loader_color_map(ldr);
+	state->timer = timer;
 	return 0;
 }
 
-// Move the screensaver forward a tick and draw it on the window. The parameters
-// must the same as from load_title above.
-static void tick_title(d3d_camera *cam, d3d_board *board, WINDOW *win,
-	struct loader *ldr)
+// Move the screensaver forward a tick and draw it on the window. Then wait
+// until the tick time is up.
+static void tick_title(struct title_state *state)
 {
-	if (cam && board && win) {
-		title_cam_pos(cam, board);
-		*d3d_camera_facing(cam) -= 0.003;
-		d3d_draw_walls(cam, board);
-		display_frame(cam, win, loader_color_map(ldr));
-		wrefresh(win);
+	if (state->cam && state->board && state->win) {
+		// Produces a cool turning effect with the camera's position:
+		double theta = state->facing + 1.0;
+		state->pos.x = cos(PI * cos(theta))
+			+ d3d_board_width(state->board) / 2.0;
+		state->pos.y = sin(PI * sin(theta))
+			+ d3d_board_height(state->board) / 2.0;
+		state->facing -= 0.003;
+		d3d_draw(state->cam, state->pos, state->facing, state->board,
+			0, NULL);
+		display_frame(state->cam, state->win, state->color_map);
+		wrefresh(state->win);
+		tick(state->timer);
 	}
+}
+
+// Resize the camera according to the size of the window.
+static void resize_title_camera(struct title_state *state)
+{
+	d3d_free_camera(state->cam);
+	int width, height;
+	getmaxyx(state->win, height, width);
+	state->cam = camera_with_dims(width, height);
+}
+
+static void destroy_title_state(struct title_state *state)
+{
+	d3d_free_camera(state->cam);
 }
 
 // Load the save state list and log in as the one with the given name. If that
@@ -180,11 +204,10 @@ static int write_save_states(struct save_states *saves, const char *state_file,
 // Get an input that is the name of a save from the menu. The menu must be in
 // the input element from which the input is to be read. The name_buf is where
 // the name will be put. The name will be at most buf_size - 1 characters, and
-// will be NUL-terminated. The other parameters are for running the screensaver
-// while waiting for input. An empty name signifies entry cancellation.
+// will be NUL-terminated. title_state is for running the screensaver while
+// waiting for input. An empty name signifies entry cancellation.
 static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
-	d3d_camera *title_cam, d3d_board *title_board, WINDOW *title_win,
-	struct loader *ldr, struct ticker *timer)
+	struct title_state *title_state)
 {
 	int key;
 	--buf_size; // Make space for the NUL-terminator from now on.
@@ -200,8 +223,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 		}
 		menu_draw(menu);
 		wrefresh(menu->win);
-		tick_title(title_cam, title_board, title_win, ldr);
-		tick(timer);
+		tick_title(title_state);
 		size_t len = strlen_max(name_buf, buf_size);
 		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
 			// Delete a character.
@@ -280,16 +302,12 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		strcpy(msg_buf, "Select a game BEFORE playing to save!");
 		menu_set_message(&menu, msg_buf);
 	}
-	d3d_malloc = xmalloc;
-	d3d_realloc = xrealloc;
-	d3d_camera *title_cam;
-	d3d_board *title_board;
-	if (load_title(&title_cam, &title_board, titlewin, &ldr)) {
+	struct ticker timer;
+	ticker_init(&timer, 30); // The frame wait is 30ms.
+	struct title_state title_state;
+	if (load_title(&title_state, titlewin, &timer, &ldr)) {
 		logger_printf(log, LOGGER_WARNING,
 			"Failed to load title screensaver\n");
-		title_cam = NULL;
-		title_board = NULL;
-		titlewin = NULL;
 	}
 	color_map_apply(loader_color_map(&ldr));
 	loader_print_summary(&ldr);
@@ -297,8 +315,6 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	noecho(); // Hide input characters.
 	wtimeout(menuwin, 0); // Don't wait for input in the menu.
 	keypad(menuwin, TRUE); // Automatically detect arrow keys and so on.
-	struct ticker timer;
-	ticker_init(&timer, 30); // The frame wait is 30ms.
 	int key; // Input key.
 	// The name of the save the user is deleting. It has been selected
 	// once, and must be selected again to be deleted. NULL indicates
@@ -323,24 +339,18 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			known_lines = LINES;
 			known_cols = COLS;
 			int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
+			int title_width = COLS - menu_width;
 			wresize(menuwin, LINES, menu_width);
-			if (title_cam && titlewin) {
-				int title_width = COLS - menu_width;
-				double old_facing =
-					*d3d_camera_facing(title_cam);
-				d3d_free_camera(title_cam);
-				title_cam =
-					camera_with_dims(title_width, LINES);
-				*d3d_camera_facing(title_cam) = old_facing;
+			if (titlewin) {
 				wresize(titlewin, LINES, title_width);
 				mvwin(titlewin, 0, menu_width);
+				resize_title_camera(&title_state);
 			}
 			first_tick = false;
 		}
-		tick_title(title_cam, title_board, titlewin, &ldr);
 		menu_draw(&menu);
 		wrefresh(menuwin);
-		tick(&timer);
+		tick_title(&title_state);
 		switch (key = wgetch(menuwin)) {
 		redirect: // Simulate entering the redirected-to item:
 			redirect->title = selected->title;
@@ -364,8 +374,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				menu_clear_message(&menu);
 				for (;;) {
 					get_input(name_buf, sizeof(name_buf),
-						&menu, title_cam, title_board,
-						titlewin, &ldr, &timer);
+						&menu, &title_state);
 					if (*name_buf
 					 && save_states_get(&saves, name_buf)) {
 						menu_set_message(&menu,
@@ -543,7 +552,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		redirect = NULL;
 	}
 end:
-	d3d_free_camera(title_cam);
+	destroy_title_state(&title_state);
 	menu_destroy(&menu);
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);

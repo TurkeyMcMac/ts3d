@@ -56,7 +56,4 @@ bool player_try_shoot(struct player *player, struct ents *ents);
 // Simulate collisions with all nearby entities in ents, calculating damages.
 void player_collide(struct player *player, struct ents *ents);
 
-// Position the camera to be from the player's point of view.
-void player_move_camera(struct player *player, d3d_camera *cam);
-
 #endif /* PLAYER_H_ */

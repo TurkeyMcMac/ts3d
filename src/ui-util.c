@@ -1,6 +1,7 @@
 #include "ui-util.h"
 #include "pixel.h"
 #include "util.h"
+#include "xalloc.h"
 #include <string.h>
 
 void color_map_init(struct color_map *map)
@@ -141,13 +142,14 @@ d3d_camera *camera_with_dims(int width, int height)
 	if (width <= 0) width = 1;
 	if (height <= 0) height = 1;
 	if (width >= height) {
-		cam = d3d_new_camera(FOV_X,
-			FOV_X / PIXEL_ASPECT * height / width, width, height);
+		cam = assert_alloc(d3d_new_camera(FOV_X,
+			FOV_X / PIXEL_ASPECT * height / width, width, height,
+			pixel(PC_BLACK, PC_BLACK)));
 	} else {
-		cam = d3d_new_camera(FOV_X * width / height,
-			FOV_X / PIXEL_ASPECT, width, height);
+		cam = assert_alloc(d3d_new_camera(FOV_X * width / height,
+			FOV_X / PIXEL_ASPECT, width, height,
+			pixel(PC_BLACK, PC_BLACK)));
 	}
-	*d3d_camera_empty_pixel(cam) = pixel(PC_BLACK, PC_BLACK);
 	return cam;
 }
 

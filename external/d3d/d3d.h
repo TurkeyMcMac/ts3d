@@ -9,12 +9,12 @@
  *    compile both your code and this library with the same D3D_PIXEL_TYPE. The
  *    types from stdint.h are not automatically available. Pixels are
  *    unsigned char by default.
- *  - D3D_UNINITIALIZED_ALLOCATOR: Don't automatically initialize d3d_malloc,
- *    d3d_realloc, and d3d_realloc to the standard library equivalents. If this
- *    symbol is defined, the library user must set the variables themselves
- *    before calling other functions. You NEED NOT compile the client code as
- *    well with this option, although you may need to change your client code
- *    depending on whether this option is set.
+ *  - D3D_CUSTOM_ALLOCATOR: Don't use malloc, realloc, and free to implement
+ *    d3d_malloc, d3d_realloc, and d3d_free within d3d.c. Instead, the compiled
+ *    source code must be linked with custom implementations of those three
+ *    functions. You NEED NOT compile d3d.c and your code with the same setting
+ *    of this option, although your code may need to provide implementations
+ *    depending on the setting used with d3d.c.
  *  - D3D_USE_INTERNAL_STRUCTS: Define this to have access to unstable internal
  *    structure layouts of opaque types used by the library. You NEED NOT
  *    compile d3d.c and your code with the same setting of this option.
@@ -27,12 +27,14 @@
 #endif
 
 /* Custom allocator routines. These have the same contract of behaviour as the
- * corresponding functions in the standard library. If the preprocessor symbol
- * D3D_UNINITIALIZED_ALLOCATOR is not defined, these are automatically set to
- * the corresponding standard library functions. */
-extern void *(*d3d_malloc)(size_t);
-extern void *(*d3d_realloc)(void *, size_t);
-extern void (*d3d_free)(void *);
+ * corresponding functions in the standard library. They are meant for internal
+ * use by the library. If the preprocessor symbol D3D_CUSTOM_ALLOCATOR is
+ * defined, provide implementations in another compilation unit. Otherwise, the
+ * library implements these with the standard library functions. Allocations
+ * might fail without ever calling these functions. */
+void *d3d_malloc(size_t);
+void *d3d_realloc(void *, size_t);
+void d3d_free(void *);
 
 /* A single numeric pixel, for storing whatever data you provide in a
  * texture. */
@@ -80,21 +82,24 @@ typedef struct d3d_board_s d3d_board;
 
 /* A direction. The possible values are all listed below. */
 typedef enum {
-	D3D_DNORTH,
-	D3D_DSOUTH,
-	D3D_DWEST,
-	D3D_DEAST,
+	D3D_DPOSX, /* Positive x direction. */
+	D3D_DPOSY, /* etc. */
+	D3D_DNEGX,
+	D3D_DNEGY,
 	D3D_DUP,
 	D3D_DDOWN
 } d3d_direction;
 
 /* Allocate a new camera with given field of view in the x and y directions (in
- * radians) and a given view width and height in pixels. */
+ * radians) and a given view width and height in pixels. The empty pixel is the
+ * pixel value set in the camera when a cast ray hits nothing (it gets off the
+ * edge of the board.) NULL is returned if allocation fails. */
 d3d_camera *d3d_new_camera(
 	double fovx,
 	double fovy,
 	size_t width,
-	size_t height);
+	size_t height,
+	d3d_pixel empty_pixel);
 
 /* Get the view width of a camera in pixels. */
 size_t d3d_camera_width(const d3d_camera *cam);
@@ -102,34 +107,20 @@ size_t d3d_camera_width(const d3d_camera *cam);
 /* Get the view height of a camera in pixels. */
 size_t d3d_camera_height(const d3d_camera *cam);
 
-/* Return a pointer to the empty pixel. This is the pixel value set in the
- * camera when a cast ray hits nothing (it gets off the edge of the board.) The
- * pointer is valid for the lifetime of the camera. */
-d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam);
-
-/* Return a pointer to the camera's position. It is UNDEFINED BEHAVIOR for this
- * to be outside the limits of the board that is passed when d3d_draw_walls or
- * d3d_draw_column is called. The pointer is valid for the lifetime of the
- * camera, but the position may be changed when other functions modify the
- * camera. */
-d3d_vec_s *d3d_camera_position(d3d_camera *cam);
-
-/* Return a pointer to the camera's direction (in radians). This can be changed
- * without regard for any range. The pointer is valid for the lifetime of the
- * camera, but the angle may be changed when other functions modify the camera.
- */
-double *d3d_camera_facing(d3d_camera *cam);
-
-/* Get a pixel in the camera's view, AFTER a drawing function is called on the
- * camera. This returns NULL if the coordinates are out of range. Otherwise, the
- * pointer is valid until another function modifies the camera. */
-const d3d_pixel *d3d_camera_get(const d3d_camera *cam, size_t x, size_t y);
+/* Get a pixel in the camera's view. This returns NULL if the coordinates are
+ * out of range. Otherwise, the pointer is valid until another function takes
+ * the camera as a non-const parameter. If d3d_draw hasn't yet been called with
+ * the camera, all the pixels are the camera's empty_pixel. This funcion does
+ * not modify the camera in any way. */
+d3d_pixel *d3d_camera_get(d3d_camera *cam, size_t x, size_t y);
 
 /* Destroy a camera object. It shall never be used again. */
 void d3d_free_camera(d3d_camera *cam);
 
-/* Allocate a new texture without its pixels initialized. */
-d3d_texture *d3d_new_texture(size_t width, size_t height);
+/* Allocate a new texture with its pixels initialized to the fill pixel.  NULL
+ * is returned if allocation fails. The width and height will be made 1 if they
+ * are 0, as a dimension of 0 cannot be stretched across another dimension. */
+d3d_texture *d3d_new_texture(size_t width, size_t height, d3d_pixel fill);
 
 /* Get the width of the texture in pixels. */
 size_t d3d_texture_width(const d3d_texture *txtr);
@@ -138,16 +129,17 @@ size_t d3d_texture_width(const d3d_texture *txtr);
 size_t d3d_texture_height(const d3d_texture *txtr);
 
 /* Get a pixel at a coordinate on a texture. NULL is returned if the coordinates
- * are out of range. The pointer is valid until the texture is used in a
- * d3d_block_s or a d3d_sprite_s. */
+ * are out of range. The pointer is valid until the texture is used (indirectly)
+ * in d3d_draw. This function does not modify the texture in any way. */
 d3d_pixel *d3d_texture_get(d3d_texture *txtr, size_t x, size_t y);
 
 /* Permanently destroy a texture. */
 void d3d_free_texture(d3d_texture *txtr);
 
 /* Create a new board with a width and height. All its blocks are initially
- * empty, transparent on all sides. */
-d3d_board *d3d_new_board(size_t width, size_t height);
+ * set to the block fill. If fill is NULL, all the blocks are set to an
+ * empty/transparent block. NULL is returned if allocation fails. */
+d3d_board *d3d_new_board(size_t width, size_t height, const d3d_block_s *fill);
 
 /* Get the width of the board in blocks. */
 size_t d3d_board_width(const d3d_board *board);
@@ -158,46 +150,36 @@ size_t d3d_board_height(const d3d_board *board);
 /* Get a block in a board. If the coordinates are out of range, NULL is
  * returned. Otherwise, a pointer to a block POINTER is returned. This pointed-
  * to pointer can be modified with a new block pointer. The outer pointer is
- * valid until the board is used in d3d_draw_column or d3d_draw_walls. */
+ * valid until the board is used in d3d_draw. This function does not modify the
+ * board in any way. */
 const d3d_block_s **d3d_board_get(d3d_board *board, size_t x, size_t y);
 
 /* Permanently destroy a board. */
 void d3d_free_board(d3d_board *board);
 
-/* FRAMES
- * ------
- * Drawing a frame consists of
- *  1. Calling either d3d_draw_walls or d3d_start_frame then d3d_draw_column for
- *     each column.
- *  2. Calling d3d_draw_sprite/d3d_draw_sprite/d3d_draw_sprite_dist if you need
- *     to draw some sprites. */
-
-/* Begin drawing a frame. This is only necessary if d3d_draw_walls is not
- * called. */
-void d3d_start_frame(d3d_camera *cam);
-
-/* Draw a single column of the view, NOT including sprites. All columns must be
- * drawn before examining the pixels of a camera. */
-void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x);
-
-/* Draw all the wall columns for the view, making it valid to access pixels. */
-void d3d_draw_walls(d3d_camera *cam, const d3d_board *board);
-
-/* Draw a set of sprites in the world. The view is blocked by walls and other
- * closer sprites. */
-void d3d_draw_sprites(
+/* Record what the camera sees, making it valid to access camera pixels. This
+ * function is the entire point of this library.
+ *
+ * The camera is positioned according to cam_pos and is facing in the direction
+ * cam_facing, measured in radians. In its orientation in relation to the axes,
+ * the facing angle is just like an angle around the unit circle, so increasing
+ * the angle turns the camera counter-clockwise. NOTE that the +y direction on
+ * the board is therefore "UP" just like the +y direction of the axes on which
+ * the unit circle is drawn, NOT "DOWN" like with other grids in this library.
+ *
+ * The given sprites are drawn inside the environment of the board. The sprites
+ * pointer can be NULL if n_sprites is 0.
+ *
+ * Out-of-bounds coordinates are tolerated. However, it is unspecified what
+ * pixels will be captured if the camera is not within the borders of the board.
+ * Sprites outside the board will not be drawn. */
+void d3d_draw(
 	d3d_camera *cam,
+	d3d_vec_s cam_pos,
+	double cam_facing,
+	const d3d_board *board,
 	size_t n_sprites,
 	const d3d_sprite_s sprites[]);
-
-/* Draw a single sprite. This DOES NOT take into account the overlapping of
- * previously drawn closer sprites; it is just drawn closer than them. You
- * probably want d3d_draw_sprites. */
-void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp);
-
-/* This is the same as d3d_draw_sprite above, but it uses a distance  already
- * calculated. This must be the distance from the camera to the sprite. */
-void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist);
 
 #endif /* D3D_H_ */
 
@@ -221,14 +203,9 @@ struct d3d_sprite_order {
 };
 
 struct d3d_camera_s {
-	// The position of the camera on the board
-	d3d_vec_s pos;
 	// The field of view in the x (sideways) and y (vertical) screen axes.
 	// Measured in radians.
 	d3d_vec_s fov;
-	// The direction of the camera relative to the positive x direction,
-	// increasing counterclockwise. In the range [0, 2π).
-	double facing;
 	// The width and height of the camera screen, in pixels.
 	size_t width, height;
 	// The block containing all empty textures.

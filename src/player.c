@@ -90,9 +90,3 @@ void player_collide(struct player *player, struct ents *ents)
 	player->body.health =
 		CLAMP(player->body.health, 0, player->start->type->health);
 }
-
-void player_move_camera(struct player *player, d3d_camera *cam)
-{
-	*d3d_camera_position(cam) = player->body.pos;
-	*d3d_camera_facing(cam) = player->facing;
-}

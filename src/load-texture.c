@@ -5,6 +5,7 @@
 #include "pixel.h"
 #include "string.h"
 #include "util.h"
+#include "xalloc.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,15 +13,13 @@
 
 static d3d_texture *new_empty_texture(void)
 {
-	d3d_texture *empty = d3d_new_texture(1, 1);
-	*d3d_texture_get(empty, 0, 0) = TRANSPARENT_PIXEL;
-	return empty;
+	return assert_alloc(d3d_new_texture(1, 1, TRANSPARENT_PIXEL));
 }
 
 d3d_texture *load_texture(struct loader *ldr, const char *name)
 {
 	FILE *file;
-	d3d_texture *txtr, **txtrp;
+	d3d_texture *txtr = NULL, **txtrp;
 	txtrp = loader_texture(ldr, name, &file);
 	if (!txtrp) return NULL;
 	txtr = *txtrp;
@@ -39,7 +38,8 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 	}
 	struct color_map *colors = loader_color_map(ldr);
 	if (width > 0 && height > 0) {
-		txtr = d3d_new_texture(width, height);
+		txtr = assert_alloc(d3d_new_texture(width, height,
+			TRANSPARENT_PIXEL));
 		for (size_t y = 0; y < height; ++y) {
 			struct string *line = &lines[y];
 			size_t x;
@@ -52,10 +52,6 @@ d3d_texture *load_texture(struct loader *ldr, const char *name)
 						"Pixel not registered: %c\n",
 						line->text[x]);
 				*d3d_texture_get(txtr, x, y) = pix;
-			}
-			for (; x < width; ++x) {
-				*d3d_texture_get(txtr, x, y) =
-					TRANSPARENT_PIXEL;
 			}
 		}
 	} else {
