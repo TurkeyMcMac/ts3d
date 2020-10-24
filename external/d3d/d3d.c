@@ -9,13 +9,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Adds the amount to the size variable, returning NULL from the current
+// function on overflow.
+#define CHECKED_ADD(size, amount) do { \
+	size_t new_size = (size) + (amount); \
+	if (new_size < (size)) return NULL; \
+	(size) = new_size; \
+} while (0)
+
 // Gets the memory alignment of the given type.
 #define ALIGNOF(type) offsetof(struct { char c; type t; }, t)
 
 // Increments size until a value of type could be stored at the offset size from
-// an aligned pointer.
-#define ALIGN_SIZE(size, type) \
-	((size) = ((size) + ALIGNOF(type) - 1) / ALIGNOF(type) * ALIGNOF(type))
+// an aligned pointer. Returns NULL from the current function on overflow.
+#define ALIGN_SIZE(size, type) do { \
+	size_t new_size = \
+		((size) + ALIGNOF(type) - 1) / ALIGNOF(type) * ALIGNOF(type); \
+	if (new_size < (size)) return NULL; \
+	(size) = new_size; \
+} while (0)
+
 
 // get a pointer to a coordinate in a grid. A grid is any structure with members
 // 'width' and 'height' and another member 'member' which is a buffer containing
@@ -30,20 +43,44 @@
 #	define M_PI 3.14159265358979323846
 #endif
 
-#ifdef D3D_UNINITIALIZED_ALLOCATOR
-void *(*d3d_malloc)(size_t);
-void *(*d3d_realloc)(void *, size_t);
-void (*d3d_free)(void *);
-#else
-void *(*d3d_malloc)(size_t) = malloc;
-void *(*d3d_realloc)(void *, size_t) = realloc;
-void (*d3d_free)(void *) = free;
+#ifndef D3D_CUSTOM_ALLOCATOR
+void *d3d_malloc(size_t size)
+{
+	return malloc(size);
+}
+
+void *d3d_realloc(void *mem, size_t size)
+{
+	return realloc(mem, size);
+}
+
+void d3d_free(void *mem)
+{
+	free(mem);
+}
 #endif
+
+static d3d_pixel camera_empty_pixel(d3d_camera *cam)
+{
+	return cam->blank_block.faces[0]->pixels[0];
+}
+
+static void empty_camera_pixels(d3d_camera *cam)
+{
+	d3d_pixel empty_pixel = camera_empty_pixel(cam);
+	for (size_t i = 0; i < cam->width * cam->height; ++i) {
+		cam->pixels[i] = empty_pixel;
+	}
+}
 
 static size_t texture_size(size_t width, size_t height)
 {
-	return offsetof(d3d_texture, pixels)
-		+ width * height * sizeof(d3d_pixel);
+	size_t pixels_size = width * height * sizeof(d3d_pixel);
+	if (pixels_size / sizeof(d3d_pixel) / width != height) return 0;
+	size_t base = offsetof(d3d_texture, pixels);
+	size_t size = base + pixels_size;
+	if (base > size) return 0;
+	return size;
 }
 
 // Computes fmod(n, 1.0) if n >= 0, or 1.0 + fmod(n, 1.0) if n < 0
@@ -81,63 +118,57 @@ static size_t tocoord(double c, bool positive)
 }
 
 // Move the given coordinates in the direction given. If the direction is not
-// cardinal, nothing happens. No bounds are checked.
+// horizontal, nothing happens. No bounds are checked.
 static void move_dir(d3d_direction dir, size_t *x, size_t *y)
 {
 	switch(dir) {
-	case D3D_DNORTH: --*y; break;
-	case D3D_DSOUTH: ++*y; break;
-	case D3D_DEAST: ++*x; break;
-	case D3D_DWEST: --*x; break;
+	case D3D_DPOSX: ++*x; break;
+	case D3D_DPOSY: ++*y; break;
+	case D3D_DNEGX: --*x; break;
+	case D3D_DNEGY: --*y; break;
 	default: break;
 	}
 }
 
-// Rotate a cardinal direction 180°. If the direction is not cardinal, it is
+// Rotate a horizontal direction 180°. If the direction is not horizontal, it is
 // returned unmodified.
 static d3d_direction invert_dir(d3d_direction dir)
 {
 	switch(dir) {
-	case D3D_DNORTH: return D3D_DSOUTH;
-	case D3D_DSOUTH: return D3D_DNORTH;
-	case D3D_DEAST: return D3D_DWEST;
-	case D3D_DWEST: return D3D_DEAST;
+	case D3D_DPOSX: return D3D_DNEGX;
+	case D3D_DPOSY: return D3D_DNEGY;
+	case D3D_DNEGX: return D3D_DPOSX;
+	case D3D_DNEGY: return D3D_DPOSY;
 	default: return dir;
 	}
 }
-
-// All boards are initialized by being filled with this block. It is transparent
-// on all sides.
-static const d3d_block_s empty_block = {{
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL
-}};
 
 d3d_camera *d3d_new_camera(
 	double fovx,
 	double fovy,
 	size_t width,
-	size_t height)
+	size_t height,
+	d3d_pixel empty_pixel)
 {
 	size_t size;
-	size_t pixels_size;
-	size_t txtr_offset, tans_offset, dists_offset;
+	size_t pixels_size, txtr_offset, tans_offset, dists_offset;
 	d3d_texture *empty_txtr;
 	d3d_camera *cam;
+	size = offsetof(d3d_camera, pixels);
 	pixels_size = width * height * sizeof(d3d_pixel);
-	size = offsetof(d3d_camera, pixels) + pixels_size;
+	if (width != 0 && pixels_size / sizeof(d3d_pixel) / width != height)
+		return NULL;
+	CHECKED_ADD(size, pixels_size);
 	ALIGN_SIZE(size, d3d_texture);
 	txtr_offset = size;
-	size += texture_size(1, 1);
+	CHECKED_ADD(size, texture_size(1, 1));
 	ALIGN_SIZE(size, double);
 	tans_offset = size;
-	size += height * sizeof(double);
+	if (height * sizeof(double) / sizeof(double) != height) return NULL;
+	CHECKED_ADD(size, height * sizeof(double));
 	dists_offset = size;
-	size += width * sizeof(double);
+	if (width * sizeof(double) / sizeof(double) != width) return NULL;
+	CHECKED_ADD(size, width * sizeof(double));
 	cam = d3d_malloc(size);
 	if (!cam) return NULL;
 	// The members 'tans' and 'dists' are actually pointers to parts of the
@@ -146,27 +177,29 @@ d3d_camera *d3d_new_camera(
 	empty_txtr = (void *)((char *)cam + txtr_offset);
 	cam->tans = (void *)((char *)cam + tans_offset);
 	cam->dists = (void *)((char *)cam + dists_offset);
-	cam->facing = 0.0;
-	cam->fov.x = fovx;
-	cam->fov.y = fovy;
+	// Just do basic protection against non-positive FOVs as they might
+	// cause issues. I could do something better than silently clamping, but
+	// what do you expect a non-positive FOV to do anyway?
+	cam->fov.x = fovx > 0.0 ? fovx : 0.001;
+	cam->fov.y = fovy > 0.0 ? fovy : 0.001;
 	cam->width = width;
 	cam->height = height;
 	empty_txtr->width = 1;
 	empty_txtr->height = 1;
-	empty_txtr->pixels[0] = 0;
-	cam->blank_block.faces[D3D_DNORTH] =
-	cam->blank_block.faces[D3D_DSOUTH] =
-	cam->blank_block.faces[D3D_DEAST] =
-	cam->blank_block.faces[D3D_DWEST] =
+	empty_txtr->pixels[0] = empty_pixel;
+	cam->blank_block.faces[D3D_DPOSX] =
+	cam->blank_block.faces[D3D_DPOSY] =
+	cam->blank_block.faces[D3D_DNEGX] =
+	cam->blank_block.faces[D3D_DNEGY] =
 	cam->blank_block.faces[D3D_DUP] =
 	cam->blank_block.faces[D3D_DDOWN] = empty_txtr;
 	cam->order = NULL;
 	cam->order_buf_cap = 0;
 	cam->last_sprites = NULL;
 	cam->last_n_sprites = 0;
-	memset(cam->pixels, 0, pixels_size);
+	empty_camera_pixels(cam);
 	for (size_t y = 0; y < height; ++y) {
-		double angle = fovy * ((double)y / height - 0.5);
+		double angle = cam->fov.y * (0.5 - (double)y / height);
 		cam->tans[y] = tan(angle);
 	}
 	return cam;
@@ -180,27 +213,38 @@ void d3d_free_camera(d3d_camera *cam)
 	d3d_free(cam);
 }
 
-d3d_texture *d3d_new_texture(size_t width, size_t height)
+d3d_texture *d3d_new_texture(size_t width, size_t height, d3d_pixel fill)
 {
+	if (width < 1) width = 1;
+	if (height < 1) height = 1;
 	size_t size = texture_size(width, height);
+	if (size == 0) return NULL;
 	d3d_texture *txtr = d3d_malloc(size);
 	if (!txtr) return NULL;
 	txtr->width = width;
 	txtr->height = height;
-	memset(txtr->pixels, 0, size - offsetof(d3d_texture, pixels));
+	for (size_t i = 0; i < width * height; ++i) {
+		txtr->pixels[i] = fill;
+	}
 	return txtr;
 }
 
-d3d_board *d3d_new_board(size_t width, size_t height)
+d3d_board *d3d_new_board(size_t width, size_t height, const d3d_block_s *fill)
 {
+	size_t size = offsetof(d3d_board, blocks);
 	size_t blocks_size = width * height * sizeof(d3d_block_s *);
-	d3d_board *board =
-		d3d_malloc(offsetof(d3d_board, blocks) + blocks_size);
+	if (width != 0 && blocks_size / sizeof(d3d_block_s *) / width != height)
+		return NULL;
+	CHECKED_ADD(size, blocks_size);
+	d3d_board *board = d3d_malloc(size);
 	if (!board) return NULL;
 	board->width = width;
 	board->height = height;
+	static const d3d_block_s empty_block = {{ NULL, NULL, NULL, NULL,
+		NULL, NULL }};
+	if (!fill) fill = &empty_block;
 	for (size_t i = 0; i < width * height; ++i) {
-		board->blocks[i] = &empty_block;
+		board->blocks[i] = fill;
 	}
 	return board;
 }
@@ -221,38 +265,38 @@ static const d3d_block_s *hit_wall(
 		d3d_direction inverted;
 		const d3d_block_s * const *blk = NULL;
 		d3d_vec_s tonext = {0, 0};
-		d3d_direction ns = D3D_DNORTH, ew = D3D_DWEST;
+		d3d_direction y_dir = D3D_DNEGY, x_dir = D3D_DNEGX;
 		if (dpos->x < 0.0) {
-			// The ray is going west
+			// The ray is going in the -x direction.
 			tonext.x = -mod1(pos->x);
 		} else if (dpos->x > 0.0) {
-			// The ray is going east
-			ew = D3D_DEAST;
+			// The ray is going in the +x direction.
+			x_dir = D3D_DPOSX;
 			tonext.x = revmod1(pos->x);
 		}
 		if (dpos->y < 0.0) {
-			// The ray is going north
+			// The ray is going in the -y direction.
 			tonext.y = -mod1(pos->y);
 		} else if (dpos->y > 0.0) {
-			// They ray is going south
-			ns = D3D_DSOUTH;
+			// They ray is going in the +y direction.
+			y_dir = D3D_DPOSY;
 			tonext.y = revmod1(pos->y);
 		}
 		if (dpos->x == 0.0) {
-			goto hit_ns;
+			goto hit_y;
 		} else if (dpos->y == 0.0) {
-			goto hit_ew;
+			goto hit_x;
 		}
 		if (tonext.x / dpos->x < tonext.y / dpos->y) {
-			// The ray will hit a east/west wall first
-	hit_ew:
-			*dir = ew;
+			// The ray will hit a wall on the x-axis first
+	hit_x:
+			*dir = x_dir;
 			pos->x += tonext.x;
 			pos->y += tonext.x / dpos->x * dpos->y;
 		} else {
-			// The ray will hit a north/south wall first
-	hit_ns:
-			*dir = ns;
+			// The ray will hit a wall on the y-axis first
+	hit_y:
+			*dir = y_dir;
 			pos->y += tonext.y;
 			pos->x += tonext.y / dpos->y * dpos->x;
 		}
@@ -278,7 +322,7 @@ static const d3d_block_s *hit_wall(
 			} else {
 				// The face the ray hit is empty
 				// Nudge the ray past the wall:
-				if (*dir == ew) {
+				if (*dir == x_dir) {
 					pos->x += copysign(0.0001, dpos->x);
 				} else {
 					pos->y += copysign(0.0001, dpos->y);
@@ -289,25 +333,47 @@ static const d3d_block_s *hit_wall(
 	}
 }
 
-void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
+static void draw_column(
+	d3d_camera *cam,
+	d3d_vec_s cam_pos,
+	double cam_facing,
+	const d3d_board *board,
+	size_t x)
 {
 	d3d_direction face;
 	const d3d_block_s *block;
 	const d3d_texture *drawing;
-	d3d_vec_s pos = cam->pos, disp;
+	d3d_vec_s pos = cam_pos, disp;
 	double dist;
-	double angle =
-		cam->facing + cam->fov.x * (0.5 - (double)x / cam->width);
+	double angle = cam_facing + cam->fov.x * (0.5 - (double)x / cam->width);
 	d3d_vec_s dpos = {cos(angle) * 0.001, sin(angle) * 0.001};
 	block = hit_wall(board, &pos, &dpos, &face, &drawing);
 	if (!block) {
 		block = &cam->blank_block;
-		drawing = (d3d_texture *)block->faces[0];
+		drawing = block->faces[0];
 	}
-	disp.x = pos.x - cam->pos.x;
-	disp.y = pos.y - cam->pos.y;
+	disp.x = pos.x - cam_pos.x;
+	disp.y = pos.y - cam_pos.y;
 	dist = sqrt(disp.x * disp.x + disp.y * disp.y);
 	cam->dists[x] = dist;
+	// Choose how far across the wall to get pixels from based on the wall
+	// orientation, and put the distance in dimension:
+	double dimension;
+	switch (face) {
+	case D3D_DPOSX:
+		dimension = revmod1(pos.y);
+		break;
+	case D3D_DPOSY:
+		dimension = mod1(pos.x);
+		break;
+	case D3D_DNEGX:
+		dimension = mod1(pos.y);
+		break;
+	case D3D_DNEGY:
+	default: // The default case shouldn't be reached.
+		dimension = revmod1(pos.x);
+		break;
+	}
 	for (size_t t = 0; t < cam->height; ++t) {
 		const d3d_texture *txtr;
 		size_t tx, ty;
@@ -316,48 +382,30 @@ void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
 		double dist_y = cam->tans[t] * dist + 0.5;
 		if (dist_y > 0.0 && dist_y < 1.0) {
 			// A vertical wall was indeed hit
-			double dimension;
 			txtr = drawing;
-			// Choose the x coordinate of the pixel depending on
-			// wall orientation:
-			switch (face) {
-			case D3D_DSOUTH:
-				dimension = mod1(pos.x);
-				break;
-			case D3D_DNORTH:
-				dimension = revmod1(pos.x);
-				break;
-			case D3D_DWEST:
-				dimension = mod1(pos.y);
-				break;
-			case D3D_DEAST:
-				dimension = revmod1(pos.y);
-				break;
-			default:
-				continue;
-			}
 			tx = dimension * txtr->width;
-			ty = txtr->height * dist_y;
+			ty = txtr->height * (1.0 - dist_y);
 		} else {
 			// A floor or ceiling was hit instead. The horizontal
 			// displacement is adjusted accordingly:
 			double newdist = 0.5 / fabs(cam->tans[t]);
 			d3d_vec_s newpos = {
-				cam->pos.x + disp.x / dist * newdist,
-				cam->pos.y + disp.y / dist * newdist
+				cam_pos.x + disp.x / dist * newdist,
+				cam_pos.y + disp.y / dist * newdist
 			};
 			size_t bx = tocoord(newpos.x, dpos.x > 0.0),
 			       by = tocoord(newpos.y, dpos.y > 0.0);
-			const d3d_block_s *top_bot =
-				*GET(board, blocks, bx, by);
+			const d3d_block_s *const *top_bot =
+				GET(board, blocks, bx, by);
+			if (!top_bot) goto no_texture;
 			if (dist_y >= 1.0) {
 				// A ceiling was hit
-				txtr = top_bot->faces[D3D_DUP];
+				txtr = (*top_bot)->faces[D3D_DUP];
 				if (!txtr) goto no_texture;
 				tx = revmod1(newpos.x) * txtr->width;
 			} else {
 				// A floor was hit
-				txtr = top_bot->faces[D3D_DDOWN];
+				txtr = (*top_bot)->faces[D3D_DDOWN];
 				if (!txtr) goto no_texture;
 				tx = mod1(newpos.x) * txtr->width;
 			}
@@ -367,23 +415,7 @@ void d3d_draw_column(d3d_camera *cam, const d3d_board *board, size_t x)
 		continue;
 
 	no_texture:
-		*GET(cam, pixels, x, t) = *d3d_camera_empty_pixel(cam);
-	}
-}
-
-void d3d_start_frame(d3d_camera *cam)
-{
-	cam->facing = fmod(cam->facing, 2 * M_PI);
-	if (cam->facing < 0.0) {
-		cam->facing += 2 * M_PI;
-	}
-}
-
-void d3d_draw_walls(d3d_camera *cam, const d3d_board *board)
-{
-	d3d_start_frame(cam);
-	for (size_t x = 0; x < cam->width; ++x) {
-		d3d_draw_column(cam, board, x);
+		*GET(cam, pixels, x, t) = camera_empty_pixel(cam);
 	}
 }
 
@@ -396,72 +428,15 @@ static int compar_sprite_order(const void *a, const void *b)
 	return 0;
 }
 
-void d3d_draw_sprites(
+static void draw_sprite_dist(
 	d3d_camera *cam,
-	size_t n_sprites,
-	const d3d_sprite_s sprites[])
+	d3d_vec_s cam_pos,
+	double cam_facing,
+	const d3d_sprite_s *sp,
+	double dist)
 {
-	size_t i;
-	if (n_sprites == cam->last_n_sprites && sprites == cam->last_sprites) {
-		// This assumes the sprites didn't move much, and are mostly
-		// sorted. Therefore, insertion sort is used.
-		for (i = 0; i < n_sprites; ++i) {
-			size_t move_to;
-			struct d3d_sprite_order ord = cam->order[i];
-			size_t s = ord.index;
-			ord.dist = hypot(sprites[s].pos.x - cam->pos.x,
-				sprites[s].pos.y - cam->pos.y);
-			move_to = i;
-			for (long j = (long)i - 1; j >= 0; --j) {
-				if (cam->order[j].dist <= ord.dist) break;
-				move_to = j;
-			}
-			memmove(cam->order + move_to + 1, cam->order + move_to,
-				(i - move_to) * sizeof(*cam->order));
-			cam->order[move_to] = ord;
-	       }
-	} else {
-		if (n_sprites > cam->order_buf_cap) {
-			struct d3d_sprite_order *new_order = d3d_realloc(
-				cam->order, n_sprites * sizeof(*cam->order));
-			if (new_order) {
-				cam->order = new_order;
-				cam->order_buf_cap = n_sprites;
-			} else {
-				// XXX Silently truncate the list of sprites
-				// drawn. This may be a bad decision, but
-				// failure is unlikely and this shouldn't break
-				// any client code.
-				n_sprites = cam->order_buf_cap;
-			}
-		}
-		for (i = 0; i < n_sprites; ++i) {
-			struct d3d_sprite_order *ord = &cam->order[i];
-			ord->dist = hypot(sprites[i].pos.x - cam->pos.x,
-				sprites[i].pos.y - cam->pos.y);
-			ord->index = i;
-		}
-		qsort(cam->order, n_sprites, sizeof(*cam->order),
-			compar_sprite_order);
-		cam->last_sprites = sprites;
-		cam->last_n_sprites = n_sprites;
-	}
-	i = n_sprites;
-	while (i--) {
-		struct d3d_sprite_order *ord = &cam->order[i];
-		d3d_draw_sprite_dist(cam, &sprites[ord->index], ord->dist);
-	}
-}
-
-void d3d_draw_sprite(d3d_camera *cam, const d3d_sprite_s *sp)
-{
-	d3d_draw_sprite_dist(cam, sp,
-		hypot(sp->pos.x - cam->pos.x, sp->pos.y - cam->pos.y));
-}
-
-void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist)
-{
-	d3d_vec_s disp = { sp->pos.x - cam->pos.x, sp->pos.y - cam->pos.y };
+	if (sp->scale.x <= 0.0 || sp->scale.y <= 0.0) return;
+	d3d_vec_s disp = { sp->pos.x - cam_pos.x, sp->pos.y - cam_pos.y };
 	double angle, width, height, diff, maxdiff;
 	long start_x, start_y;
 	if (dist == 0.0) return;
@@ -471,7 +446,7 @@ void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist)
 	width = atan(sp->scale.x / dist) * 2;
 	// The max camera-sprite angle difference so the sprite's visible:
 	maxdiff = (cam->fov.x + width) / 2;
-	diff = angle_diff(cam->facing, angle);
+	diff = angle_diff(cam_facing, angle);
 	if (fabs(diff) > maxdiff) return;
 	// The height of the sprite in pixels on the camera screen:
 	height = atan(sp->scale.y / dist) * 2 / cam->fov.y * cam->height;
@@ -500,6 +475,91 @@ void d3d_draw_sprite_dist(d3d_camera *cam, const d3d_sprite_s *sp, double dist)
 	}
 }
 
+static void draw_sprites(
+	d3d_camera *cam,
+	d3d_vec_s cam_pos,
+	double cam_facing,
+	size_t n_sprites,
+	const d3d_sprite_s sprites[])
+{
+	size_t i;
+	if (n_sprites == cam->last_n_sprites && sprites == cam->last_sprites) {
+		// This assumes the sprites didn't move much, and are mostly
+		// sorted. Therefore, insertion sort is used.
+		for (i = 0; i < n_sprites; ++i) {
+			size_t move_to;
+			struct d3d_sprite_order ord = cam->order[i];
+			size_t s = ord.index;
+			ord.dist = hypot(sprites[s].pos.x - cam_pos.x,
+				sprites[s].pos.y - cam_pos.y);
+			move_to = i;
+			for (long j = (long)i - 1; j >= 0; --j) {
+				if (cam->order[j].dist <= ord.dist) break;
+				move_to = j;
+			}
+			memmove(cam->order + move_to + 1, cam->order + move_to,
+				(i - move_to) * sizeof(*cam->order));
+			cam->order[move_to] = ord;
+	       }
+	} else {
+		if (n_sprites > cam->order_buf_cap) {
+			struct d3d_sprite_order *new_order;
+			size_t size = n_sprites * sizeof(*cam->order);
+			if (size / sizeof(*cam->order) == n_sprites
+			 && (new_order = d3d_realloc(cam->order, size))) {
+				cam->order = new_order;
+				cam->order_buf_cap = n_sprites;
+			} else {
+				// XXX Silently truncate the list of sprites
+				// drawn. This may be a bad decision, but
+				// failure is unlikely and this shouldn't break
+				// any client code.
+				n_sprites = cam->order_buf_cap;
+			}
+		}
+		for (i = 0; i < n_sprites; ++i) {
+			struct d3d_sprite_order *ord = &cam->order[i];
+			ord->dist = hypot(sprites[i].pos.x - cam_pos.x,
+				sprites[i].pos.y - cam_pos.y);
+			ord->index = i;
+		}
+		qsort(cam->order, n_sprites, sizeof(*cam->order),
+			compar_sprite_order);
+		cam->last_sprites = sprites;
+		cam->last_n_sprites = n_sprites;
+	}
+	i = n_sprites;
+	while (i--) {
+		struct d3d_sprite_order *ord = &cam->order[i];
+		draw_sprite_dist(cam, cam_pos, cam_facing, &sprites[ord->index],
+			ord->dist);
+	}
+}
+
+void d3d_draw(
+	d3d_camera *cam,
+	d3d_vec_s cam_pos,
+	double cam_facing,
+	const d3d_board *board,
+	size_t n_sprites,
+	const d3d_sprite_s sprites[])
+{
+	if (cam_pos.x > 0.0 && cam_pos.y > 0.0
+	 && cam_pos.x < board->width && cam_pos.y < board->height) {
+		// Canonicalize camera direction:
+		cam_facing = fmod(cam_facing, 2 * M_PI);
+		if (cam_facing < 0.0) {
+			cam_facing += 2 * M_PI;
+		}
+		for (size_t x = 0; x < cam->width; ++x) {
+			draw_column(cam, cam_pos, cam_facing, board, x);
+		}
+		draw_sprites(cam, cam_pos, cam_facing, n_sprites, sprites);
+	} else {
+		empty_camera_pixels(cam);
+	}
+}
+
 size_t d3d_camera_width(const d3d_camera *cam)
 {
 	return cam->width;
@@ -510,22 +570,7 @@ size_t d3d_camera_height(const d3d_camera *cam)
 	return cam->height;
 }
 
-d3d_pixel *d3d_camera_empty_pixel(d3d_camera *cam)
-{
-	return (d3d_pixel *)&cam->blank_block.faces[0]->pixels[0];
-}
-
-d3d_vec_s *d3d_camera_position(d3d_camera *cam)
-{
-	return &cam->pos;
-}
-
-double *d3d_camera_facing(d3d_camera *cam)
-{
-	return &cam->facing;
-}
-
-const d3d_pixel *d3d_camera_get(const d3d_camera *cam, size_t x, size_t y)
+d3d_pixel *d3d_camera_get(d3d_camera *cam, size_t x, size_t y)
 {
 	return GET(cam, pixels, x, y);
 }

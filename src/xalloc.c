@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+static void print_default_oom_message(void);
+
 static void die(const char *fmt, ...)
 	ATTRIBUTE(format(printf, 1, 2));
 
@@ -36,6 +38,21 @@ void *xrealloc(void *ptr, size_t size)
 	return ptr;
 }
 
+void *assert_alloc(void *ptr)
+{
+	if (!ptr) {
+		print_default_oom_message();
+		abort();
+	}
+	return ptr;
+}
+
+static void print_default_oom_message(void)
+{
+	static const char msg[] = "Out of memory. Aborting.\n";
+	ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msg, sizeof(msg));
+}
+
 static void die(const char *fmt, ...)
 {
 	// Probably thread-unsafety is OK.
@@ -48,8 +65,7 @@ static void die(const char *fmt, ...)
 	if (l > 0) {
 		ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msgbuf, (size_t)l);
 	} else {
-		static const char msg[] = "Out of memory. Aborting.\n";
-		ssize_t UNUSED_VAR(w) = write(STDERR_FILENO, msg, sizeof(msg));
+		print_default_oom_message();
 	}
 	abort();
 }

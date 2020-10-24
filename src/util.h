@@ -21,7 +21,7 @@ char *str_dup(const char *str);
 // first max bytes, returning max if it finds no terminator therein.
 size_t strlen_max(const char *str, size_t max);
 
-// Turn a cardinal direction 180 degrees, or swap between up and down.
+// Turn a horizontal direction 180 degrees, or swap between up and down.
 d3d_direction flip_direction(d3d_direction dir);
 
 // Concat parts 1 and 2 with mid inbetween. Return the concatenated.
