@@ -24,7 +24,7 @@ headers = src/*.h $(version-header)
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 ${CFLAGS}
 linkage = -lm -lcurses
-test-flags = -fPIC -Og -g3 -DCTF_TESTS_ENABLED
+test-flags = -fPIC -O0 -g3 -DCTF_TESTS_ENABLED
 
 CC ?= cc
 RM ?= rm -f
