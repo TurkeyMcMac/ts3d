@@ -365,11 +365,6 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			switch (redirect ? menu_redirect(&menu, redirect)
 				: menu_enter(&menu))
 			{
-			case ACTION_BLOCKED:
-				beep();
-				break;
-			case ACTION_WENT:
-				break;
 			case ACTION_INPUT:
 				menu_clear_message(&menu);
 				for (;;) {
@@ -496,31 +491,29 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				touchwin(menuwin);
 				touchwin(titlewin);
 				break;
+			default:
+				break;
 			}
 			break;
 		case 'a':
 		case ESC:
 		case KEY_LEFT:
 			// Leave submenu.
-			if (menu_escape(&menu)) {
-				menu_clear_message(&menu);
-			} else {
-				beep();
-			}
+			if (menu_escape(&menu)) menu_clear_message(&menu);
 			break;
 		case 'w':
 		case KEY_UP:
 		case KEY_BACKSPACE:
 		case KEY_SR:
 			// Scroll up.
-			if (!menu_scroll(&menu, -1)) beep();
+			menu_scroll(&menu, -1);
 			break;
 		case 's':
 		case ' ':
 		case KEY_DOWN:
 		case KEY_SF:
 			// Scroll down.
-			if (!menu_scroll(&menu, 1)) beep();
+			menu_scroll(&menu, 1);
 			break;
 		case 'g':
 			// Scroll to beginning.
@@ -544,7 +537,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				// Goto nth menu item.
 				int to = key == '0' ? 9 : key - '0' - 1;
 				menu_scroll(&menu, -999);
-				if (menu_scroll(&menu, to) != to) beep();
+				menu_scroll(&menu, to);
 				break;
 			}
 			break;
