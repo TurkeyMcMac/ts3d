@@ -109,7 +109,10 @@ static double angle_diff(double a1, double a2)
 
 // This is pretty much floor(c). However, when c is a nonzero whole number and
 // positive is true (that is, the relevant component of the delta position is
-// over 0,) c is decremented and returned.
+// over 0,) c is decremented and returned. This is for calculating the tile
+// coordinates of a moving point hitting a wall. If it hits a wall going in the
+// positive direction, it would be put in the tile one over except for the
+// decrement.
 static size_t tocoord(double c, bool positive)
 {
 	double f = floor(c);
@@ -393,8 +396,7 @@ static void draw_column(
 				cam_pos.x + disp.x / dist * newdist,
 				cam_pos.y + disp.y / dist * newdist
 			};
-			size_t bx = tocoord(newpos.x, dpos.x > 0.0),
-			       by = tocoord(newpos.y, dpos.y > 0.0);
+			size_t bx = newpos.x, by = newpos.y;
 			const d3d_block_s *const *top_bot =
 				GET(board, blocks, bx, by);
 			if (!top_bot) goto no_texture;
