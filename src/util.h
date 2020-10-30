@@ -45,8 +45,7 @@ int try_setenv(const char *name, const char *value, int overwrite);
 // Substitute '/' for the native separator character in the path.
 void subst_native_dir_sep(char *path);
 
-// Move x OR y in the direction dir. North is -y. South is +y. West is -x. East
-// is +x. Underflow in x or y is NOT accounted for.
+// Move x OR y in the direction dir. Underflow in x or y is NOT accounted for.
 void move_direction(d3d_direction dir, size_t *x, size_t *y);
 
 // Normalizes the vector to the given magnitude, which may be positive or
