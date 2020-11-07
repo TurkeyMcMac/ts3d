@@ -44,8 +44,8 @@ struct meter {
 	const char *label;
 	// Meter fullness out of 1.
 	double fraction;
-	// The curses style of the meter.
-	int style;
+	// The curses style of the meter where it is full and where it is empty.
+	chtype full_style, empty_style;
 	// The x and y position of the meter, in character cells.
 	int x, y;
 	// The width of the meter, in character cells.
