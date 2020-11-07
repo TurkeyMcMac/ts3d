@@ -10,7 +10,7 @@ terminal-based 3D graphics.
 [Here](https://asciinema.org/a/330110) is a trailer/demo session showing some of
 the mechanics. The video may play choppily the first time through.
 
-The fastest way to install the game is with Homebrew:
+The fastest way for Mac users to install the game is with Homebrew:
 
 ```
 brew install turkeymcmac/tap/ts3d
@@ -36,7 +36,7 @@ call `ceeteef` directly.
 
 ## Installation
 
-Again, the fastest installation procedure is this:
+Again, the fastest installation procedure for Mac users is this:
 
 ```
 brew install turkeymcmac/tap/ts3d
