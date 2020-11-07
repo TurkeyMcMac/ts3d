@@ -41,7 +41,6 @@
 
 struct title_state {
 	d3d_camera *cam;
-	d3d_vec_s pos;
 	double facing;
 	d3d_board *board;
 	WINDOW *win;
@@ -75,13 +74,13 @@ static void tick_title(struct title_state *state)
 	if (state->cam && state->board && state->win) {
 		// Produces a cool turning effect with the camera's position:
 		double theta = state->facing + 1.0;
-		state->pos.x = cos(PI * cos(theta))
+		double x = cos(PI * cos(theta))
 			+ d3d_board_width(state->board) / 2.0;
-		state->pos.y = sin(PI * sin(theta))
+		double y = sin(PI * sin(theta))
 			+ d3d_board_height(state->board) / 2.0;
+		d3d_vec_s pos = { x, y };
 		state->facing -= 0.003;
-		d3d_draw(state->cam, state->pos, state->facing, state->board,
-			0, NULL);
+		d3d_draw(state->cam, pos, state->facing, state->board, 0, NULL);
 		display_frame(state->cam, state->win, state->color_map);
 		wrefresh(state->win);
 		tick(state->timer);
@@ -365,11 +364,6 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			switch (redirect ? menu_redirect(&menu, redirect)
 				: menu_enter(&menu))
 			{
-			case ACTION_BLOCKED:
-				beep();
-				break;
-			case ACTION_WENT:
-				break;
 			case ACTION_INPUT:
 				menu_clear_message(&menu);
 				for (;;) {
@@ -496,31 +490,29 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				touchwin(menuwin);
 				touchwin(titlewin);
 				break;
+			default:
+				break;
 			}
 			break;
 		case 'a':
 		case ESC:
 		case KEY_LEFT:
 			// Leave submenu.
-			if (menu_escape(&menu)) {
-				menu_clear_message(&menu);
-			} else {
-				beep();
-			}
+			if (menu_escape(&menu)) menu_clear_message(&menu);
 			break;
 		case 'w':
 		case KEY_UP:
 		case KEY_BACKSPACE:
 		case KEY_SR:
 			// Scroll up.
-			if (!menu_scroll(&menu, -1)) beep();
+			menu_scroll(&menu, -1);
 			break;
 		case 's':
 		case ' ':
 		case KEY_DOWN:
 		case KEY_SF:
 			// Scroll down.
-			if (!menu_scroll(&menu, 1)) beep();
+			menu_scroll(&menu, 1);
 			break;
 		case 'g':
 			// Scroll to beginning.
@@ -544,7 +536,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				// Goto nth menu item.
 				int to = key == '0' ? 9 : key - '0' - 1;
 				menu_scroll(&menu, -999);
-				if (menu_scroll(&menu, to) != to) beep();
+				menu_scroll(&menu, to);
 				break;
 			}
 			break;
