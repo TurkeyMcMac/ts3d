@@ -1,4 +1,5 @@
 #include "player.h"
+#include "config.h"
 #include "ent.h"
 #include "map.h"
 #include "util.h"
@@ -13,8 +14,8 @@ void player_init(struct player *player, struct map *map)
 	player->body.radius = player->start->type->width / 2;
 	player->body.health = player->start->type->health;
 	player->body.damage = player->start->type->damage;
-	player->turn_speed =
-		2.5 * chance_to_fraction(player->start->type->turn_chance);
+	player->turn_speed = PLAYER_TURN_MULTIPLIER
+		* chance_to_fraction(player->start->type->turn_chance);
 	double reload_ready =
 		1.0 / chance_to_fraction(player->start->type->shoot_chance);
 	player->reload_ready = isfinite(reload_ready) ? reload_ready : LONG_MAX;

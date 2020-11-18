@@ -1,4 +1,5 @@
 #include "ui-util.h"
+#include "config.h"
 #include "pixel.h"
 #include "util.h"
 #include "xalloc.h"
@@ -122,19 +123,10 @@ void display_frame(d3d_camera *cam, WINDOW *win, struct color_map *colors)
 		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
 			int pair = color_map_get_pair(colors, pix);
-			mvwaddch(win, y, x, COLOR_PAIR(pair) | ':');
+			mvwaddch(win, y, x, COLOR_PAIR(pair) | SCENE_FG_CHAR);
 		}
 	}
 }
-
-// The width:height ratio of each pixel. Curses seems not to have a way to
-// determine this dynamically. The information is used when deciding camera
-// dimensions.
-#define PIXEL_ASPECT 0.625
-// The field of view side-to-side, in radians. The field is smaller if the
-// screen is taller than it is wide, which is unlikely. See camera_with_dims
-// for details.
-#define FOV_X 2.0
 
 d3d_camera *camera_with_dims(int width, int height)
 {
@@ -142,12 +134,12 @@ d3d_camera *camera_with_dims(int width, int height)
 	if (width <= 0) width = 1;
 	if (height <= 0) height = 1;
 	if (width >= height) {
-		cam = assert_alloc(d3d_new_camera(FOV_X,
-			FOV_X / PIXEL_ASPECT * height / width, width, height,
-			pixel(PC_BLACK, PC_BLACK)));
+		cam = assert_alloc(d3d_new_camera(CAM_FOV_X,
+			CAM_FOV_X / PIXEL_ASPECT * height / width,
+			width, height, pixel(PC_BLACK, PC_BLACK)));
 	} else {
-		cam = assert_alloc(d3d_new_camera(FOV_X * width / height,
-			FOV_X / PIXEL_ASPECT, width, height,
+		cam = assert_alloc(d3d_new_camera(CAM_FOV_X * width / height,
+			CAM_FOV_X / PIXEL_ASPECT, width, height,
 			pixel(PC_BLACK, PC_BLACK)));
 	}
 	return cam;

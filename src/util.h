@@ -68,6 +68,11 @@ void vec_norm_mul(d3d_vec_s *vec, double mag);
 // The constant pi.
 #define PI 3.14159265358979323846
 
+// Convert the expression to a string after substitution. For example,
+// STRINGIFY(PI) would become "3.1415...".
+#define STRINGIFY(x) STRINGIFY_(x)
+#define STRINGIFY_(x) #x
+
 // Evaluate the expression that has a numeric type. If it is less than 0, return
 // -1. Otherwise, continue onward.
 #define TRY(expr) if ((expr) >= 0) ; else return -1

@@ -1,5 +1,6 @@
 #include "do-ts3d-game.h"
 #include "body.h"
+#include "config.h"
 #include "load-texture.h"
 #include "loader.h"
 #include "logger.h"
@@ -54,7 +55,7 @@ struct title_state {
 static int load_title(struct title_state *state, WINDOW *win,
 	struct ticker *timer, struct loader *ldr)
 {
-	struct map *map = load_map(ldr, "title");
+	struct map *map = load_map(ldr, TITLE_SCREEN_MAP_NAME);
 	if (!map) return -1;
 	int width, height;
 	getmaxyx(win, height, width);
@@ -79,7 +80,7 @@ static void tick_title(struct title_state *state)
 		double y = sin(PI * sin(theta))
 			+ d3d_board_height(state->board) / 2.0;
 		d3d_vec_s pos = { x, y };
-		state->facing -= 0.003;
+		state->facing -= TITLE_SCREEN_CAM_ROTATION;
 		d3d_draw(state->cam, pos, state->facing, state->board, 0, NULL);
 		display_frame(state->cam, state->win, state->color_map);
 		wrefresh(state->win);
@@ -252,7 +253,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		state_file, &saves, log);
 	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
 	// This here is lowered from "1000":
-	try_setenv("ESCDELAY", "30", 0);
+	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
 	initscr();
 	start_color();
 	// For some reason, NetBSD Curses requires these two extra calls to keep
@@ -302,7 +303,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		menu_set_message(&menu, msg_buf);
 	}
 	struct ticker timer;
-	ticker_init(&timer, 30); // The frame wait is 30ms.
+	ticker_init(&timer, FRAME_DELAY);
 	struct title_state title_state;
 	if (load_title(&title_state, titlewin, &timer, &ldr)) {
 		logger_printf(log, LOGGER_WARNING,
