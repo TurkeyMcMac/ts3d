@@ -1,4 +1,5 @@
 #include "play-level.h"
+#include "config.h"
 #include "ent.h"
 #include "map.h"
 #include "loader.h"
@@ -11,11 +12,6 @@
 #include "util.h"
 #include <ctype.h>
 #include <math.h>
-
-// The number of ticks a turn lasts, triggered by a single key press. This is to
-// smooth out key detection speeds for different terminals, as some wait longer
-// before registering another press.
-#define TURN_DURATION 5
 
 // Create all the entities specified by the entity start specifications
 // (struct map_ent_start) in the given map.
@@ -167,9 +163,11 @@ int play_level(const char *root_dir, struct save_state *save,
 	if (map->prereq && !save_state_is_complete(save, map->prereq))
 		goto error_map; // Map not unlocked.
 	int health_meter_full_color = color_map_add_pair(
-		loader_color_map(&ldr), pixel(PC_BLACK, PC_GREEN));
+		loader_color_map(&ldr),
+		pixel(HEALTH_METER_FG_COLOR, HEALTH_METER_BG_COLOR));
 	int health_meter_empty_color = color_map_add_pair(
-		loader_color_map(&ldr), pixel(PC_GREEN, PC_BLACK));
+		loader_color_map(&ldr),
+		pixel(HEALTH_METER_BG_COLOR, HEALTH_METER_FG_COLOR));
 	struct meter health_meter = {
 		.label = "HEALTH",
 		.full_style = COLOR_PAIR(health_meter_full_color),
@@ -177,9 +175,11 @@ int play_level(const char *root_dir, struct save_state *save,
 		// Position and size not initialized yet.
 	};
 	int reload_meter_full_color = color_map_add_pair(
-		loader_color_map(&ldr), pixel(PC_BLACK, PC_RED));
+		loader_color_map(&ldr),
+		pixel(RELOAD_METER_FG_COLOR, RELOAD_METER_BG_COLOR));
 	int reload_meter_empty_color = color_map_add_pair(
-		loader_color_map(&ldr), pixel(PC_RED, PC_BLACK));
+		loader_color_map(&ldr),
+		pixel(RELOAD_METER_BG_COLOR, RELOAD_METER_FG_COLOR));
 	struct meter reload_meter = {
 		.label = "RELOAD",
 		.full_style = COLOR_PAIR(reload_meter_full_color),
