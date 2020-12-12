@@ -65,7 +65,7 @@ $(version-header): $(version-file)
 $(windows-zip): $(exe)
 	./zip-windows
 
-$(man-page): $(man-page-input)
+$(man-page): $(man-page-input) $(version-file)
 	sed "s/@@VERSION@@/$(version)/g" $< | gzip > $@
 
 .PHONY: install
