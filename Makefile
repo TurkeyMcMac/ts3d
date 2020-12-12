@@ -20,6 +20,7 @@ sources = src/*.c
 version-header = src/version.h
 # src/*.h will not include src/version.h if it has not been made yet:
 headers = src/*.h $(version-header)
+man-page-input = $(man-page).in
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 ${CFLAGS}
@@ -64,20 +65,20 @@ $(version-header): $(version-file)
 $(windows-zip): $(exe)
 	./zip-windows
 
+$(man-page): $(man-page-input)
+	sed "s/@@VERSION@@/$(version)/g" $< | gzip > $@
+
 .PHONY: install
-install: $(exe)
-	MAKEFILE=yes VERSION=$(version) \
-	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
+install: $(exe) $(man-page)
+	MAKEFILE=yes EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
 	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
 	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
 	./installer install
 
 .PHONY: uninstall
 uninstall:
-	MAKEFILE=yes VERSION=$(version) \
-	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
-	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
-	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
+	MAKEFILE=yes EXE_INSTALL="$(exe-install)" \
+	DATA_INSTALL="$(data-install)" MAN_INSTALL="$(man-install)" \
 	./installer uninstall
 
 .PHONY: run-tests
@@ -86,5 +87,5 @@ run-tests: $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) -r $(exe) $(dev-exe) $(tests) $(windows-zip) $(version-header) \
-		build
+	$(RM) -r $(exe) $(dev-exe) $(tests) $(windows-zip) $(man-page) \
+	       	$(version-header) build

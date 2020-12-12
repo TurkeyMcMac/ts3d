@@ -5,7 +5,7 @@ if ! [ -f ts3d.exe ]; then
 	echo >&2 'ts3d.exe must exist to make ts3d.zip'
 	exit 1
 fi
-dir="`mktemp -d`"
+dir="$(mktemp -d)"
 out() { rm -rf "$dir"; exit "${1-1}"; }
 cd "$dir" || out
 mkdir ts3d || out
@@ -15,7 +15,6 @@ zip -r ts3d.zip ts3d/ts3d.exe || out
 zip -r ts3d.zip ts3d/data || out
 cat > ts3d/install.bat <<'EOF'
 XCOPY data\ "%AppData%\ts3d\data\" /E /y
-ECHO Game data installed.
 EOF
 zip -r ts3d.zip ts3d/install.bat
 mv ts3d.zip "$ts3d_dir/" || out

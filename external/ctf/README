@@ -54,14 +54,15 @@ making a shared library.
 
 Now run the tests:
 
- $ ceeteef <your executable>
+ $ ceeteef YOUR-EXECUTABLE
 -- test_name --
 test_name:testing...
 test_name:Assertion failed: (1 + 1 == 3), function test_name, file test.c, line 3.
 test_name FAILED   Terminated by signal 6   Core dumped
 
 For further information, consult the man pages `ceeteef.1` and `ctf.3` or the
-help information from `ceeteef -h`.
+help information from `ceeteef -h`. A practical example of this framework's
+usage can be seen with my project 'ts3d', located at github.com/TurkeyMcMac/ts3d
 
 OUTPUT PARSING
 ==============
@@ -69,16 +70,28 @@ OUTPUT PARSING
 I didn't add a whole lot of built-in output switches because I figure that's the
 Unix way or something. The output is fairly easy to parse.
 
-All of the following scripts can have styles enabled with `ceeteef`'s -s option.
+All of the following scripts, except the last one, can have styles enabled with
+`ceeteef`'s -s option. Replace TESTS in these examples with the name of your
+compiled test file.
 
 Listing all output of just the failing tests:
 
- $ ceeteef <tests> | awk '/^-/{o=""}{o=o$0"\n"}/^[^- ]+ [^ ]*FA/{printf"%s",o}'
+ $ ceeteef TESTS | awk '/^-/{o=""}{o=o$0"\n"}/^[^- ]+ [^ ]*FAIL/{printf"%s",o}'
 
 Listing only test outcomes:
 
- $ ceeteef <tests> | grep -Ev '^--|^[[:alnum:]_]+:'
+ $ ceeteef TESTS | grep -Ev '^--|^[[:alnum:]_]+:'
 
 Listing only test failure outcomes:
 
- $ ceeteef <tests> | grep -Ev '^--|^[[:alnum:]_]+:|SUCCEEDED'
+ $ ceeteef TESTS | grep -Ev '^--|^[[:alnum:]_]+:|SUCCEEDED'
+
+Finally, here is a more complex script. It writes the output from each test into
+its own file in the directory 'logs'. The file is named after the test function.
+Here it is, in all its hideousness:
+
+ceeteef TESTS | sed '
+	s/'\''/'"'\\\\''"'/g
+	s/^\([^-: ]\{1,\}\)[: ]\(.*\)$/printf %s\\\\n '\''\2'\'' >> logs\/\1/
+	s/^-- \([^ ]\{1,\}\) --$/rm -f logs\/\1/
+' | sh
