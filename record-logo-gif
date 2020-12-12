@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -ex
 #
 # Record the GIF image to use as the logo in the README. This isn't very
 # polished, and you may have to tweak the script to get things to look right. If
@@ -17,8 +17,6 @@
 #  - FROG_WIDTH: The width in text cells of the frog entity.
 #  - GIF_WIDTH: The width in text cells of the output GIF.
 #  - GIF_HEIGHT: The height in text cells of the output GIF.
-
-set -ex
 
 # Output GIF:
 gif=${1:-logo.gif}

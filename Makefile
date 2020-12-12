@@ -14,6 +14,7 @@ man-install = $(man-dir)/$(man-page).gz
 data-install = $(TS3D_DATA)
 sources = src/*.c
 headers = src/*.h
+man-page-input = $(man-page).in
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
@@ -32,20 +33,20 @@ $(tests): $(sources) $(headers)
 $(windows-zip): $(exe)
 	./zip-windows
 
+$(man-page): $(man-page-input)
+	sed "s/@@VERSION@@/$(version)/g" $< | gzip > $@
+
 .PHONY: install
-install: $(exe)
-	MAKEFILE=yes VERSION=$(version) \
-	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
+install: $(exe) $(man-page)
+	MAKEFILE=yes EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
 	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
 	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
 	./installer install
 
 .PHONY: uninstall
 uninstall:
-	MAKEFILE=yes VERSION=$(version) \
-	EXE="$(exe)" EXE_INSTALL="$(exe-install)" \
-	DATA_DIR="$(data-dir)" DATA_INSTALL="$(data-install)" \
-	MAN_PAGE="$(man-page)" MAN_INSTALL="$(man-install)" \
+	MAKEFILE=yes EXE_INSTALL="$(exe-install)" \
+	DATA_INSTALL="$(data-install)" MAN_INSTALL="$(man-install)" \
 	./installer uninstall
 
 .PHONY: run-tests
@@ -54,4 +55,4 @@ run-tests: $(tests)
 
 .PHONY: clean
 clean:
-	$(RM) $(exe) $(tests) $(windows-zip)
+	$(RM) $(exe) $(tests) $(windows-zip) $(man-page)

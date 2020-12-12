@@ -1,10 +1,8 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # (Un)installation script for the Makefile to call; the script is a bit complex
 # to put in the Makefile. It tries to do stuff as a normal user and only falls
 # back to root if necessary.
-
-set -e
 
 if test -z "$MAKEFILE"; then
 	echo >&2 'Only run this command through make install'
@@ -37,12 +35,12 @@ install)
 	echo "    Installing manual to $MAN_INSTALL"
 	ask_to_proceed
 	set -x
+	do_or_sudo mkdir -p "$(dirname "$EXE_INSTALL")"
 	do_or_sudo cp "$EXE" "$EXE_INSTALL"
 	do_or_sudo mkdir -p "$DATA_INSTALL"
-	do_or_sudo cp -fr "$DATA_DIR"/* "$DATA_INSTALL"
-	do_or_sudo cp -f LICENSE "$DATA_INSTALL/LICENSE"
-	do_or_sudo sh -c 'sed "1s/@@VERSION@@/$1/" "$2" | gzip > "$3"' -- \
-		"$VERSION" "$MAN_PAGE" "$MAN_INSTALL"
+	do_or_sudo cp -fr "$DATA_DIR"/* LICENSE "$DATA_INSTALL"
+	do_or_sudo mkdir -p "$(dirname "$MAN_INSTALL")"
+	do_or_sudo cp -f "$MAN_PAGE" "$MAN_INSTALL"
 	;;
 uninstall)
 	echo
