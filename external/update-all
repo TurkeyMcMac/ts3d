@@ -10,15 +10,20 @@ for project in ./*/; do
 	echo "Updating $name"
 	url="`head -n1 "$project/FETCH"`"
 	sed '1d' "$project/FETCH" | while read filename; do
+		file_url="$url/$filename"
+		echo " - Getting $file_url"
 		path="$project/$filename"
 		mkdir -p "`dirname "$path"`"
-		curl -s "$url/$filename" > "$path"
-		cd ../src
-		case "$filename" in
-			*.[ch]) ln -fs "../external/$path" ;;
-			*) ;;
-		esac
-		cd ../external
-	done &
+		if curl --fail --silent --show-error "$file_url" > "$path"; then
+			cd ../src
+			case "$filename" in
+				*.[ch]) ln -fs "../external/$path" ;;
+				*) ;;
+			esac
+			cd ../external
+		else
+			echo '  FAILED! Not updated!'
+			rm "$path"
+		fi
+	done
 done
-wait
