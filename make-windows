@@ -11,13 +11,14 @@ if [ -z "$PDCURSES_DIR" ]; then
 	exit 1
 fi
 
-if ! [ -f "$PDCURSES_DIR/wincon/pdcurses.a" ]; then
-	# Make sure ts3d.exe is rebuilt:
-	rm -f ts3d.exe
-	make -C "$PDCURSES_DIR/wincon" CC="$CC" pdcurses.a || exit 1
+libcurses="$PDCURSES_DIR/wincon/pdcurses.a"
+
+if ! [ -f "$libcurses" ]; then
+	echo >&2 "Build $libcurses before running this script. Aborting."
+	exit 1
 fi
 
 make exe=ts3d.exe \
 	CFLAGS="-I$PDCURSES_DIR $CFLAGS" \
-	linkage="$linkage -lm -static -L$PDCURSES_DIR/wincon -l:pdcurses.a" \
+	linkage="$linkage -lm $libcurses" \
 	"$@"
