@@ -26,9 +26,8 @@ You can specify other parameters, e.g. `CFLAGS`, alongside the two above. These
 will work as normal.
 
 The script will create a statically-linked executable `ts3d.exe` which you can
-run on Windows. If `$PDCURSES_DIR/wincon/pdcurses.a` does not exist, the script
-will build it as well. If `pdcurses.a` is already built, make sure it is also
-built for Windows, not the native platform.
+run on Windows. Build `$PDCURSES_DIR/wincon/pdcurses.a` before running the
+script, and make sure it is built for Windows, not the native platform.
 
 The statically linked `ts3d.exe` compiled with `CFLAGS='-O3 -flto'` is about
 740k in size.
