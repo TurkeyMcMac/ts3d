@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # Sync all the external projects with the versions hosted on Github and update
 # various source files accordingly.
@@ -9,21 +9,19 @@ for project in ./*/; do
 	name="$(basename "$project")"
 	echo "Updating $name"
 	url="$(head -n1 "$project/FETCH")"
-	sed '1d' "$project/FETCH" | while read filename; do
-		file_url="$url/$filename"
+	sed '1d' "$project/FETCH" | while read -r project_path; do
+		file_url="$url/$project_path"
 		echo " - Getting $file_url"
-		path="$project/$filename"
+		path="$project/$project_path"
 		mkdir -p "$(dirname "$path")"
 		if curl --fail --silent --show-error "$file_url" > "$path"; then
-			cd ../src
-			case "$filename" in
-				*.[ch]) ln -fs "../external/$path" ;;
+			case "$project_path" in
+				*.[ch]) ln -fs "../external/$path" ../src ;;
 				*) ;;
 			esac
-			cd ../external
 		else
 			echo '  FAILED! Not updated!'
-			rm "$path"
+			rm -f "$path"
 		fi
 	done
 done
