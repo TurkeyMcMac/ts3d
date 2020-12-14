@@ -18,7 +18,7 @@ if ! [ -f "$libcurses" ]; then
 	exit 1
 fi
 
-make exe=ts3d.exe \
+exec make exe=ts3d.exe \
 	CFLAGS="-I$PDCURSES_DIR ${CFLAGS:-}" \
 	linkage="${linkage:-} -lm $libcurses" \
 	"$@"
