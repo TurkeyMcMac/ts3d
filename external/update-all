@@ -20,7 +20,7 @@ for project in ./*/; do
 				*) ;;
 			esac
 		else
-			echo '  FAILED! Not updated!'
+			echo '   FAILED! Not updated!'
 			rm -f "$path"
 		fi
 	done
