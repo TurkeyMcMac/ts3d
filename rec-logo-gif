@@ -10,7 +10,7 @@
 #    - ImageMagick
 #    - gifsicle or giflossy
 #
-# Usage: ./record-logo-gif [filename]
+# Usage: ./rec-logo-gif [filename]
 # If a filename is given, the GIF is put there instead of at ./logo.gif. There
 # are some environment variables available you may have to set if the size in
 # text cells of the frog entity changes. Here they are:
