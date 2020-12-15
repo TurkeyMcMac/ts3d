@@ -28,6 +28,8 @@
 use strict;
 use warnings;
 
+my @orig_argv = @ARGV;
+
 my $conf_target = 'a.out';
 my $conf_build_dir = 'build';
 my $conf_src_dir = 'src';
@@ -51,9 +53,15 @@ sub main {
 		} elsif (arg_opt('-c', \$arg)) {
 			$conf_cc = $arg;
 		} elsif (arg_opt('-j', \$arg)) {
-			fatal("$0: -j takes a positive integer argument")
-				unless ($arg =~ /^[0-9]+$/ && +$arg > 0);
-			$conf_parallel = +$arg;
+			if ($arg eq 'auto') {
+				$conf_parallel = get_n_procs();
+			} else {
+				unless ($arg =~ /^[0-9]+$/ && +$arg > 0) {
+					fatal("$0: -j takes a positive integer "
+						. "argument or 'auto'");
+				}
+				$conf_parallel = +$arg;
+			}
 		} elsif (args_opt('-F', \@args)) {
 			@conf_flags = @args;
 		} elsif (args_opt('-L', \@args)) {
@@ -76,7 +84,9 @@ Options:
                   default is 'build'.
   -s <dir>        Look for sources in the directory <dir>. The default is 'src'.
   -c <cc>         Use the compiler <cc>. The default is 'cc'.
-  -j <number>     Compile <number> files in parallel. The default is 1.
+  -j <number>     Compile <number> files in parallel. The default is 1. The
+                  argument can also be 'auto' to make the script try to use all
+		  available processors on the computer.
   -F <arg>... --  Pass <arg>... as flags to all invocations of the compiler. The
                   default is nothing.
   -L <arg>... --  Pass linking options <arg>... after source files when linking.
@@ -110,31 +120,51 @@ EOT
 	my @check_deps = ();
 	opendir(my $src_dir, $conf_src_dir)
 		or fatal("Unable to open source directory $conf_src_dir; $!");
+	system "mkdir", "-p", $conf_build_dir
+		and fatal("Unable to make directory $conf_build_dir");
 	my @sources = ();
 	my @changed_includes = ();
 	my $timestamp = "$conf_build_dir/.timestamp";
+	my $argv_filename = "$conf_build_dir/argv";
 	my $rebuild_inc_after = mtime($timestamp);
-	$rebuild_inc_after = 0 if (!defined($rebuild_inc_after));
+	my $rebuild_all = !defined($rebuild_inc_after);
+	my $current_argv_data = (join "\0", @orig_argv) . "\0";
+	if (open(my $argv_file, "+<", $argv_filename)) {
+		local $/;
+		if ($current_argv_data ne <$argv_file>) {
+			$rebuild_all = 1;
+			seek $argv_file, 0, 0;
+			print $argv_file $current_argv_data;
+		}
+	} else {
+		if (open(my $argv_outfile, ">", $argv_filename)) {
+			print $argv_outfile $current_argv_data;
+		}
+		$rebuild_all = 1;
+	}
 	for my $file (readdir $src_dir) {
-		next if (-d $file);
-		if ($file =~ /\.(?:c|cc|cpp|cxx|C|CPP|m)$/) {
+		my $file_path = "$conf_src_dir/$file";
+		next if (-d $file_path);
+		if ($file_path =~ /\.(?:c|cc|cpp|cxx|C|CPP|m)$/) {
 			push @sources, $file;
-		} elsif (mtime("$conf_src_dir/$file") > $rebuild_inc_after) {
+		} elsif (mtime($file_path) > ($rebuild_inc_after // 0)) {
 			push @changed_includes, $file;
 		}
 	}
 	closedir $src_dir;
-	system "mkdir", "-p", $conf_build_dir
-		and fatal("Unable to make directory $conf_build_dir");
-	for my $source (@sources) {
-		my $object = "$source.o";
-		my $source_path = "$conf_src_dir/$source";
-		my $object_path = "$conf_build_dir/$object";
-		if (!-e $object_path
-		 || mtime($source_path) > mtime($object_path)) {
-			push @rebuilds, $source;
-		} else {
-			push @check_deps, $source;
+	if ($rebuild_all) {
+		@rebuilds = @sources;
+	} else {
+		for my $source (@sources) {
+			my $object = "$source.o";
+			my $source_path = "$conf_src_dir/$source";
+			my $object_path = "$conf_build_dir/$object";
+			if (!-e $object_path
+			 || mtime($source_path) > mtime($object_path)) {
+				push @rebuilds, $source;
+			} else {
+				push @check_deps, $source;
+			}
 		}
 	}
 	my @pids = ();
@@ -188,6 +218,21 @@ sub args_opt {
 	} else {
 		unshift @ARGV, $opt;
 		return 0;
+	}
+}
+
+sub get_n_procs {
+	# Use Sys::Info only if it is installed:
+	eval '
+		use Sys::Info;
+		return Sys::Info->new->device("CPU")->count;
+	' or do {
+		# nproc is part of GNU coreutils, but it's also in Busybox. It
+		# is probably present on Mac, but the sysctl works for Mac just
+		# in case. Support for more systems can be added here.
+		my $out = `sh -c 'nproc || sysctl -n hw.ncpu' 2>/dev/null`;
+		# 4 is probably a safe default:
+		return $out ne '' ? +$out : 4;
 	}
 }
 

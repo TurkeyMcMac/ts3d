@@ -37,16 +37,17 @@ $(dev-exe): $(sources) $(headers)
 	@# -t sets the output destination.
 	@# -c sets the compiler.
 	@# -b sets the build directory (which will be automatically created.)
-	@# -j sets the number of compilation processes in parallel.
+	@# -j auto uses all the available processors.
 	@# -F sets the flags to pass to every compiler invocation. The list is
 	@#    terminated by '--'.
 	@# -L sets the linking arguments passed after the sources when linking.
 	@#    It is not terminated by '--' since the argument list ends here.
-	./compile -t $@ -c $(CC) -b build/dev -j 4 -F $(cflags) -- -L $(linkage)
+	./compile -t $@ -c $(CC) -b build/dev -j auto \
+		-F $(cflags) -- -L $(linkage)
 
 # Optimized build.
 $(exe): $(sources) $(headers)
-	./compile -t $@ -c $(CC) -b build/release -j 4 \
+	./compile -t $@ -c $(CC) -b build/release -j auto \
 		-F $(cflags) -O2 -flto -- \
 		-L $(linkage)
 
@@ -55,7 +56,7 @@ $(tests): $(sources) $(headers)
 	@# -J overrides the entire argument vector for the linking stage. Here
 	@#    it is used to produce a shared object. The {o} will be replaced
 	@#    with the output and the {i} will be replaced with all input files.
-	./compile -t $@ -c $(CC) -b build/test -j 4 \
+	./compile -t $@ -c $(CC) -b build/test -j auto \
 		-J $(CC) $(test-flags) -shared -o {o} {i} $(linkage) -- \
 		-F $(cflags) $(test-flags)
 
