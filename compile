@@ -133,6 +133,7 @@ EOT
 		local $/;
 		if ($current_argv_data ne <$argv_file>) {
 			$rebuild_all = 1;
+			truncate $argv_file, 0;
 			seek $argv_file, 0, 0;
 			print $argv_file $current_argv_data;
 		}
@@ -169,12 +170,11 @@ EOT
 	}
 	my @pids = ();
 	start_dep_check(\@check_deps, \@pids, @changed_includes);
-	compile_sources(@rebuilds);
+	compile_sources($timestamp, @rebuilds);
 	wait_dep_check(\@check_deps, \@pids, @changed_includes);
 	if (scalar @rebuilds > 0 || scalar @check_deps > 0 || !-e $conf_target)
 	{
-		compile_sources(@check_deps);
-		system "touch", $timestamp;
+		compile_sources($timestamp, @check_deps);
 		link_target(map { "$_.o" } @sources)
 			and fatal("Compilation failed");
 		print "Compilation of $conf_target completed.\n";
@@ -284,6 +284,47 @@ sub dep_argv {
 		} @conf_pp_argv);
 }
 
+sub is_subset {
+	my ($arr1, $arr2) = @_;
+	my %hash2 = map { $_ => 1 } @$arr2;
+	my %merged = map { $_ => 1 } (@$arr1, @$arr2);
+	return scalar (keys %merged) == scalar (keys %hash2);
+}
+
+# This nodep stuff is an optimization. If a file is checked for dependencies and
+# is not dependent on any of the tested files, the files are stored in their own
+# file in the build directory. The next time the source file is checked, it can
+# be quickly ruled out as a dependent if the checked dependencies are a subset
+# of the headers which the source file is known not to depend on. This speeds
+# things up a small amount if a file does not depend on many other files.
+# Whenever the file is compiled, the cache is destroyed. Despite the speed
+# improvements, this program is slower than just -MMD or whatever.
+
+sub nodep_path {
+	my ($source_filename) = @_;
+	return $conf_build_dir . '/' . basename($source_filename) . '.nodep';
+}
+
+sub get_nodeps {
+	my ($source_filename) = @_;
+	if (open(my $nodep_file, "<", nodep_path($source_filename))) {
+		local $/;
+		my @nodeps = split "\0", <$nodep_file>;
+		return \@nodeps;
+	}
+}
+
+sub merge_nodeps {
+	my ($source_filename, $new_nodeps) = @_;
+	return if (scalar @$new_nodeps == 0);
+	my $orig_nodeps = get_nodeps($source_filename) // [];
+	if (open(my $nodep_file, ">", nodep_path($source_filename))) {
+		my %merged = map { $_ => 1 } (@$orig_nodeps, @$new_nodeps);
+		my $new_data = (join "\0", (keys %merged)) . "\0";
+		print $nodep_file $new_data;
+	}
+}
+
 sub start_dep_check {
 	my ($files, $pids, @deps) = @_;
 	@$pids = ();
@@ -298,6 +339,10 @@ sub start_dep_check {
 			# New process group to keep compile_sources() from
 			# waiting for this:
 			setpgrp();
+			my $nodeps = get_nodeps($files->[$i]);
+			if (defined($nodeps) && is_subset(\@deps, $nodeps)) {
+				exit 1;
+			}
 			exec dep_argv($grep_pattern, $files->[$i])
 				or fatal("Failed to exec dependency checker");
 		} elsif ($pids->[$i] < 0) {
@@ -311,7 +356,10 @@ sub wait_dep_check {
 	my ($files, $pids, @deps) = @_;
 	for (my $j = $#$pids; $j >= 0; --$j) {
 		waitpid $pids->[$j], 0;
-		splice @$files, $j, 1 if ($? != 0);
+		if ($? != 0) {
+			merge_nodeps($files->[$j], \@deps);
+			splice @$files, $j, 1;
+		}
 	}
 	if (scalar @$files == 0 || scalar @deps == 0) {
 		@$files = ();
@@ -320,12 +368,27 @@ sub wait_dep_check {
 	my $grep_pattern = grep_pattern(@deps);
 	for (my $j = $#$files; $j >= 0; --$j) {
 		my $exit = system dep_argv($grep_pattern, $files->[$j]);
-		splice @$files, $j, 1 if ($exit != 0);
+		if ($? != 0) {
+			merge_nodeps($files->[$j], \@deps);
+			splice @$files, $j, 1;
+		}
 	}
 }
 
+sub invalidate_dep_cache {
+	system "rm", "-f", map { nodep_path($_) } @_ if (scalar @_ > 0);
+}
+
+sub register_compiler_finish {
+	my $status = $?;
+	my ($timestamp) = @_;
+	system "touch", $timestamp;
+	fatal("Compilation failed") if ($status != 0);
+}
+
 sub compile_sources {
-	my @sources = @_;
+	my ($timestamp, @sources) = @_;
+	invalidate_dep_cache(@sources);
 	# Ignore preprocessor processes that are outside this group:
 	my $pgroup = getpgrp();
 	my $n_procs = 0;
@@ -334,7 +397,7 @@ sub compile_sources {
 		if ($n_procs >= $conf_parallel) {
 			waitpid -$pgroup, 0;
 			--$n_procs;
-			fatal("Compilation failed") if ($? != 0);
+			register_compiler_finish($timestamp);
 		}
 		my $pid = fork();
 		if ($pid == 0) {
@@ -354,8 +417,8 @@ sub compile_sources {
 	}
 	while ($n_procs > 0) {
 		waitpid -$pgroup, 0;
-		fatal("Compilation failed") if ($? != 0);
 		--$n_procs;
+		register_compiler_finish($timestamp);
 	}
 }
 
