@@ -4,6 +4,8 @@
 use strict;
 use warnings;
 
+use constant FG_CHAR => ':';
+
 sub print_help {
     my ($file) = @_;
     print $file <<HELP;
@@ -47,23 +49,29 @@ sub clear_screen {
     print "\e[H\e[J";
 }
 
-sub colorize_pix {
+sub off_style { return "\e[0m"; }
+
+sub pix_color {
     my ($pix) = @_;
     my $code = ord($pix) - ord(' ') - 1;
     if ( $code >= 0 && $code < 64 ) {
         my $fg = $code >> 3;
         my $bg = $code & 0b111;
-        $pix = "\e[3${fg};4${bg}m:\e[0m";
+        return "\e[3${fg};4${bg}m";
     }
-    return $pix;
+    return '';
 }
 
 sub colorize_txtr {
     my ($path) = @_;
     if ( open( my $file, "<", $path ) ) {
-        my $print = '';
+        my $print      = '';
+        my $last_color = '';
         while ( defined( my $pix = getc($file) ) ) {
-            $print .= colorize_pix($pix);
+            my $color = pix_color($pix);
+            $print .= $color || off_style() if $color ne $last_color;
+            $print .= $color ? FG_CHAR : $pix;
+            $last_color = $color;
         }
         close($file);
         print $print;
@@ -136,7 +144,8 @@ elsif ( $subcmd eq 'table' ) {
     for ( my $y = 0 ; $y < 8 ; ++$y ) {
         for ( my $x = 0 ; $x < 8 ; ++$x ) {
             $ascii = chr( ord($ascii) + 1 );
-            printf "%s%s   ", $ascii, colorize_pix($ascii);
+            printf( "%s%s%s%s   ",
+                $ascii, pix_color($ascii), FG_CHAR, off_style() );
         }
         print "\n";
     }

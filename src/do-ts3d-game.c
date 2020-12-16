@@ -41,6 +41,8 @@
 #define SAVE_PFX_LEN 5
 
 struct title_state {
+	// True if a screensaver was loaded and is being drawn:
+	bool is_working;
 	d3d_camera *cam;
 	double facing;
 	d3d_board *board;
@@ -55,6 +57,7 @@ struct title_state {
 static int load_title(struct title_state *state, WINDOW *win,
 	struct ticker *timer, struct loader *ldr)
 {
+	state->is_working = false;
 	struct map *map = load_map(ldr, TITLE_SCREEN_MAP_NAME);
 	if (!map) return -1;
 	int width, height;
@@ -65,6 +68,7 @@ static int load_title(struct title_state *state, WINDOW *win,
 	state->win = win;
 	state->color_map = loader_color_map(ldr);
 	state->timer = timer;
+	state->is_working = true;
 	return 0;
 }
 
@@ -72,7 +76,7 @@ static int load_title(struct title_state *state, WINDOW *win,
 // until the tick time is up.
 static void tick_title(struct title_state *state)
 {
-	if (state->cam && state->board && state->win) {
+	if (state->is_working) {
 		// Produces a cool turning effect with the camera's position:
 		double theta = state->facing + 1.0;
 		double x = cos(PI * cos(theta))
@@ -91,15 +95,17 @@ static void tick_title(struct title_state *state)
 // Resize the camera according to the size of the window.
 static void resize_title_camera(struct title_state *state)
 {
-	d3d_free_camera(state->cam);
-	int width, height;
-	getmaxyx(state->win, height, width);
-	state->cam = camera_with_dims(width, height);
+	if (state->is_working) {
+		d3d_free_camera(state->cam);
+		int width, height;
+		getmaxyx(state->win, height, width);
+		state->cam = camera_with_dims(width, height);
+	}
 }
 
 static void destroy_title_state(struct title_state *state)
 {
-	d3d_free_camera(state->cam);
+	if (state->is_working) d3d_free_camera(state->cam);
 }
 
 // Load the save state list and log in as the one with the given name. If that
