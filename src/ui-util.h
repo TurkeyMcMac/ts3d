@@ -38,6 +38,12 @@ int color_map_get_pair(struct color_map *map, d3d_pixel pix);
 // Free resources associated with the map.
 void color_map_destroy(struct color_map *map);
 
+// A representation of part of the screen.
+struct screen_area {
+	int x, y;
+	int width, height;
+};
+
 // Configuration for drawing an analog meter on the screen.
 struct meter {
 	// The text to label the meter with.
@@ -61,9 +67,10 @@ void meter_draw(const struct meter *meter);
 // the given text with each line centered.
 WINDOW *popup_window(const char *text);
 
-// Copy the current scene from the camera to the window. The color map is used
+// Copy the current scene from the camera to given area. The color map is used
 // to translate pixels for Curses.
-void display_frame(d3d_camera *cam, WINDOW *win, struct color_map *colors);
+void display_frame(d3d_camera *cam, struct screen_area *area,
+	struct color_map *colors);
 
 // Create a camera with the given positive dimensions.
 d3d_camera *camera_with_dims(int width, int height);

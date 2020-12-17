@@ -2,6 +2,7 @@
 #define MENU_H_
 
 #include <curses.h>
+#include "ui-util.h"
 
 struct logger; // Weak dependency
 
@@ -67,8 +68,8 @@ struct menu {
 	struct menu_item *root;
 	// The currently displayed menu item.
 	struct menu_item *current;
-	// The window on which the menu is drawn.
-	WINDOW *win;
+	// The area in which the menu is drawn.
+	struct screen_area *area;
 	// The root directory of files loaded by the menu.
 	const char *root_dir;
 	// The message displayed at the bottom of the menu.
@@ -80,9 +81,9 @@ struct menu {
 };
 
 // Initialize a menu from the file called "menu.json" in the root directory. The
-// window will be used for drawing the menu. The logger is only used during
+// area will be used for drawing the menu. The logger is only used during
 // menu_init. Success and failure return 0 or -1, respectively.
-int menu_init(struct menu *menu, const char *data_dir, WINDOW *win,
+int menu_init(struct menu *menu, const char *data_dir, struct screen_area *area,
 	struct logger *log);
 
 // Get the currently looked-at menu item. This will never be NULL.

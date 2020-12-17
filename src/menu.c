@@ -1,5 +1,4 @@
 #include "menu.h"
-#include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,7 +84,7 @@ error_kind:
 	return -1;
 }
 
-int menu_init(struct menu *menu, const char *root_dir, WINDOW *win,
+int menu_init(struct menu *menu, const char *root_dir, struct screen_area *area,
 	struct logger *log)
 {
 	char *fname = mid_cat(root_dir, DIRSEP, "menu.json");
@@ -99,7 +98,7 @@ int menu_init(struct menu *menu, const char *root_dir, WINDOW *win,
 	if (parse_json_tree("menu", file, log, &jtree)) goto error_json_parse;
 	menu->root = xmalloc(sizeof(*menu->root));
 	if (construct(menu->root, NULL, &jtree, log)) goto error_json_format;
-	menu->win = win;
+	menu->area = area;
 	menu->current = menu->root;
 	menu->root_dir = root_dir;
 	menu->msg = "";
@@ -134,9 +133,7 @@ struct menu_item *menu_get_selected(struct menu *menu)
 
 static void text_n_items(struct menu *menu, struct menu_item *text)
 {
-	int maxy, UNUSED_VAR(maxx);
-	getmaxyx(menu->win, maxy, maxx);
-	size_t lines = (size_t)maxy - 3;
+	size_t lines = (size_t)menu->area->height - 3;
 	if (menu->n_lines > lines) {
 		text->n_items = menu->n_lines - lines;
 	} else {
@@ -154,14 +151,12 @@ int menu_scroll(struct menu *menu, int amount)
 	current->place =
 		CLAMP(current->place + amount, 0, (int)current->n_items - 1);
 	if (current->kind == ITEM_LINKS) {
-		int maxy, UNUSED_VAR(maxx);
-		getmaxyx(menu->win, maxy, maxx);
-		maxy -= 2;
-		if ((int)current->n_items < maxy) {
+		int height = menu->area->height - 2;
+		if ((int)current->n_items < height) {
 			current->frame = 0;
 		} else {
 			current->frame = CLAMP(current->frame,
-				current->place - maxy + 1, current->place);
+				current->place - height + 1, current->place);
 		}
 	}
 	return current->place - last_place;
@@ -170,7 +165,6 @@ int menu_scroll(struct menu *menu, int amount)
 static void enter(struct menu *menu, struct menu_item *into)
 {
 	menu->current = into;
-	werase(menu->win);
 }
 
 bool menu_set_input(struct menu *menu, char *buf, size_t size)
@@ -232,7 +226,6 @@ bool menu_escape(struct menu *menu)
 	}
 	if (!menu->current->parent) return false;
 	menu->current = menu->current->parent;
-	werase(menu->win);
 	return true;
 }
 
@@ -250,57 +243,64 @@ bool menu_delete_selected(struct menu *menu, struct menu_item *move_to)
 	return true;
 }
 
+static void move_clear_line(struct menu *menu, int y, int x)
+{
+	move(y, 0);
+	printw("%*s", menu->area->width, "");
+	move(y, x);
+}
+
 void menu_draw(struct menu *menu)
 {
 	int i = 0;
 	struct menu_item *current = menu->current;
-	wattron(menu->win, A_UNDERLINE);
-	mvwaddstr(menu->win, 0, 0, current->title);
-	wattroff(menu->win, A_UNDERLINE);
-	int maxy, UNUSED_VAR(maxx);
-	getmaxyx(menu->win, maxy, maxx);
-	--maxy;
+	move_clear_line(menu, 0, 0);
+	attron(A_UNDERLINE);
+	addstr(current->title);
+	attroff(A_UNDERLINE);
+	int height = menu->area->height - 1;
 	switch (current->kind) {
 	case ITEM_LINKS:
 		for (int l = current->frame;
-		     l < (int)current->n_items && ++i < maxy; ++l) {
+		     l < (int)current->n_items && ++i < height; ++l) {
 			int reverse = l == current->place;
-			wmove(menu->win, i, 0);
-			if (reverse) wattron(menu->win, A_REVERSE);
-			wprintw(menu->win,  "%2d. %s ",
-				l + 1, current->items[l].title);
-			if (reverse) wattroff(menu->win, A_REVERSE);
-			wclrtoeol(menu->win);
+			move_clear_line(menu, i, 0);
+			if (reverse) attron(A_REVERSE);
+			printw("%2d. %s ", l + 1, current->items[l].title);
+			if (reverse) attroff(A_REVERSE);
 		}
 		break;
 	case ITEM_TEXT:
 		for (int l = current->place;
-		     l < (int)menu->n_lines && ++i < maxy; ++l) {
+		     l < (int)menu->n_lines && ++i < height; ++l) {
 			struct string *line = &menu->lines[l];
-			wmove(menu->win, i, 0);
-			waddnstr(menu->win, line->text, line->len);
-			wclrtoeol(menu->win);
+			mvprintw(i, 0, "%-*.*s",
+				menu->area->width, (int)line->len, line->text);
 		}
 		break;
 	case ITEM_INPUT:
-		wattron(menu->win, A_UNDERLINE);
-		mvwprintw(menu->win, 2, 1, "%*.*s",
-			-(int)current->n_items, (int)current->n_items,
+		move_clear_line(menu, 3, 0);
+		move_clear_line(menu, 1, 0);
+		move_clear_line(menu, 2, 1);
+		attron(A_UNDERLINE);
+		printw("%*.*s", -(int)current->n_items, (int)current->n_items,
 			current->tag);
 		size_t last = strlen_max(current->tag, current->n_items);
 		if (last < current->n_items) {
-			mvwaddch(menu->win, 2, (int)last + 1, A_REVERSE | ' ');
+			mvaddch(2, (int)last + 1, A_REVERSE | ' ');
 		}
-		wattroff(menu->win, A_UNDERLINE);
-		mvwaddstr(menu->win, 3, 1, "Enter text");
+		attroff(A_UNDERLINE);
+		mvaddstr(3, 1, "Enter text");
 		i = 3;
 		break;
 	default:
 		break;
 	}
-	wclrtobot(menu->win);
-	if (++i >= maxy) i = maxy;
-	mvwaddstr(menu->win, i, 0, menu->msg);
+	if (++i >= height) i = height;
+	for (int j = i; j <= height; ++j) {
+		move_clear_line(menu, j, 0);
+	}
+	mvaddstr(i, 0, menu->msg);
 }
 
 void menu_set_message(struct menu *menu, const char *msg)

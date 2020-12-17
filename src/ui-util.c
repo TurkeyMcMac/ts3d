@@ -117,13 +117,19 @@ WINDOW *popup_window(const char *text)
 	return win;
 }
 
-void display_frame(d3d_camera *cam, WINDOW *win, struct color_map *colors)
+void display_frame(d3d_camera *cam, struct screen_area *area,
+	struct color_map *colors)
 {
-	for (size_t x = 0; x < d3d_camera_width(cam); ++x) {
-		for (size_t y = 0; y < d3d_camera_height(cam); ++y) {
+	size_t width = d3d_camera_width(cam);
+	if (width > (size_t)area->width) width = (size_t)area->width;
+	size_t height = d3d_camera_height(cam);
+	if (height > (size_t)area->height) height = (size_t)area->height;
+	for (size_t x = 0; x < width; ++x) {
+		for (size_t y = 0; y < height; ++y) {
 			d3d_pixel pix = *d3d_camera_get(cam, x, y);
 			int pair = color_map_get_pair(colors, pix);
-			mvwaddch(win, y, x, COLOR_PAIR(pair) | SCENE_FG_CHAR);
+			mvaddch((int)y + area->y, (int)x + area->x,
+				COLOR_PAIR(pair) | SCENE_FG_CHAR);
 		}
 	}
 }
