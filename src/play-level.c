@@ -218,7 +218,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Are you sure you want to quit?\n"
 			"Press Y to confirm or N to cancel.";
 		tick(timer);
-		bool resized = sync_screen_size(area.width, area.height)
+		bool resized = sync_screen_size(area.height, area.width)
 			|| !cam;
 		if (resized) {
 			area.width = COLS;
