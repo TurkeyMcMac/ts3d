@@ -78,11 +78,14 @@ struct menu {
 	struct string *lines;
 	// If a file is being viewed, the line count of that file. 0 otherwise.
 	size_t n_lines;
+	// Whether the menu has changed and needs redrawing.
+	bool needs_redraw;
 };
 
 // Initialize a menu from the file called "menu.json" in the root directory. The
-// area will be used for drawing the menu. The logger is only used during
-// menu_init. Success and failure return 0 or -1, respectively.
+// area will be used for drawing the menu. The menu should have exclusive access
+// to the area. The logger is only used during menu_init. Success and failure
+// return 0 or -1, respectively.
 int menu_init(struct menu *menu, const char *data_dir, struct screen_area *area,
 	struct logger *log);
 

@@ -104,6 +104,7 @@ int menu_init(struct menu *menu, const char *root_dir, struct screen_area *area,
 	menu->msg = "";
 	menu->lines = NULL;
 	menu->n_lines = 0;
+	menu->needs_redraw = true;
 	free_json_tree(&jtree);
 	free(fname);
 	return 0;
@@ -159,11 +160,13 @@ int menu_scroll(struct menu *menu, int amount)
 				current->place - height + 1, current->place);
 		}
 	}
+	menu->needs_redraw = true;
 	return current->place - last_place;
 }
 
 static void enter(struct menu *menu, struct menu_item *into)
 {
+	menu->needs_redraw = true;
 	menu->current = into;
 }
 
@@ -171,6 +174,7 @@ bool menu_set_input(struct menu *menu, char *buf, size_t size)
 {
 	struct menu_item *current = menu->current;
 	if (current->kind != ITEM_INPUT) return false;
+	menu->needs_redraw = true;
 	current->tag = buf;
 	current->n_items = size;
 	return true;
@@ -210,6 +214,7 @@ enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
 		enter(menu, into);
 		return ACTION_INPUT;
 	case ITEM_TAG:
+		menu->needs_redraw = true;
 		return ACTION_TAG;
 	}
 	return ACTION_BLOCKED;
@@ -225,6 +230,7 @@ bool menu_escape(struct menu *menu)
 		menu->lines = NULL;
 	}
 	if (!menu->current->parent) return false;
+	menu->needs_redraw = true;
 	menu->current = menu->current->parent;
 	return true;
 }
@@ -254,6 +260,9 @@ void menu_draw(struct menu *menu)
 {
 	int i = 0;
 	struct menu_item *current = menu->current;
+	if (!menu->needs_redraw) return;
+	// Inputs should always be redrawn since the input buffer may change:
+	menu->needs_redraw = current->kind == ITEM_INPUT;
 	move_clear_line(menu, 0, 0);
 	attron(A_UNDERLINE);
 	addstr(current->title);
@@ -305,11 +314,13 @@ void menu_draw(struct menu *menu)
 
 void menu_set_message(struct menu *menu, const char *msg)
 {
+	menu->needs_redraw = true;
 	menu->msg = msg;
 }
 
 void menu_clear_message(struct menu *menu)
 {
+	menu->needs_redraw = true;
 	menu->msg = "";
 }
 
