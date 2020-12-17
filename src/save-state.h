@@ -15,9 +15,6 @@ struct save_states {
 	table saves;
 };
 
-// Create an empty collection.
-void save_states_empty(struct save_states *saves);
-
 // Create a collection from a file. The file is closed. Error messages are sent
 // to the log if an error occurs, and -1 is returned (0 is for success.)
 int save_states_init(struct save_states *saves, FILE *from, struct logger *log);

@@ -162,24 +162,21 @@ static void destroy_screen_state(struct screen_state *state)
 }
 
 // Load the save state list and log in as the one with the given name. If that
-// name is not present, create it.
+// name is not present, add it. NULL is returned if the saves couldn't load.
 static struct save_state *get_save_state(const char *name,
 	const char *state_file, struct save_states *saves, struct logger *log)
 {
 	FILE *from = fopen(state_file, "r");
+	// from closed by save_state_init:
 	if (from && !save_states_init(saves, from, log)) {
 		save_states_add(saves, ANONYMOUS);
 		struct save_state *save = save_states_get(saves, name);
 		if (!save) save = save_states_add(saves, name);
 		return save;
-	} else {
-		logger_printf(log, LOGGER_WARNING,
-			"Unable to load save state from %s; "
-			"creating empty state\n", state_file);
-		save_states_empty(saves);
-		return save_states_add(saves, ANONYMOUS);
 	}
-	// from closed by save_state_init
+	logger_printf(log, LOGGER_ERROR,
+		"Unable to load save state from %s\n", state_file);
+	return NULL;
 }
 
 // Add any links present in the save state list but absent in the items list to
@@ -308,6 +305,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// Log in with the given save name, or anonymously if NULL is given.
 	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
 		state_file, &saves, log);
+	if (!save) goto error_save_state;
 	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
 	// This here is lowered from "1000":
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
@@ -343,7 +341,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	struct screen_state screen_state = SCREEN_STATE_PARTIAL_INITIALIZER;
 	if (load_menu_state(&screen_state.menu, data_dir, log)) {
 		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
-		goto end;
+		goto error_menu;
 	}
 	if (load_title_state(&screen_state.title, FRAME_DELAY, &ldr)) {
 		logger_printf(log, LOGGER_WARNING,
@@ -572,13 +570,16 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		redirect = NULL;
 	}
 end:
+	ret = 0; // Things are successful so far.
+error_menu:
 	destroy_screen_state(&screen_state);
 	endwin();
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
-	ret = write_save_states(&saves, state_file, log);
+	if (write_save_states(&saves, state_file, log)) ret = -1;
 	free_save_links(&game_list);
 	save_states_destroy(&saves);
+error_save_state:
 	loader_free(&ldr);
 	return ret;
 }
