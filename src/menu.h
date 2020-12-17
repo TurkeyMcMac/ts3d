@@ -128,7 +128,7 @@ bool menu_delete_selected(struct menu *menu, struct menu_item *move_to);
 // text of the buffer must ALWAYS BE NUL TERMINATED.
 bool menu_set_input(struct menu *menu, char *buf, size_t size);
 
-// Draw the viewed menu on menu->win.
+// Draw the viewed menu on the screen, clobbering the Curses state.
 void menu_draw(struct menu *menu);
 
 // Set the message to be displayed next time the menu is drawn.
@@ -137,8 +137,8 @@ void menu_set_message(struct menu *menu, const char *msg);
 // Display an empty message next time the menu is drawn.
 void menu_clear_message(struct menu *menu);
 
-// Deallocate menu resources. This doesn't touch the window, the root directory,
-// or the message.
+// Deallocate menu resources. This doesn't touch the screen area, the root
+// directory, the input buffer, or the message.
 void menu_destroy(struct menu *menu);
 
 #endif /* MENU_H_ */
