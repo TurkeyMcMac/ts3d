@@ -74,7 +74,9 @@ static int load_menu_state(struct menu_state *state, const char *data_dir,
 {
 	// Screen area not yet initialized:
 	state->area = (struct screen_area) { 0, 0, 1, 1 };
-	return menu_init(&state->menu, data_dir, &state->area, log);
+	int ret = menu_init(&state->menu, data_dir, &state->area, log);
+	state->initialized = !ret;
+	return ret;
 }
 
 // Load the title screensaver map with the given loader, setting the camera and
@@ -83,7 +85,6 @@ static int load_menu_state(struct menu_state *state, const char *data_dir,
 static int load_title_state(struct title_state *state, int tick_interval,
 	struct loader *ldr)
 {
-	state->initialized = false;
 	struct map *map = load_map(ldr, TITLE_SCREEN_MAP_NAME);
 	if (!map) return -1;
 	// Screen area not yet initialized:
@@ -95,40 +96,6 @@ static int load_title_state(struct title_state *state, int tick_interval,
 	ticker_init(&state->timer, tick_interval);
 	state->initialized = true;
 	return 0;
-}
-
-// Move the screensaver forward a tick and draw it on the screen. Then wait
-// until the tick time is up.
-static void tick_title(struct title_state *state)
-{
-	if (state->initialized) {
-		// Produces a cool turning effect with the camera's position:
-		double theta = state->facing + 1.0;
-		double x = cos(PI * cos(theta))
-			+ d3d_board_width(state->board) / 2.0;
-		double y = sin(PI * sin(theta))
-			+ d3d_board_height(state->board) / 2.0;
-		d3d_vec_s pos = { x, y };
-		state->facing -= TITLE_SCREEN_CAM_ROTATION;
-		d3d_draw(state->cam, pos, state->facing, state->board, 0, NULL);
-		display_frame(state->cam, &state->area, state->color_map);
-		tick(&state->timer);
-	}
-}
-
-// Resize the camera according to the size of the window.
-static void resize_title_camera(struct title_state *state)
-{
-	if (state->initialized) {
-		d3d_free_camera(state->cam);
-		state->cam = camera_with_dims(state->area.width,
-			state->area.height);
-	}
-}
-
-static void destroy_title_state(struct title_state *state)
-{
-	if (state->initialized) d3d_free_camera(state->cam);
 }
 
 // Update the screen, including waiting for the next screensaver tick.
@@ -146,18 +113,37 @@ static void do_screen_tick(struct screen_state *state)
 		state->title.area.width = COLS - state->menu.area.width;
 		state->title.area.height = LINES;
 		state->title.area.x = state->menu.area.width;
-		resize_title_camera(&state->title);
+		if (state->title.initialized) {
+			d3d_free_camera(state->title.cam);
+			state->title.cam = camera_with_dims(
+				state->title.area.width,
+				state->title.area.height);
+		}
 		state->sized = true;
 	}
 	// Update the screen:
-	tick_title(&state->title);
-	menu_draw(&state->menu.menu);
+	if (state->title.initialized) {
+		// Produces a cool turning effect with the camera's position:
+		double theta = state->title.facing + 1.0;
+		double x = cos(PI * cos(theta))
+			+ d3d_board_width(state->title.board) / 2.0;
+		double y = sin(PI * sin(theta))
+			+ d3d_board_height(state->title.board) / 2.0;
+		d3d_vec_s pos = { x, y };
+		state->title.facing -= TITLE_SCREEN_CAM_ROTATION;
+		d3d_draw(state->title.cam, pos, state->title.facing,
+			state->title.board, 0, NULL);
+		display_frame(state->title.cam, &state->title.area,
+			state->title.color_map);
+		tick(&state->title.timer);
+	}
+	if (state->menu.initialized) menu_draw(&state->menu.menu);
 	refresh();
 }
 
 static void destroy_screen_state(struct screen_state *state)
 {
-	destroy_title_state(&state->title);
+	if (state->title.initialized) d3d_free_camera(state->title.cam);
 	if (state->menu.initialized) menu_destroy(&state->menu.menu);
 }
 
