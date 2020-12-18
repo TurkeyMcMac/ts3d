@@ -400,17 +400,13 @@ static void draw_column(
 			const d3d_block_s *const *top_bot =
 				GET(board, blocks, bx, by);
 			if (!top_bot) goto no_texture;
-			if (dist_y >= 1.0) {
-				// A ceiling was hit
-				txtr = (*top_bot)->faces[D3D_DUP];
-				if (!txtr) goto no_texture;
-				tx = revmod1(newpos.x) * txtr->width;
-			} else {
-				// A floor was hit
-				txtr = (*top_bot)->faces[D3D_DDOWN];
-				if (!txtr) goto no_texture;
-				tx = mod1(newpos.x) * txtr->width;
-			}
+			// Ceiling hit if dist_y >= 1, floor hit if
+			// dist_y <= 0, and nothing else is possible:
+			d3d_direction face =
+				dist_y >= 1.0 ? D3D_DUP : D3D_DDOWN;
+			txtr = (*top_bot)->faces[face];
+			if (!txtr) goto no_texture;
+			tx = mod1(newpos.x) * txtr->width;
 			ty = mod1(newpos.y) * txtr->height;
 		}
 		*GET(cam, pixels, x, t) = *GET(txtr, pixels, tx, ty);
