@@ -10,6 +10,13 @@
 // The ASCII delete key.
 #define DEL '\177'
 
+#ifndef KEY_RESIZE
+	// If it's not defined, set KEY_RESIZE to something that won't come up
+	// often in the input. Implementations without KEY_RESIZE will simply
+	// not support resizing the window.
+#	define KEY_RESIZE '\a'
+#endif
+
 // A map from pixel values to Curses color pairs. The fields are private. If all
 // possible pixels were initialized, Curses might run out of color pairs.
 struct color_map {
@@ -75,8 +82,7 @@ void display_frame(d3d_camera *cam, struct screen_area *area,
 // Create a camera with the given positive dimensions.
 d3d_camera *camera_with_dims(int width, int height);
 
-// Synchronizes Curses with the actual size of the screen. Returns whether the
-// screen size was updated.
-bool sync_screen_size(int known_lines, int known_cols);
+// If the terminal is known to have resized, update LINES and COLS if needed.
+void update_term_size(void);
 
 #endif /* UI_UTIL_H_ */

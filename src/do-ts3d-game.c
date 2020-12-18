@@ -42,10 +42,8 @@
 
 // Screen state, including the menu and screensaver. The fields are public.
 struct screen_state {
-	// Whether the menu has been sized to the screen size (initially false.)
+	// Whether the screen state is the right size for the physical screen.
 	bool sized;
-	// The LINES and COLS values used since the last screen size check.
-	int known_lines, known_cols;
 	struct menu_state {
 		bool initialized;
 		struct menu menu;
@@ -99,11 +97,8 @@ static int load_title_state(struct title_state *state, struct loader *ldr)
 static void do_screen_tick(struct screen_state *state)
 {
 	// Sync the screen size:
-	if (!state->sized
-	 || sync_screen_size(state->known_lines, state->known_cols))
-	{
-		state->known_lines = LINES;
-		state->known_cols = COLS;
+	if (!state->sized) {
+		update_term_size();
 		state->menu.area.width =
 			COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
 		state->menu.area.height = LINES;
@@ -116,6 +111,8 @@ static void do_screen_tick(struct screen_state *state)
 				state->title.area.width,
 				state->title.area.height);
 		}
+		if (state->menu.initialized)
+			menu_mark_area_changed(&state->menu.menu);
 		state->sized = true;
 	}
 	// Update the screen:
@@ -259,6 +256,7 @@ static void get_input(char *name_buf, size_t buf_size,
 			*name_buf = '\0';
 			return;
 		}
+		if (key == KEY_RESIZE) screen_state->sized = false;
 		tick(timer);
 		do_screen_tick(screen_state);
 		size_t len = strlen_max(name_buf, buf_size);
@@ -497,10 +495,13 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					beep();
 				} else {
 					menu_clear_message(menu);
+					// Reset colors:
+					color_map_apply(loader_color_map(&ldr));
+					// Resize the screen state in case the
+					// screen changed size during the level:
+					screen_state.sized = false;
 				}
 				free(prereq);
-				// Reset colors:
-				color_map_apply(loader_color_map(&ldr));
 				break;
 			default:
 				break;
@@ -543,6 +544,9 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case 'x':
 			// Quit shortcut.
 			goto end;
+		case KEY_RESIZE:
+			screen_state.sized = false;
+			break;
 		default:
 			if (isdigit(key)) {
 				// Goto nth menu item.
