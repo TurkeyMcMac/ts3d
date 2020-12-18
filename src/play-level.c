@@ -205,7 +205,7 @@ int play_level(const char *root_dir, struct save_state *save,
 	bool paused = false;
 	bool quitting = false;
 	bool do_redraw = true;
-	int known_lines = LINES, known_cols = COLS;
+	struct screen_area area = { 0, 0, COLS, LINES };
 	clear();
 	for (;;) {
 		static const char dead_msg[] =
@@ -218,11 +218,11 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Are you sure you want to quit?\n"
 			"Press Y to confirm or N to cancel.";
 		tick(timer);
-		bool resized = sync_screen_size(known_lines, known_cols)
+		bool resized = sync_screen_size(area.height, area.width)
 			|| !cam;
 		if (resized) {
-			known_lines = LINES;
-			known_cols = COLS;
+			area.width = COLS;
+			area.height = LINES;
 			d3d_free_camera(cam);
 			// LINES - 1 so that one is reserved for the health and
 			// reload meters:
@@ -259,7 +259,7 @@ int play_level(const char *root_dir, struct save_state *save,
 		if (do_redraw) {
 			d3d_draw(cam, player.body.pos, player.facing, board,
 				ents_num(&ents), ents_sprites(&ents));
-			display_frame(cam, stdscr, loader_color_map(&ldr));
+			display_frame(cam, &area, loader_color_map(&ldr));
 			health_meter.fraction = player_health_fraction(&player);
 			meter_draw(&health_meter);
 			reload_meter.fraction = player_reload_fraction(&player);

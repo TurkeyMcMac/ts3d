@@ -9,11 +9,6 @@ struct save_state {
 	table complete;
 };
 
-void save_states_empty(struct save_states *saves)
-{
-	table_init(&saves->saves, 5);
-}
-
 static void parse_save_state(struct save_state *save, struct json_node *json)
 {
 	union json_node_data *got;
@@ -40,7 +35,7 @@ int save_states_init(struct save_states *saves, FILE *from, struct logger *log)
 {
 	struct json_node jtree;
 	if (parse_json_tree("save_states", from, log, &jtree)) return -1;
-	save_states_empty(saves);
+	table_init(&saves->saves, 5); // This empty table will be populated.
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
 	if (!(got = json_map_get(&jtree, "saves", JN_MAP))) goto end;

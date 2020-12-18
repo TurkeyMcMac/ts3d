@@ -40,43 +40,68 @@
 // The length of the above prefix, including the slash.
 #define SAVE_PFX_LEN 5
 
-struct title_state {
-	// True if a screensaver was loaded and is being drawn:
-	bool is_working;
-	d3d_camera *cam;
-	double facing;
-	d3d_board *board;
-	WINDOW *win;
-	struct color_map *color_map;
-	struct ticker *timer;
+// Screen state, including the menu and screensaver. The fields are public.
+struct screen_state {
+	// Whether the menu has been sized to the screen size (initially false.)
+	bool sized;
+	// The LINES and COLS values used since the last screen size check.
+	int known_lines, known_cols;
+	struct menu_state {
+		bool initialized;
+		struct menu menu;
+		struct screen_area area;
+	} menu;
+	struct title_state {
+		bool initialized;
+		d3d_camera *cam;
+		double facing;
+		d3d_board *board;
+		struct screen_area area;
+		struct color_map *color_map;
+		struct ticker timer;
+	} title;
 };
 
-// Load the title screensaver map with the given loader, setting the camera and
-// board in the title state. The window will be used to draw the scene later.
-// -1 is returned for error.
-static int load_title(struct title_state *state, WINDOW *win,
-	struct ticker *timer, struct loader *ldr)
+// The initializer for the screen state excluding the menu/title stuff.
+#define SCREEN_STATE_PARTIAL_INITIALIZER {  .sized = false, \
+	.menu = { .initialized = false }, .title = { .initialized = false } }
+
+// Load the menu part of the screen state. This is pretty much just menu_init
+// except the area is provided internally. The return value is the same as
+// menu_init's for success/failure.
+static int load_menu_state(struct menu_state *state, const char *data_dir,
+	struct logger *log)
 {
-	state->is_working = false;
+	// Screen area not yet initialized:
+	state->area = (struct screen_area) { 0, 0, 1, 1 };
+	return menu_init(&state->menu, data_dir, &state->area, log);
+}
+
+// Load the title screensaver map with the given loader, setting the camera and
+// board in the title state. The area will be used to draw the scene later.
+// -1 is returned for error.
+static int load_title_state(struct title_state *state, int tick_interval,
+	struct loader *ldr)
+{
+	state->initialized = false;
 	struct map *map = load_map(ldr, TITLE_SCREEN_MAP_NAME);
 	if (!map) return -1;
-	int width, height;
-	getmaxyx(win, height, width);
-	state->cam = camera_with_dims(width, height);
+	// Screen area not yet initialized:
+	state->area = (struct screen_area) { 0, 0, 1, 1 };
+	state->cam = camera_with_dims(state->area.width, state->area.height);
 	state->facing = 0.0;
 	state->board = map->board;
-	state->win = win;
 	state->color_map = loader_color_map(ldr);
-	state->timer = timer;
-	state->is_working = true;
+	ticker_init(&state->timer, tick_interval);
+	state->initialized = true;
 	return 0;
 }
 
-// Move the screensaver forward a tick and draw it on the window. Then wait
+// Move the screensaver forward a tick and draw it on the screen. Then wait
 // until the tick time is up.
 static void tick_title(struct title_state *state)
 {
-	if (state->is_working) {
+	if (state->initialized) {
 		// Produces a cool turning effect with the camera's position:
 		double theta = state->facing + 1.0;
 		double x = cos(PI * cos(theta))
@@ -86,47 +111,72 @@ static void tick_title(struct title_state *state)
 		d3d_vec_s pos = { x, y };
 		state->facing -= TITLE_SCREEN_CAM_ROTATION;
 		d3d_draw(state->cam, pos, state->facing, state->board, 0, NULL);
-		display_frame(state->cam, state->win, state->color_map);
-		wrefresh(state->win);
-		tick(state->timer);
+		display_frame(state->cam, &state->area, state->color_map);
+		tick(&state->timer);
 	}
 }
 
 // Resize the camera according to the size of the window.
 static void resize_title_camera(struct title_state *state)
 {
-	if (state->is_working) {
+	if (state->initialized) {
 		d3d_free_camera(state->cam);
-		int width, height;
-		getmaxyx(state->win, height, width);
-		state->cam = camera_with_dims(width, height);
+		state->cam = camera_with_dims(state->area.width,
+			state->area.height);
 	}
 }
 
 static void destroy_title_state(struct title_state *state)
 {
-	if (state->is_working) d3d_free_camera(state->cam);
+	if (state->initialized) d3d_free_camera(state->cam);
+}
+
+// Update the screen, including waiting for the next screensaver tick.
+static void do_screen_tick(struct screen_state *state)
+{
+	// Sync the screen size:
+	if (!state->sized
+	 || sync_screen_size(state->known_lines, state->known_cols))
+	{
+		state->known_lines = LINES;
+		state->known_cols = COLS;
+		state->menu.area.width =
+			COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
+		state->menu.area.height = LINES;
+		state->title.area.width = COLS - state->menu.area.width;
+		state->title.area.height = LINES;
+		state->title.area.x = state->menu.area.width;
+		resize_title_camera(&state->title);
+		state->sized = true;
+	}
+	// Update the screen:
+	tick_title(&state->title);
+	menu_draw(&state->menu.menu);
+	refresh();
+}
+
+static void destroy_screen_state(struct screen_state *state)
+{
+	destroy_title_state(&state->title);
+	if (state->menu.initialized) menu_destroy(&state->menu.menu);
 }
 
 // Load the save state list and log in as the one with the given name. If that
-// name is not present, create it.
+// name is not present, add it. NULL is returned if the saves couldn't load.
 static struct save_state *get_save_state(const char *name,
 	const char *state_file, struct save_states *saves, struct logger *log)
 {
 	FILE *from = fopen(state_file, "r");
+	// from closed by save_state_init:
 	if (from && !save_states_init(saves, from, log)) {
 		save_states_add(saves, ANONYMOUS);
 		struct save_state *save = save_states_get(saves, name);
 		if (!save) save = save_states_add(saves, name);
 		return save;
-	} else {
-		logger_printf(log, LOGGER_WARNING,
-			"Unable to load save state from %s; "
-			"creating empty state\n", state_file);
-		save_states_empty(saves);
-		return save_states_add(saves, ANONYMOUS);
 	}
-	// from closed by save_state_init
+	logger_printf(log, LOGGER_ERROR,
+		"Unable to load save state from %s\n", state_file);
+	return NULL;
 }
 
 // Add any links present in the save state list but absent in the items list to
@@ -207,19 +257,19 @@ static int write_save_states(struct save_states *saves, const char *state_file,
 	return ret;
 }
 
-// Get an input that is the name of a save from the menu. The menu must be in
-// the input element from which the input is to be read. The name_buf is where
+// Get an input that is the name of a save from the menu. The name_buf is where
 // the name will be put. The name will be at most buf_size - 1 characters, and
-// will be NUL-terminated. title_state is for running the screensaver while
-// waiting for input. An empty name signifies entry cancellation.
-static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
-	struct title_state *title_state)
+// will be NUL-terminated. An empty name signifies entry cancellation.
+// screen_state is used for accessing the menu and managing the screen while
+// waiting for input.
+static void get_input(char *name_buf, size_t buf_size,
+	struct screen_state *screen_state)
 {
 	int key;
 	--buf_size; // Make space for the NUL-terminator from now on.
-	menu_set_input(menu, name_buf, buf_size);
+	menu_set_input(&screen_state->menu.menu, name_buf, buf_size);
 	for (;;) {
-		key = wgetch(menu->win);
+		key = getch();
 		// The name is entered:
 		if (key == KEY_ENTER || key == '\n') break;
 		// The entry is cancelled:
@@ -227,9 +277,7 @@ static void get_input(char *name_buf, size_t buf_size, struct menu *menu,
 			*name_buf = '\0';
 			return;
 		}
-		menu_draw(menu);
-		wrefresh(menu->win);
-		tick_title(title_state);
+		do_screen_tick(screen_state);
 		size_t len = strlen_max(name_buf, buf_size);
 		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
 			// Delete a character.
@@ -257,24 +305,16 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// Log in with the given save name, or anonymously if NULL is given.
 	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
 		state_file, &saves, log);
+	if (!save) goto error_save_state;
 	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
 	// This here is lowered from "1000":
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
 	initscr();
 	start_color();
-	// For some reason, NetBSD Curses requires these two extra calls to keep
-	// the program from waiting for user input in the menu:
-	timeout(0);
+	timeout(0); // No delay for key presses.
+	// For some reason, NetBSD Curses requires this to keep the program from
+	// waiting for user input in the menu:
 	getch();
-	// Windows will be resized at the beginning of the first tick:
-	// Window to draw the menu on:
-	WINDOW *menuwin = newwin(1, 1, 0, 0);
-	// Window to draw the screensaver on:
-	WINDOW *titlewin = newwin(1, 1, 0, 0);
-	if (!menuwin || !titlewin) {
-		logger_printf(log, LOGGER_ERROR, "Cannot allocate windows\n");
-		goto error_windows;
-	}
 	// The item to menu_redirect to. NULL means not to redirect:
 	struct menu_item *redirect = NULL;
 	// A synthetic input element for the New Game link. This can only be
@@ -297,30 +337,28 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	// The name entry buffer. The maximum name length is 15 characters. The
 	// buffer is initially empty:
 	char name_buf[16] = {'\0'};
-	// The menu message buffer. The maximum length is 63 characters:
-	char msg_buf[64];
-	struct menu menu;
-	if (menu_init(&menu, data_dir, menuwin, log)) {
+	// The screen state including the menu and title screensaver:
+	struct screen_state screen_state = SCREEN_STATE_PARTIAL_INITIALIZER;
+	if (load_menu_state(&screen_state.menu, data_dir, log)) {
 		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
 		goto error_menu;
 	}
-	if (!play_as) {
-		strcpy(msg_buf, "Select a game BEFORE playing to save!");
-		menu_set_message(&menu, msg_buf);
-	}
-	struct ticker timer;
-	ticker_init(&timer, FRAME_DELAY);
-	struct title_state title_state;
-	if (load_title(&title_state, titlewin, &timer, &ldr)) {
+	if (load_title_state(&screen_state.title, FRAME_DELAY, &ldr)) {
 		logger_printf(log, LOGGER_WARNING,
 			"Failed to load title screensaver\n");
+	} else {
+		color_map_apply(loader_color_map(&ldr));
+		loader_print_summary(&ldr);
 	}
-	color_map_apply(loader_color_map(&ldr));
-	loader_print_summary(&ldr);
+	// Maximum dynamically sized message length is 63 characters (msg_buf
+	// is just some scratch space):
+	char msg_buf[64];
+	if (!play_as)
+		menu_set_message(&screen_state.menu.menu,
+			"Select a game BEFORE playing to save!");
 	curs_set(0); // Hide the cursor.
 	noecho(); // Hide input characters.
-	wtimeout(menuwin, 0); // Don't wait for input in the menu.
-	keypad(menuwin, TRUE); // Automatically detect arrow keys and so on.
+	keypad(stdscr, TRUE); // Automatically detect arrow keys and so on.
 	int key; // Input key.
 	// The name of the save the user is deleting. It has been selected
 	// once, and must be selected again to be deleted. NULL indicates
@@ -333,31 +371,15 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		SWITCHING,
 		DELETING
 	} save_managing = SWITCHING;
-	bool first_tick = true;
-	int known_lines, known_cols;
 	for (;;) {
+		// Alias for the menu, to make the code easier to read:
+		struct menu *menu = &screen_state.menu.menu;
 		// The selected menu item (used later):
 		struct menu_item *selected;
 		// The map prerequisite found (used later):
 		char *prereq;
-		// Resize screen structures if needed:
-		if (first_tick || sync_screen_size(known_lines, known_cols)) {
-			known_lines = LINES;
-			known_cols = COLS;
-			int menu_width = COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
-			int title_width = COLS - menu_width;
-			wresize(menuwin, LINES, menu_width);
-			if (titlewin) {
-				wresize(titlewin, LINES, title_width);
-				mvwin(titlewin, 0, menu_width);
-				resize_title_camera(&title_state);
-			}
-			first_tick = false;
-		}
-		menu_draw(&menu);
-		wrefresh(menuwin);
-		tick_title(&title_state);
-		switch (key = wgetch(menuwin)) {
+		do_screen_tick(&screen_state);
+		switch (key = getch()) {
 		redirect: // Simulate entering the redirected-to item:
 			redirect->title = selected->title;
 			// Simulate childhood:
@@ -367,18 +389,18 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
-			menu_clear_message(&menu);
-			switch (redirect ? menu_redirect(&menu, redirect)
-				: menu_enter(&menu))
+			menu_clear_message(menu);
+			switch (redirect ? menu_redirect(menu, redirect)
+				: menu_enter(menu))
 			{
 			case ACTION_INPUT:
-				menu_clear_message(&menu);
+				menu_clear_message(menu);
 				for (;;) {
 					get_input(name_buf, sizeof(name_buf),
-						&menu, &title_state);
+						&screen_state);
 					if (*name_buf
 					 && save_states_get(&saves, name_buf)) {
-						menu_set_message(&menu,
+						menu_set_message(menu,
 							"Name already taken");
 					} else {
 						// Cancelled or accepted.
@@ -400,11 +422,11 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					strcpy(msg_buf, "Save creation"
 							" cancelled");
 				}
-				menu_escape(&menu);
-				menu_set_message(&menu, msg_buf);
+				menu_escape(menu);
+				menu_set_message(menu, msg_buf);
 				break;
 			case ACTION_TAG:
-				selected = menu_get_selected(&menu);
+				selected = menu_get_selected(menu);
 				if (!selected || !selected->tag) break;
 				if (!strcmp(selected->tag, "act/resume-game")) {
 					const char *name =
@@ -414,10 +436,10 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 						snprintf(msg_buf,
 							sizeof(msg_buf),
 							"Playing as %s", name);
-						menu_set_message(&menu,
+						menu_set_message(menu,
 							msg_buf);
 					} else {
-						menu_set_message(&menu,
+						menu_set_message(menu,
 							"Playing anonymously");
 					}
 					save_managing = SWITCHING;
@@ -429,7 +451,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					goto redirect;
 				} else if (!strcmp(selected->tag,
 						"act/delete-game")) {
-					menu_set_message(&menu,
+					menu_set_message(menu,
 						"Select twice to delete");
 					save_managing = DELETING;
 					delete_save = NULL;
@@ -457,7 +479,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 								&saves,
 								ANONYMOUS);
 							delete_save_link(
-								&menu, &saves);
+								menu, &saves);
 						} else {
 							// Confirmation needed.
 							delete_save = name;
@@ -470,7 +492,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 						snprintf(msg_buf,
 							sizeof(msg_buf),
 							"Switched to %s", name);
-						menu_set_message(&menu,
+						menu_set_message(menu,
 							msg_buf);
 					}
 					break;
@@ -479,23 +501,21 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				prereq = map_prereq(&ldr, selected->tag);
 				if (prereq
 				 && !save_state_is_complete(save, prereq)) {
-					menu_set_message(&menu, "Level locked");
+					menu_set_message(menu, "Level locked");
 					beep();
 				} else if (play_level(data_dir, save,
-					selected->tag, &timer, log))
+					selected->tag,
+					&screen_state.title.timer, log))
 				{
-					menu_set_message(&menu,
+					menu_set_message(menu,
 						"Error loading map");
 					beep();
 				} else {
-					menu_clear_message(&menu);
+					menu_clear_message(menu);
 				}
 				free(prereq);
 				// Reset colors:
 				color_map_apply(loader_color_map(&ldr));
-				// Redraw the screen next time:
-				touchwin(menuwin);
-				touchwin(titlewin);
 				break;
 			default:
 				break;
@@ -505,34 +525,34 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case ESC:
 		case KEY_LEFT:
 			// Leave submenu.
-			if (menu_escape(&menu)) menu_clear_message(&menu);
+			if (menu_escape(menu)) menu_clear_message(menu);
 			break;
 		case 'w':
 		case KEY_UP:
 		case KEY_BACKSPACE:
 		case KEY_SR:
 			// Scroll up.
-			menu_scroll(&menu, -1);
+			menu_scroll(menu, -1);
 			break;
 		case 's':
 		case ' ':
 		case KEY_DOWN:
 		case KEY_SF:
 			// Scroll down.
-			menu_scroll(&menu, 1);
+			menu_scroll(menu, 1);
 			break;
 		case 'g':
 			// Scroll to beginning.
-			menu_scroll(&menu, -999);
+			menu_scroll(menu, -999);
 			break;
 		case 'G':
 			// Scroll to end.
-			menu_scroll(&menu, 999);
+			menu_scroll(menu, 999);
 			break;
 		case KEY_HOME:
 			// Return to root menu.
-			while (menu_escape(&menu)) {
-				menu_clear_message(&menu);
+			while (menu_escape(menu)) {
+				menu_clear_message(menu);
 			}
 			break;
 		case 'x':
@@ -542,27 +562,24 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			if (isdigit(key)) {
 				// Goto nth menu item.
 				int to = key == '0' ? 9 : key - '0' - 1;
-				menu_scroll(&menu, -999);
-				menu_scroll(&menu, to);
-				break;
+				menu_scroll(menu, -999);
+				menu_scroll(menu, to);
 			}
 			break;
 		}
 		redirect = NULL;
 	}
 end:
-	destroy_title_state(&title_state);
-	menu_destroy(&menu);
+	ret = 0; // Things are successful so far.
+error_menu:
+	destroy_screen_state(&screen_state);
+	endwin();
 	// Don't save the progress of the anonymous:
 	save_states_remove(&saves, ANONYMOUS);
-	ret = write_save_states(&saves, state_file, log);
-error_menu:
+	if (write_save_states(&saves, state_file, log)) ret = -1;
 	free_save_links(&game_list);
-error_windows:
-	if (menuwin) delwin(menuwin);
-	if (titlewin) delwin(titlewin);
-	endwin();
 	save_states_destroy(&saves);
+error_save_state:
 	loader_free(&ldr);
 	return ret;
 }
