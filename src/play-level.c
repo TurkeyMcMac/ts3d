@@ -218,9 +218,11 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Are you sure you want to quit?\n"
 			"Press Y to confirm or N to cancel.";
 		tick(timer);
-		bool resized = sync_screen_size(area.height, area.width)
-			|| !cam;
+		int key = getch();
+		int lowkey = tolower(key);
+		bool resized = key == KEY_RESIZE || !cam;
 		if (resized) {
+			update_term_size();
 			area.width = COLS;
 			area.height = LINES;
 			d3d_free_camera(cam);
@@ -275,8 +277,6 @@ int play_level(const char *root_dir, struct save_state *save,
 			refresh();
 		}
 		do_redraw = resized;
-		int key = getch();
-		int lowkey = tolower(key);
 		if (dead_popup) {
 			// Display the death popup if possible.
 			touchwin(dead_popup);

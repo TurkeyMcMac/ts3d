@@ -151,16 +151,9 @@ d3d_camera *camera_with_dims(int width, int height)
 	return cam;
 }
 
-bool sync_screen_size(int known_lines, int known_cols)
+void update_term_size(void)
 {
-	// First, sync with the physical screen if need be:
 #ifdef PDCURSES
-	// PDCurses needs this here to update LINES and COLS:
-	if (is_termresized()) resize_term(0, 0);
+	resize_term(0, 0);
 #endif
-	// ncurses and the netbsd curses port I have tested with
-	// (github.com/sabotage-linux/netbsd-curses) automatically keep LINES
-	// and COLS up to date. Other implementations may not detect terminal
-	// resizing, but that isn't a huge deal.
-	return known_lines != LINES || known_cols != COLS;
 }

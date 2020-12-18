@@ -42,10 +42,8 @@
 
 // Screen state, including the menu and screensaver. The fields are public.
 struct screen_state {
-	// Whether the menu has been sized to the screen size (initially false.)
+	// Whether the screen state is the right size for the physical screen.
 	bool sized;
-	// The LINES and COLS values used since the last screen size check.
-	int known_lines, known_cols;
 	struct menu_state {
 		bool initialized;
 		struct menu menu;
@@ -58,7 +56,6 @@ struct screen_state {
 		d3d_board *board;
 		struct screen_area area;
 		struct color_map *color_map;
-		struct ticker timer;
 	} title;
 };
 
@@ -74,16 +71,16 @@ static int load_menu_state(struct menu_state *state, const char *data_dir,
 {
 	// Screen area not yet initialized:
 	state->area = (struct screen_area) { 0, 0, 1, 1 };
-	return menu_init(&state->menu, data_dir, &state->area, log);
+	int ret = menu_init(&state->menu, data_dir, &state->area, log);
+	state->initialized = !ret;
+	return ret;
 }
 
 // Load the title screensaver map with the given loader, setting the camera and
 // board in the title state. The area will be used to draw the scene later.
 // -1 is returned for error.
-static int load_title_state(struct title_state *state, int tick_interval,
-	struct loader *ldr)
+static int load_title_state(struct title_state *state, struct loader *ldr)
 {
-	state->initialized = false;
 	struct map *map = load_map(ldr, TITLE_SCREEN_MAP_NAME);
 	if (!map) return -1;
 	// Screen area not yet initialized:
@@ -92,72 +89,54 @@ static int load_title_state(struct title_state *state, int tick_interval,
 	state->facing = 0.0;
 	state->board = map->board;
 	state->color_map = loader_color_map(ldr);
-	ticker_init(&state->timer, tick_interval);
 	state->initialized = true;
 	return 0;
 }
 
-// Move the screensaver forward a tick and draw it on the screen. Then wait
-// until the tick time is up.
-static void tick_title(struct title_state *state)
-{
-	if (state->initialized) {
-		// Produces a cool turning effect with the camera's position:
-		double theta = state->facing + 1.0;
-		double x = cos(PI * cos(theta))
-			+ d3d_board_width(state->board) / 2.0;
-		double y = sin(PI * sin(theta))
-			+ d3d_board_height(state->board) / 2.0;
-		d3d_vec_s pos = { x, y };
-		state->facing -= TITLE_SCREEN_CAM_ROTATION;
-		d3d_draw(state->cam, pos, state->facing, state->board, 0, NULL);
-		display_frame(state->cam, &state->area, state->color_map);
-		tick(&state->timer);
-	}
-}
-
-// Resize the camera according to the size of the window.
-static void resize_title_camera(struct title_state *state)
-{
-	if (state->initialized) {
-		d3d_free_camera(state->cam);
-		state->cam = camera_with_dims(state->area.width,
-			state->area.height);
-	}
-}
-
-static void destroy_title_state(struct title_state *state)
-{
-	if (state->initialized) d3d_free_camera(state->cam);
-}
-
-// Update the screen, including waiting for the next screensaver tick.
+// Update the screen (the menu and the screensaver.)
 static void do_screen_tick(struct screen_state *state)
 {
 	// Sync the screen size:
-	if (!state->sized
-	 || sync_screen_size(state->known_lines, state->known_cols))
-	{
-		state->known_lines = LINES;
-		state->known_cols = COLS;
+	if (!state->sized) {
+		update_term_size();
 		state->menu.area.width =
 			COLS >= MENU_WIDTH ? MENU_WIDTH : COLS;
 		state->menu.area.height = LINES;
 		state->title.area.width = COLS - state->menu.area.width;
 		state->title.area.height = LINES;
 		state->title.area.x = state->menu.area.width;
-		resize_title_camera(&state->title);
+		if (state->title.initialized) {
+			d3d_free_camera(state->title.cam);
+			state->title.cam = camera_with_dims(
+				state->title.area.width,
+				state->title.area.height);
+		}
+		if (state->menu.initialized)
+			menu_mark_area_changed(&state->menu.menu);
 		state->sized = true;
 	}
 	// Update the screen:
-	tick_title(&state->title);
-	menu_draw(&state->menu.menu);
+	if (state->title.initialized) {
+		// Produces a cool turning effect with the camera's position:
+		double theta = state->title.facing + 1.0;
+		double x = cos(PI * cos(theta))
+			+ d3d_board_width(state->title.board) / 2.0;
+		double y = sin(PI * sin(theta))
+			+ d3d_board_height(state->title.board) / 2.0;
+		d3d_vec_s pos = { x, y };
+		state->title.facing -= TITLE_SCREEN_CAM_ROTATION;
+		d3d_draw(state->title.cam, pos, state->title.facing,
+			state->title.board, 0, NULL);
+		display_frame(state->title.cam, &state->title.area,
+			state->title.color_map);
+	}
+	if (state->menu.initialized) menu_draw(&state->menu.menu);
 	refresh();
 }
 
 static void destroy_screen_state(struct screen_state *state)
 {
-	destroy_title_state(&state->title);
+	if (state->title.initialized) d3d_free_camera(state->title.cam);
 	if (state->menu.initialized) menu_destroy(&state->menu.menu);
 }
 
@@ -261,9 +240,9 @@ static int write_save_states(struct save_states *saves, const char *state_file,
 // the name will be put. The name will be at most buf_size - 1 characters, and
 // will be NUL-terminated. An empty name signifies entry cancellation.
 // screen_state is used for accessing the menu and managing the screen while
-// waiting for input.
+// waiting for input. timer is used to do the waiting.
 static void get_input(char *name_buf, size_t buf_size,
-	struct screen_state *screen_state)
+	struct screen_state *screen_state, struct ticker *timer)
 {
 	int key;
 	--buf_size; // Make space for the NUL-terminator from now on.
@@ -277,6 +256,8 @@ static void get_input(char *name_buf, size_t buf_size,
 			*name_buf = '\0';
 			return;
 		}
+		if (key == KEY_RESIZE) screen_state->sized = false;
+		tick(timer);
 		do_screen_tick(screen_state);
 		size_t len = strlen_max(name_buf, buf_size);
 		if (key == KEY_BACKSPACE || key == KEY_DC || key == DEL) {
@@ -343,7 +324,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		logger_printf(log, LOGGER_ERROR, "Failed to load menu\n");
 		goto error_menu;
 	}
-	if (load_title_state(&screen_state.title, FRAME_DELAY, &ldr)) {
+	if (load_title_state(&screen_state.title, &ldr)) {
 		logger_printf(log, LOGGER_WARNING,
 			"Failed to load title screensaver\n");
 	} else {
@@ -359,6 +340,8 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	curs_set(0); // Hide the cursor.
 	noecho(); // Hide input characters.
 	keypad(stdscr, TRUE); // Automatically detect arrow keys and so on.
+	struct ticker timer; // The ticker used throughout the game.
+	ticker_init(&timer, FRAME_DELAY);
 	int key; // Input key.
 	// The name of the save the user is deleting. It has been selected
 	// once, and must be selected again to be deleted. NULL indicates
@@ -378,6 +361,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		struct menu_item *selected;
 		// The map prerequisite found (used later):
 		char *prereq;
+		tick(&timer);
 		do_screen_tick(&screen_state);
 		switch (key = getch()) {
 		redirect: // Simulate entering the redirected-to item:
@@ -397,7 +381,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				menu_clear_message(menu);
 				for (;;) {
 					get_input(name_buf, sizeof(name_buf),
-						&screen_state);
+						&screen_state, &timer);
 					if (*name_buf
 					 && save_states_get(&saves, name_buf)) {
 						menu_set_message(menu,
@@ -504,18 +488,20 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					menu_set_message(menu, "Level locked");
 					beep();
 				} else if (play_level(data_dir, save,
-					selected->tag,
-					&screen_state.title.timer, log))
+					selected->tag, &timer, log))
 				{
 					menu_set_message(menu,
 						"Error loading map");
 					beep();
 				} else {
 					menu_clear_message(menu);
+					// Reset colors:
+					color_map_apply(loader_color_map(&ldr));
+					// Resize the screen state in case the
+					// screen changed size during the level:
+					screen_state.sized = false;
 				}
 				free(prereq);
-				// Reset colors:
-				color_map_apply(loader_color_map(&ldr));
 				break;
 			default:
 				break;
@@ -558,6 +544,9 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		case 'x':
 			// Quit shortcut.
 			goto end;
+		case KEY_RESIZE:
+			screen_state.sized = false;
+			break;
 		default:
 			if (isdigit(key)) {
 				// Goto nth menu item.

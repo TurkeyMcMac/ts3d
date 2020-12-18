@@ -128,6 +128,10 @@ bool menu_delete_selected(struct menu *menu, struct menu_item *move_to);
 // text of the buffer must ALWAYS BE NUL TERMINATED.
 bool menu_set_input(struct menu *menu, char *buf, size_t size);
 
+// Tells the menu that it's area has changed position or that it's area's
+// contents have been dirtied and need overwriting.
+void menu_mark_area_changed(struct menu *menu);
+
 // Draw the viewed menu on the screen, clobbering the Curses state.
 void menu_draw(struct menu *menu);
 

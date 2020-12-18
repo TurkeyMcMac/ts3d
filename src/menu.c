@@ -249,6 +249,11 @@ bool menu_delete_selected(struct menu *menu, struct menu_item *move_to)
 	return true;
 }
 
+void menu_mark_area_changed(struct menu *menu)
+{
+	menu->needs_redraw = true;
+}
+
 static void move_clear_line(struct menu *menu, int y, int x)
 {
 	move(y, 0);
