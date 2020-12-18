@@ -160,7 +160,7 @@ int menu_scroll(struct menu *menu, int amount)
 				current->place - height + 1, current->place);
 		}
 	}
-	menu->needs_redraw = true;
+	menu->needs_redraw = current->place != last_place;
 	return current->place - last_place;
 }
 
