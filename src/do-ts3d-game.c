@@ -26,9 +26,6 @@
 #include <string.h>
 #include <math.h>
 
-// The "name" of an anonymous player whose progress is not saved.
-#define ANONYMOUS ""
-
 // Character cell width of menu. Must be enough to fit width 40 text.
 #define MENU_WIDTH 41
 
@@ -140,22 +137,16 @@ static void destroy_screen_state(struct screen_state *state)
 	if (state->menu.initialized) menu_destroy(&state->menu.menu);
 }
 
-// Load the save state list and log in as the one with the given name. If that
-// name is not present, add it. NULL is returned if the saves couldn't load.
-static struct save_state *get_save_state(const char *name,
-	const char *state_file, struct save_states *saves, struct logger *log)
+// Load the save state list, returning 0 for success and -1 for failure.
+static int load_save_states(struct save_states *saves,
+	const char *state_file, struct logger *log)
 {
 	FILE *from = fopen(state_file, "r");
 	// from closed by save_state_init:
-	if (from && !save_states_init(saves, from, log)) {
-		save_states_add(saves, ANONYMOUS);
-		struct save_state *save = save_states_get(saves, name);
-		if (!save) save = save_states_add(saves, name);
-		return save;
-	}
+	if (from && !save_states_init(saves, from, log)) return 0;
 	logger_printf(log, LOGGER_ERROR,
 		"Unable to load save state from %s\n", state_file);
-	return NULL;
+	return -1;
 }
 
 // Add any links present in the save state list but absent in the items list to
@@ -169,8 +160,6 @@ static void add_save_links(struct menu_item **items, size_t *num,
 	const char *key;
 	void **UNUSED_VAR(val);
 	SAVE_STATES_FOR_EACH(from, key, val) {
-		// Skip unnamed saves:
-		if (!strcmp(key, ANONYMOUS)) continue;
 		struct menu_item *item = (*items) + head;
 		if (head >= *num || strcmp(key, item->title)) {
 			GROWE(*items, *num, cap);
@@ -210,9 +199,9 @@ static void free_save_links(struct menu_item *links)
 	free(links->items);
 }
 
-// Sync the save state set with the file.
+// Sync the save state set with the file. The menu's message is set on error.
 static int write_save_states(struct save_states *saves, const char *state_file,
-	struct logger *log)
+	struct logger *log, struct menu *menu)
 {
 	FILE *to = fopen(state_file, "w");
 	int ret = 0;
@@ -220,16 +209,17 @@ static int write_save_states(struct save_states *saves, const char *state_file,
 		int errnum = errno;
 		FILE *print = logger_get_output(log, LOGGER_ERROR);
 		if (print) {
-			static const char *const lines[] = {
+			logger_printf(log, LOGGER_ERROR,
 				"Failed to write state information to %s: %s\n",
-				"The information is below. Copy this to %s or"
-				" to another location (see ts3d -h output):\n"
-			};
-			logger_printf(log, LOGGER_ERROR, lines[0],
 				state_file, strerror(errnum));
-			logger_printf(log, LOGGER_ERROR, lines[1], state_file);
+			logger_printf(log, LOGGER_ERROR,
+				"The information is below. Copy this to %s or"
+				" to another location (see ts3d -h output):\n",
+				state_file);
 			save_states_write(saves, print);
 		}
+		menu_set_message(menu, "SAVE ERROR!! QUIT NOW AND READ LOG!");
+		beep();
 		ret = -1;
 	}
 	if (to) fclose(to);
@@ -283,10 +273,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	loader_init(&ldr, data_dir);
 	logger_free(loader_set_logger(&ldr, log));
 	struct save_states saves;
-	// Log in with the given save name, or anonymously if NULL is given.
-	struct save_state *save = get_save_state(play_as ? play_as : ANONYMOUS,
-		state_file, &saves, log);
-	if (!save) goto error_save_state;
+	if (load_save_states(&saves, state_file, log)) goto error_save_state;
 	// ncurses reads ESCDELAY and waits that many ms after an ESC key press.
 	// This here is lowered from "1000":
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
@@ -314,8 +301,6 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		.items = NULL,
 		.n_items = 0
 	};
-	// Populate with saves:
-	add_save_links(&game_list.items, &game_list.n_items, &saves);
 	// The name entry buffer. The maximum name length is 15 characters. The
 	// buffer is initially empty:
 	char name_buf[16] = {'\0'};
@@ -332,12 +317,27 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		color_map_apply(loader_color_map(&ldr));
 		loader_print_summary(&ldr);
 	}
+	ret = 0; // Things are successful by default when exiting after this.
+	// Alias for the menu, to make the code easier to read:
+	struct menu *menu = &screen_state.menu.menu;
+	// The save being played (NULL means no save is in use):
+	struct save_state *save = NULL;
+	if (play_as) {
+		// Log in with the given name:
+		save = save_states_get(&saves, play_as);
+		if (!save) {
+			save = save_states_add(&saves, play_as);
+			// Save the currently unused game:
+			ret = write_save_states(&saves, state_file, log, menu);
+		}
+	}
+	// Populate UI list with saves:
+	add_save_links(&game_list.items, &game_list.n_items, &saves);
 	// Maximum dynamically sized message length is 63 characters (msg_buf
 	// is just some scratch space):
 	char msg_buf[64];
-	if (!play_as)
-		menu_set_message(&screen_state.menu.menu,
-			"Select a game BEFORE playing to save!");
+	if (!save)
+		menu_set_message(menu, "Select a save to use before playing");
 	curs_set(0); // Hide the cursor.
 	noecho(); // Hide input characters.
 	keypad(stdscr, TRUE); // Automatically detect arrow keys and so on.
@@ -356,8 +356,6 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		DELETING
 	} save_managing = SWITCHING;
 	for (;;) {
-		// Alias for the menu, to make the code easier to read:
-		struct menu *menu = &screen_state.menu.menu;
 		// The selected menu item (used later):
 		struct menu_item *selected;
 		// The map prerequisite found (used later):
@@ -365,19 +363,22 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		tick(&timer);
 		do_screen_tick(&screen_state);
 		switch (key = getch()) {
+			enum menu_action action;
 		redirect: // Simulate entering the redirected-to item:
-			redirect->title = selected->title;
-			// Simulate childhood:
-			redirect->parent = selected->parent;
-			/* FALLTHROUGH */
 		case 'd':
 		case '\n':
 		case KEY_ENTER:
 		case KEY_RIGHT:
-			menu_clear_message(menu);
-			switch (redirect ? menu_redirect(menu, redirect)
-				: menu_enter(menu))
-			{
+			if (!redirect) {
+				menu_clear_message(menu);
+				action = menu_enter(menu);
+			} else {
+				redirect->title = selected->title;
+				// Simulate childhood:
+				redirect->parent = selected->parent;
+				action = menu_redirect(menu, redirect);
+			}
+			switch (action) {
 			case ACTION_INPUT:
 				menu_clear_message(menu);
 				for (;;) {
@@ -399,33 +400,34 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					snprintf(msg_buf, sizeof(msg_buf),
 						"Switched to new save %s",
 						name_buf);
+					menu_set_message(menu, msg_buf);
 					add_save_links(&game_list.items,
 						&game_list.n_items, &saves);
 					// Clear name buffer:
 					name_buf[0] = '\0';
+					// Save the currently unused game:
+					ret = write_save_states(&saves,
+						state_file, log, menu);
 				} else {
-					strcpy(msg_buf, "Save creation"
-							" cancelled");
+					menu_set_message(menu,
+						"Save creation cancelled");
 				}
 				menu_escape(menu);
-				menu_set_message(menu, msg_buf);
 				break;
 			case ACTION_TAG:
 				selected = menu_get_selected(menu);
 				if (!selected || !selected->tag) break;
 				if (!strcmp(selected->tag, "act/resume-game")) {
-					const char *name =
-						save_state_name(save);
-					if (strcmp(name, ANONYMOUS)) {
-						// Not anonymous.
+					if (save) {
 						snprintf(msg_buf,
 							sizeof(msg_buf),
-							"Playing as %s", name);
+							"Playing as %s",
+							save_state_name(save));
 						menu_set_message(menu,
 							msg_buf);
 					} else {
-						menu_set_message(menu,
-							"Playing anonymously");
+						menu_set_message(menu, "Select "
+							"a save to use");
 					}
 					save_managing = SWITCHING;
 					redirect = &game_list;
@@ -433,6 +435,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				} else if (!strcmp(selected->tag,
 						"act/new-game")) {
 					redirect = &new_game;
+					menu_clear_message(menu);
 					goto redirect;
 				} else if (!strcmp(selected->tag,
 						"act/delete-game")) {
@@ -454,24 +457,23 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 						if (delete_save && !strcmp(name,
 								delete_save)) {
 							// Delete game.
-							if (!strcmp(name,
+							if (save && !strcmp(
+								name,
 								save_state_name(
 									save)))
-								// Set save to
-								// anonymous.
-								save = // squish
-								save_states_get(
-								&saves,
-								ANONYMOUS);
+								save = NULL;
 							delete_save_link(
 								menu, &saves);
 							delete_save = NULL;
+							// Save it to disk:
+							ret = write_save_states(
+								&saves,
+								state_file,
+								log, menu);
 						} else {
 							// Confirmation needed.
 							delete_save = name;
 						}
-						// Don't reset redirect to NULL:
-						continue;
 					} else if (save_managing == SWITCHING) {
 						save = save_states_get(&saves,
 							name);
@@ -485,7 +487,11 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 				}
 				// No action taken above; load the map:
 				prereq = map_prereq(&ldr, selected->tag);
-				if (prereq
+				if (!save) {
+					menu_set_message(menu, "Select a save "
+						"to use before playing");
+					beep();
+				} else if (prereq
 				 && !save_state_is_complete(save, prereq)) {
 					menu_set_message(menu, "Level locked");
 					beep();
@@ -497,6 +503,9 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 					beep();
 				} else {
 					menu_clear_message(menu);
+					// Save the progress to the disk:
+					ret = write_save_states(&saves,
+						state_file, log, menu);
 					// Reset colors:
 					color_map_apply(loader_color_map(&ldr));
 					// Resize the screen state in case the
@@ -561,13 +570,9 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 		redirect = NULL;
 	}
 end:
-	ret = 0; // Things are successful so far.
 error_menu:
 	destroy_screen_state(&screen_state);
 	endwin();
-	// Don't save the progress of the anonymous:
-	save_states_remove(&saves, ANONYMOUS);
-	if (write_save_states(&saves, state_file, log)) ret = -1;
 	free_save_links(&game_list);
 	save_states_destroy(&saves);
 error_save_state:

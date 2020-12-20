@@ -1,4 +1,4 @@
-.TH ts3d 6 "12 Dec. 2020" "version @@VERSION@@"
+.TH ts3d 6 "20 Dec. 2020" "version @@VERSION@@"
 
 
 .SH NAME
@@ -16,7 +16,7 @@ the game. That information is available in the in-game menu.
 
 The optional argument \fIplay_as\fR gives the name of the save to start off
 with. If it does not exist, it will be created. If it is not given, you start
-out anonymous; log in \fIbefore\fR playing to save your progress!
+out anonymous, and will have to create a save through the in-game menu.
 
 
 .SH OPTIONS
