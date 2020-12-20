@@ -151,6 +151,13 @@ d3d_camera *camera_with_dims(int width, int height)
 	return cam;
 }
 
+void set_application_title(const char *UNUSED_VAR(title))
+{
+#ifdef PDCURSES
+	PDC_set_title(title);
+#endif
+}
+
 void update_term_size(void)
 {
 #ifdef PDCURSES

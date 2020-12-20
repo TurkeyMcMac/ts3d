@@ -292,6 +292,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
 	initscr();
 	start_color();
+	set_application_title("Thing Shooter 3D");
 	timeout(0); // No delay for key presses.
 	// For some reason, NetBSD Curses requires this to keep the program from
 	// waiting for user input in the menu:
