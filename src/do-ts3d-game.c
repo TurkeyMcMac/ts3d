@@ -465,6 +465,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 								ANONYMOUS);
 							delete_save_link(
 								menu, &saves);
+							delete_save = NULL;
 						} else {
 							// Confirmation needed.
 							delete_save = name;
