@@ -5,7 +5,9 @@ if ! [ -f ts3d.exe ]; then
 	echo >&2 'ts3d.exe must exist to make ts3d.zip'
 	exit 1
 fi
-dir="$(mktemp -d)"
+dir="$PWD/.zip-windows"
+rm -rf "$dir"
+mkdir "$dir"
 out() { rm -rf "$dir"; exit "${1-1}"; }
 cd "$dir" || out
 mkdir ts3d || out
