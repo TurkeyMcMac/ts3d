@@ -34,7 +34,7 @@ static void print_help(const char *progname)
 "\n"
 "The optional argument play_as gives the name of the save to start off with.\n"
 "If it does not exist, it will be created. If it is not given, you start out\n"
-"anonymous; log in BEFORE playing to save your progress!\n"
+"anonymous, and will have to create a save through the in-game menu.\n"
 "Game data and state is looked for in $TS3D_ROOT, or $HOME/.ts3d by default.\n"
 "If the root directory doesn't exist, it will be created. The paths for data\n"
 "and state specifically can be overriden by $TS3D_DATA/-d and $TS3D_STATE/-s,\n"

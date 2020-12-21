@@ -82,6 +82,9 @@ void display_frame(d3d_camera *cam, struct screen_area *area,
 // Create a camera with the given positive dimensions.
 d3d_camera *camera_with_dims(int width, int height);
 
+// Sets the user-visible application title if possible.
+void set_application_title(const char *title);
+
 // If the terminal is known to have resized, update LINES and COLS if needed.
 void update_term_size(void);
 

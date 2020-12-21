@@ -73,10 +73,6 @@ void vec_norm_mul(d3d_vec_s *vec, double mag);
 #define STRINGIFY(x) STRINGIFY_(x)
 #define STRINGIFY_(x) #x
 
-// Evaluate the expression that has a numeric type. If it is less than 0, return
-// -1. Otherwise, continue onward.
-#define TRY(expr) if ((expr) >= 0) ; else return -1
-
 // Wrap this around the name of a variable at its point of definition to
 // suppress warnings by the compiler that it is unused.
 #define UNUSED_VAR(var) var ATTRIBUTE(unused)

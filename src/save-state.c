@@ -1,5 +1,6 @@
 #include "save-state.h"
 #include "json-util.h"
+#include "string.h"
 #include "util.h"
 #include "xalloc.h"
 #include <stdlib.h>
@@ -93,43 +94,62 @@ int save_states_remove(struct save_states *saves, const char *name)
 	return -1;
 }
 
-static int save_state_write(const struct save_state *save, FILE *to)
+static void save_state_to_string(const struct save_state *save,
+	struct string *buf, size_t *cap)
 {
-	TRY(fputs("{\n   \"complete\": ", to));
+	string_pushz(buf, cap, "{\n   \"complete\": ");
 	if (table_count(&save->complete) > 0) {
 		const char *before = "[";
 		const char *key;
 		void **UNUSED_VAR(val);
 		TABLE_FOR_EACH(&save->complete, key, val) {
-			TRY(fprintf(to, "%s\n    \"", before));
-			TRY(escape_text_json(key, to));
+			string_pushz(buf, cap, before);
+			string_pushz(buf, cap, "\n    \"");
+			escape_text_json(key, buf, cap);
 			before = "\",";
 		}
-		TRY(fputs("\"\n   ]\n  }", to));
+		string_pushz(buf, cap, "\"\n   ]\n  }");
 	} else {
-		TRY(fputs("[]\n  }", to));
+		string_pushz(buf, cap, "[]\n  }");
 	}
-	return 0;
 }
 
 int save_states_write(struct save_states *saves, FILE *to)
 {
-	TRY(fputs("{\n \"saves\": ", to));
+	struct string buf;
+	size_t cap = 128;
+	string_init(&buf, cap);
+	string_pushz(&buf, &cap, "{\n \"saves\": ");
 	if (table_count(&saves->saves) > 0) {
 		char before = '{';
 		const char *name;
 		void **val;
 		TABLE_FOR_EACH(&saves->saves, name, val) {
-			TRY(fprintf(to, "%c\n  \"", before));
-			TRY(escape_text_json(name, to));
-			TRY(fputs("\": ", to));
-			TRY(save_state_write(*val, to));
+			string_pushc(&buf, &cap, before);
+			string_pushz(&buf, &cap, "\n  \"");
+			escape_text_json(name, &buf, &cap);
+			string_pushz(&buf, &cap, "\": ");
+			save_state_to_string(*val, &buf, &cap);
 			before = ',';
 		}
-		TRY(fputs("\n }\n}\n", to));
+		string_pushz(&buf, &cap, "\n }\n}\n");
 	} else {
-		TRY(fputs("{}\n}\n", to));
+		string_pushz(&buf, &cap, "{}\n}\n");
 	}
+	// Try to recover from errors where part of the data was written:
+	size_t total_writ = 0;
+	do {
+		size_t writ = fwrite(buf.text + total_writ, 1,
+			buf.len - total_writ, to);
+		// Exit if no progress is being made:
+		if (!writ) {
+			free(buf.text);
+			return -1;
+		}
+		clearerr(to);
+		total_writ += writ;
+	} while (total_writ < buf.len);
+	free(buf.text);
 	return 0;
 }
 

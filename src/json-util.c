@@ -272,43 +272,43 @@ int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list)
 	return retval;
 }
 
-int escape_text_json(const char *text, FILE *to)
+void escape_text_json(const char *text, struct string *buf, size_t *cap)
 {
 	while (*text) {
 		switch (*text) {
 		case '"':
-			TRY(fputs("\\\"", to));
+			string_pushn(buf, cap, "\\\"", 2);
 			break;
 		case '\\':
-			TRY(fputs("\\\\", to));
+			string_pushn(buf, cap, "\\\\", 2);
 			break;
 		case '\b':
-			TRY(fputs("\\b", to));
+			string_pushn(buf, cap, "\\b", 2);
 			break;
 		case '\f':
-			TRY(fputs("\\f", to));
+			string_pushn(buf, cap, "\\f", 2);
 			break;
 		case '\n':
-			TRY(fputs("\\n", to));
+			string_pushn(buf, cap, "\\n", 2);
 			break;
 		case '\r':
-			TRY(fputs("\\r", to));
+			string_pushn(buf, cap, "\\r", 2);
 			break;
 		case '\t':
-			TRY(fputs("\\t", to));
+			string_pushn(buf, cap, "\\t", 2);
 			break;
 		default:
 			if ((unsigned char)*text < 32) {
-				TRY(fprintf(to, "\\u%04X",
-					(unsigned char)*text));
+				char *space = string_grow(buf, cap, 7);
+				sprintf(space, "\\u%04X", (unsigned char)*text);
+				buf->len -= 1; // Ignore NUL that was appended.
 			} else {
-				TRY(fputc(*text, to));
+				string_pushc(buf, cap, *text);
 			}
 			break;
 		}
 		++text;
 	}
-	return 0;
 }
 
 int scan_json_key(json_reader *rdr, const char *key, struct json_item *item)
@@ -421,16 +421,14 @@ CTF_TEST(json_node_taken,
 CTF_TEST(escapes_text_json,
 	const char text[] = "ABC\n\"\x1BZ";
 	const char expected[] = "ABC\\n\\\"\\u001BZ";
-	size_t n_escaped = 0;
-	char *escaped = NULL;
-	int out_fd;
-	FILE *to = test_output(&out_fd);
-	assert(!escape_text_json(text, to));
-	fclose(to);
-	test_read_output(out_fd, &escaped, &n_escaped);
-	printf("escaped: \"%.*s\"\n", (int)n_escaped, escaped);
-	assert(n_escaped == sizeof(expected) - 1);
-	assert(!memcmp(escaped, expected, n_escaped));
+	struct string esc;
+	size_t cap = 0;
+	string_init(&esc, cap);
+	escape_text_json(text, &esc, &cap);
+	string_pushc(&esc, &cap, '\0');
+	printf("escaped: \"%s\"\n", esc.text);
+	assert(esc.len == sizeof(expected));
+	assert(!strcmp(esc.text, expected));
 )
 
 CTF_TEST(scans_json_key,

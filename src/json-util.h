@@ -3,6 +3,7 @@
 
 #include "d3d.h"
 #include "json.h"
+#include "string.h"
 #include "table.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -73,10 +74,9 @@ void free_json_tree(struct json_node *root);
 // invalid, in which case -1 is returned and unparseable coordinates are zero.
 int parse_json_vec(d3d_vec_s *vec, const struct json_node_data_list *list);
 
-// Escape the text for use in JSON and write the result to the file. 0 is
-// returned on success; -1 is returned on failure. Quotes are not put around the
-// escaped text. The input text is assumed to be UTF-8.
-int escape_text_json(const char *text, FILE *to);
+// Escape the text for use in JSON and append the result to the buffer. Quotes
+// are not put around the escaped text. The input text is assumed to be UTF-8.
+void escape_text_json(const char *text, struct string *buf, size_t *cap);
 
 // Look for the key in the reader. Only depth 1 is searched. For example, if the
 // desired key were "b" and the reader were at the value {"a":{"b":2},"b":1},
