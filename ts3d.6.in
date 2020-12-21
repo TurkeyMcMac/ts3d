@@ -1,4 +1,4 @@
-.TH ts3d 6 "20 Dec. 2020" "version @@VERSION@@"
+.TH ts3d 6 "21 Dec. 2020" "version @@VERSION@@"
 
 
 .SH NAME
@@ -6,17 +6,13 @@
 
 
 .SH SYNOPSIS
-\fBts3d\fR [\fIoptions\fR] [--] [\fIplay_as\fR]
+\fBts3d\fR [\fIoptions\fR]
 
 
 .SH DESCRIPTION
 
 \fBts3d\fR runs the game Thing Shooter 3D. This a manual for the command, not
 the game. That information is available in the in-game menu.
-
-The optional argument \fIplay_as\fR gives the name of the save to start off
-with. If it does not exist, it will be created. If it is not given, you start
-out anonymous, and will have to create a save through the in-game menu.
 
 
 .SH OPTIONS

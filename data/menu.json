@@ -1,14 +1,5 @@
 {"title": "Thing Shooter 3D",
  "items": [
-  {"title": "Manage Games",
-   "items": [
-    {"title": "New Game",
-     "tag": "act/new-game"},
-    {"title": "Resume Game",
-     "tag": "act/resume-game"},
-    {"title": "Delete Game",
-     "tag": "act/delete-game"}
-   ]},
   {"title": "Levels",
    "items": [
     {"title": "The Pond",
@@ -36,8 +27,6 @@
    "items": [
     {"title": "Overview",
      "text": "help/Overview"},
-    {"title": "Managing Games",
-     "text": "help/Managing-Games"},
     {"title": "Controls",
      "text": "help/Controls"},
     {"title": "Gameplay",

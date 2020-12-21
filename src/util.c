@@ -19,12 +19,6 @@ char *str_dup(const char *str)
 	return memcpy(xmalloc(size), str, size);
 }
 
-size_t strlen_max(const char *str, size_t max)
-{
-	char *nul = memchr(str, '\0', max);
-	return nul ? (size_t)(nul - str) : max;
-}
-
 d3d_direction flip_direction(d3d_direction dir)
 {
 	switch (dir) {

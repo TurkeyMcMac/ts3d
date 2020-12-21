@@ -22,7 +22,7 @@ static void destroy_item(struct menu_item *item)
 	}
 	free(item->items);
 	free(item->title);
-	if (item->kind != ITEM_INPUT) free(item->tag);
+	free(item->tag);
 }
 
 static int construct(struct menu_item *item, struct menu_item *parent,
@@ -58,11 +58,6 @@ static int construct(struct menu_item *item, struct menu_item *parent,
 		item->tag = got->str;
 		subst_native_dir_sep(item->tag);
 		item->n_items = 0;
-	} else if ((got = json_map_get(json, "input", JN_BOOLEAN))
-			&& got->boolean) {
-		item->kind = ITEM_INPUT;
-		item->n_items = 0;
-		item->tag = "";
 	} else if ((got = json_map_get(json, "tag", TAKE_NODE | JN_STRING))) {
 		item->kind = ITEM_TAG;
 		item->tag = got->str;
@@ -145,7 +140,6 @@ static void text_n_items(struct menu *menu, struct menu_item *text)
 int menu_scroll(struct menu *menu, int amount)
 {
 	struct menu_item *current = menu->current;
-	if (current->kind == ITEM_INPUT) return 0;
 	if (current->kind == ITEM_TEXT) text_n_items(menu, current);
 	if (current->n_items <= 0) return 0;
 	int last_place = current->place;
@@ -170,26 +164,11 @@ static void enter(struct menu *menu, struct menu_item *into)
 	menu->current = into;
 }
 
-bool menu_set_input(struct menu *menu, char *buf, size_t size)
-{
-	struct menu_item *current = menu->current;
-	if (current->kind != ITEM_INPUT) return false;
-	menu->needs_redraw = true;
-	current->tag = buf;
-	current->n_items = size;
-	return true;
-}
-
 enum menu_action menu_enter(struct menu *menu)
 {
 	struct menu_item *current = menu->current;
 	if (!has_items(current)) return ACTION_BLOCKED;
 	struct menu_item *into = &current->items[current->place];
-	return menu_redirect(menu, into);
-}
-
-enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
-{
 	switch (into->kind) {
 		FILE *txtfile;
 		char *fname;
@@ -210,9 +189,6 @@ enum menu_action menu_redirect(struct menu *menu, struct menu_item *into)
 		text_n_items(menu, into);
 		enter(menu, into);
 		return ACTION_WENT;
-	case ITEM_INPUT:
-		enter(menu, into);
-		return ACTION_INPUT;
 	case ITEM_TAG:
 		menu->needs_redraw = true;
 		return ACTION_TAG;
@@ -235,20 +211,6 @@ bool menu_escape(struct menu *menu)
 	return true;
 }
 
-bool menu_delete_selected(struct menu *menu, struct menu_item *move_to)
-{
-	struct menu_item *current = menu_get_current(menu);
-	struct menu_item *selected = menu_get_selected(menu);
-	if (!selected) return false;
-	*move_to = *selected;
-	--current->n_items;
-	memmove(selected, selected + 1,
-		(current->n_items - (selected - current->items))
-			* sizeof(*selected));
-	menu_scroll(menu, 0);
-	return true;
-}
-
 void menu_mark_area_changed(struct menu *menu)
 {
 	menu->needs_redraw = true;
@@ -266,15 +228,13 @@ void menu_draw(struct menu *menu)
 	int i = 0;
 	struct menu_item *current = menu->current;
 	if (!menu->needs_redraw) return;
-	// Inputs should always be redrawn since the input buffer may change:
-	menu->needs_redraw = current->kind == ITEM_INPUT;
+	menu->needs_redraw = false;
 	move_clear_line(menu, 0, 0);
 	attron(A_UNDERLINE);
 	addstr(current->title);
 	attroff(A_UNDERLINE);
 	int height = menu->area->height - 1;
-	switch (current->kind) {
-	case ITEM_LINKS:
+	if (current->kind == ITEM_LINKS) {
 		for (int l = current->frame;
 		     l < (int)current->n_items && ++i < height; ++l) {
 			int reverse = l == current->place;
@@ -283,32 +243,13 @@ void menu_draw(struct menu *menu)
 			printw("%2d. %s ", l + 1, current->items[l].title);
 			if (reverse) attroff(A_REVERSE);
 		}
-		break;
-	case ITEM_TEXT:
+	} else if (current->kind == ITEM_TEXT) {
 		for (int l = current->place;
 		     l < (int)menu->n_lines && ++i < height; ++l) {
 			struct string *line = &menu->lines[l];
 			mvprintw(i, 0, "%-*.*s",
 				menu->area->width, (int)line->len, line->text);
 		}
-		break;
-	case ITEM_INPUT:
-		move_clear_line(menu, 3, 0);
-		move_clear_line(menu, 1, 0);
-		move_clear_line(menu, 2, 1);
-		attron(A_UNDERLINE);
-		printw("%*.*s", -(int)current->n_items, (int)current->n_items,
-			current->tag);
-		size_t last = strlen_max(current->tag, current->n_items);
-		if (last < current->n_items) {
-			mvaddch(2, (int)last + 1, A_REVERSE | ' ');
-		}
-		attroff(A_UNDERLINE);
-		mvaddstr(3, 1, "Enter text");
-		i = 3;
-		break;
-	default:
-		break;
 	}
 	if (++i >= height) i = height;
 	for (int j = i; j <= height; ++j) {

@@ -11,7 +11,7 @@
 
 static void print_usage(const char *progname, FILE *to)
 {
-	fprintf(to, "Usage: %s [options] [play_as]\n", progname);
+	fprintf(to, "Usage: %s [options]\n", progname);
 }
 
 static void print_help(const char *progname)
@@ -31,9 +31,6 @@ static void print_help(const char *progname)
 "  -s state_file Read persistent state from state_file.\n"
 "  -v            Print version information.\n"
 "\n"
-"The optional argument play_as gives the name of the save to start off with.\n"
-"If it does not exist, it will be created. If it is not given, you start out\n"
-"anonymous, and will have to create a save through the in-game menu.\n"
 "Game data and state is looked for in $TS3D_ROOT, or $HOME/.ts3d by default.\n"
 "If the root directory doesn't exist, it will be created. The paths for data\n"
 "and state specifically can be overriden by $TS3D_DATA/-d and $TS3D_STATE/-s,\n"
@@ -145,8 +142,6 @@ int main(int argc, char *argv[])
 	bool error = false;
 	// Program name from invokation:
 	const char *progname = argc > 0 ? argv[0] : "ts3d";
-	// Save name, NULL for anonymous:
-	char *play_as = NULL;
 	// Data directory path, NULL for default:
 	char *data_dir = NULL;
 	// State file path, NULL for default:
@@ -193,7 +188,6 @@ int main(int argc, char *argv[])
 		print_usage(progname, stderr);
 		goto end;
 	}
-	if (optind < argc) play_as = argv[optind];
 	if (!data_dir) data_dir = default_file("data", "TS3D_DATA");
 	if (!data_dir || ensure_file(data_dir, true)) {
 		fprintf(stderr,
@@ -218,7 +212,7 @@ int main(int argc, char *argv[])
 		if (logger_get_output(&log, LOGGER_ERROR) == UNTOUCHED_MARKER)
 			logger_set_output(&log, LOGGER_ERROR, log_def, false);
 	}
-	ret = do_ts3d_game(play_as, data_dir, state_file, &log);
+	ret = do_ts3d_game(data_dir, state_file, &log);
 	if (ret < 0) {
 		FILE *err_log = logger_get_output(&log, LOGGER_ERROR);
 		if (err_log) {
