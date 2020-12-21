@@ -17,10 +17,6 @@
 // allocated copy.
 char *str_dup(const char *str);
 
-// This is identical to strnlen. It calculates strlen(str) but only looks at the
-// first max bytes, returning max if it finds no terminator therein.
-size_t strlen_max(const char *str, size_t max);
-
 // Turn a horizontal direction 180 degrees, or swap between up and down.
 d3d_direction flip_direction(d3d_direction dir);
 

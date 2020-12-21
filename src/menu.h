@@ -12,9 +12,6 @@ enum menu_action {
 	ACTION_BLOCKED,
 	// The item was entered to reveal a submenu.
 	ACTION_WENT,
-	// An input element was entered. This is the same as WENT except that
-	// the entered item is always an INPUT.
-	ACTION_INPUT,
 	// The item had a tag.
 	ACTION_TAG
 };
@@ -27,8 +24,6 @@ enum menu_kind {
 	ITEM_LINKS,
 	// An item which displays text from a file.
 	ITEM_TEXT,
-	// An item for user text input.
-	ITEM_INPUT,
 	// An item which has a string tag.
 	ITEM_TAG
 };
@@ -42,17 +37,14 @@ struct menu_item {
 	// The kind of item.
 	enum menu_kind kind;
 	// Some item-specific data. For TAGs, this is the tag string. For TEXTs,
-	// it is the path of a text file relative to the data directory. For
-	// inputs, it is the pointer to the current text buffer, For other
-	// kinds, it is NULL. This pointer is allocated or NULL unless the item
-	// is an INPUT.
+	// it is the path of a text file relative to the data directory.  For
+	// other kinds, it is NULL. This pointer is allocated or NULL.
 	char *tag;
 	// Sub-items for LINKSs. For other kinds, this is NULL.
 	struct menu_item *items;
 	// The number of sub-items for LINKSs. For TEXTs, this is set to the
 	// number of scrollable lines in the file when it is loaded, or 0 before
-	// it has ever been loaded. For INPUTs, this is the space in characters
-	// of the current input buffer. For other kinds, this is 0.
+	// it has ever been loaded. For other kinds, this is 0.
 	size_t n_items;
 	// The place of the cursor in the menu, from 0 to n_items minus 1. This
 	// is only relevant for TEXTs and LINKSs.
@@ -106,27 +98,9 @@ int menu_scroll(struct menu *menu, int lines);
 // menu_get_selected) will have a non-NULL tag field.
 enum menu_action menu_enter(struct menu *menu);
 
-// Teleport to the location of the given menu item. The item can be external and
-// manually constructed. It is valid for into to have a parent pointer to some
-// place even if it is not part of the menu tree.
-enum menu_action menu_redirect(struct menu *menu, struct menu_item *into);
-
 // Exit the current menu to the parent. true is returned unless the menu that is
 // currently viewed is the root menu.
 bool menu_escape(struct menu *menu);
-
-// Delete the selected menu item in a LINKS. This will shift over menu items
-// after it in memory. Returned is whether an item was deleted. If no item was
-// selected (i.e. the current item was not a LINKS) then false is returned.
-// move_to is set to the removed item, which is not freed or modified. move_to
-// must be freed manually.
-bool menu_delete_selected(struct menu *menu, struct menu_item *move_to);
-
-// Set the input buffer with the given size. This only applies to INPUTS, and
-// returns true and does stuff only if the current item is an INPUT. The buffer
-// can later be modified and changes will show up when the menu is redrawn. The
-// text of the buffer must ALWAYS BE NUL TERMINATED.
-bool menu_set_input(struct menu *menu, char *buf, size_t size);
 
 // Tells the menu that it's area has changed position or that it's area's
 // contents have been dirtied and need overwriting.
@@ -142,7 +116,7 @@ void menu_set_message(struct menu *menu, const char *msg);
 void menu_clear_message(struct menu *menu);
 
 // Deallocate menu resources. This doesn't touch the screen area, the root
-// directory, the input buffer, or the message.
+// directory, or the message.
 void menu_destroy(struct menu *menu);
 
 #endif /* MENU_H_ */

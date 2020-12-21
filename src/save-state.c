@@ -5,72 +5,43 @@
 #include "xalloc.h"
 #include <stdlib.h>
 
-struct save_state {
-	char *name;
-	table complete;
-};
-
-static void parse_save_state(struct save_state *save, struct json_node *json)
-{
-	union json_node_data *got;
-	if (!(got = json_map_get(json, "complete", JN_LIST))) return;
-	for (size_t i = 0; i < got->list.n_vals; ++i) {
-		if (got->list.vals[i].kind == JN_STRING)
-			save_state_mark_complete(save, got->list.vals[i].d.str);
-	}
-}
-
-static void free_save_state(struct save_state *save)
-{
-	free(save->name);
-	const char *key;
-	void **UNUSED_VAR(val);
-	TABLE_FOR_EACH(&save->complete, key, val) {
-		free((char *)key);
-	}
-	table_free(&save->complete);
-	free(save);
-}
-
-int save_states_init(struct save_states *saves, FILE *from, struct logger *log)
+int save_state_init(struct save_state *save, FILE *from, struct logger *log)
 {
 	struct json_node jtree;
-	if (parse_json_tree("save_states", from, log, &jtree)) return -1;
-	table_init(&saves->saves, 5); // This empty table will be populated.
+	if (parse_json_tree("save_state", from, log, &jtree)) return -1;
+	table_init(&save->complete, 5); // This empty table will be populated.
 	if (jtree.kind != JN_MAP) goto end;
 	union json_node_data *got;
-	if (!(got = json_map_get(&jtree, "saves", JN_MAP))) goto end;
-	const char *key;
-	void **val;
-	TABLE_FOR_EACH(&got->map, key, val) {
-		parse_save_state(save_states_add(saves, key), *val);
+	if ((got = json_map_get(&jtree, "complete", JN_LIST))) {
+		struct json_node_data_list *complete = &got->list;
+		for (size_t i = 0; i < complete->n_vals; ++i) {
+			struct json_node *node = &complete->vals[i];
+			if (node->kind == JN_STRING)
+				save_state_mark_complete(save, node->d.str);
+		}
+	} else if ((got = json_map_get(&jtree, "saves", JN_MAP))) {
+		// With the old format, merge all the saves' completed levels
+		// into one list.
+		table *saves = &got->map;
+		const char *UNUSED_VAR(key);
+		void **val;
+		TABLE_FOR_EACH(saves, key, val) {
+			if ((got = json_map_get(*val, "complete", JN_LIST))) {
+				struct json_node_data_list *complete =
+					&got->list;
+				for (size_t i = 0; i < complete->n_vals; ++i) {
+					struct json_node *node =
+						&complete->vals[i];
+					if (node->kind == JN_STRING)
+						save_state_mark_complete(save,
+							node->d.str);
+				}
+			}
+		}
 	}
 end:
 	free_json_tree(&jtree);
 	return 0;
-}
-
-struct save_state *save_states_add(struct save_states *saves, const char *name)
-{
-	struct save_state *save = xmalloc(sizeof(*save));
-	save->name = str_dup(name);
-	table_init(&save->complete, 8);
-	if (table_add(&saves->saves, save->name, save)) {
-		free_save_state(save);
-		return NULL;
-	}
-	return save;
-}
-
-struct save_state *save_states_get(struct save_states *saves, const char *name)
-{
-	void **got = table_get(&saves->saves, name);
-	return got ? *got : NULL;
-}
-
-const char *save_state_name(const struct save_state *save)
-{
-	return save->name;
 }
 
 bool save_state_is_complete(const struct save_state *save, const char *name)
@@ -84,57 +55,25 @@ void save_state_mark_complete(struct save_state *save, const char *name)
 	if (table_add(&save->complete, name_dup, NULL)) free(name_dup);
 }
 
-int save_states_remove(struct save_states *saves, const char *name)
+int save_state_write(struct save_state *save, FILE *to)
 {
-	struct save_state *save = table_remove(&saves->saves, name);
-	if (save) {
-		free_save_state(save);
-		return 0;
-	}
-	return -1;
-}
-
-static void save_state_to_string(const struct save_state *save,
-	struct string *buf, size_t *cap)
-{
-	string_pushz(buf, cap, "{\n   \"complete\": ");
+	struct string buf;
+	size_t cap = 64;
+	string_init(&buf, cap);
+	string_pushz(&buf, &cap, "{\n \"complete\": ");
 	if (table_count(&save->complete) > 0) {
 		const char *before = "[";
 		const char *key;
 		void **UNUSED_VAR(val);
 		TABLE_FOR_EACH(&save->complete, key, val) {
-			string_pushz(buf, cap, before);
-			string_pushz(buf, cap, "\n    \"");
-			escape_text_json(key, buf, cap);
+			string_pushz(&buf, &cap, before);
+			string_pushz(&buf, &cap, "\n  \"");
+			escape_text_json(key, &buf, &cap);
 			before = "\",";
 		}
-		string_pushz(buf, cap, "\"\n   ]\n  }");
+		string_pushz(&buf, &cap, "\"\n ]\n}");
 	} else {
-		string_pushz(buf, cap, "[]\n  }");
-	}
-}
-
-int save_states_write(struct save_states *saves, FILE *to)
-{
-	struct string buf;
-	size_t cap = 128;
-	string_init(&buf, cap);
-	string_pushz(&buf, &cap, "{\n \"saves\": ");
-	if (table_count(&saves->saves) > 0) {
-		char before = '{';
-		const char *name;
-		void **val;
-		TABLE_FOR_EACH(&saves->saves, name, val) {
-			string_pushc(&buf, &cap, before);
-			string_pushz(&buf, &cap, "\n  \"");
-			escape_text_json(name, &buf, &cap);
-			string_pushz(&buf, &cap, "\": ");
-			save_state_to_string(*val, &buf, &cap);
-			before = ',';
-		}
-		string_pushz(&buf, &cap, "\n }\n}\n");
-	} else {
-		string_pushz(&buf, &cap, "{}\n}\n");
+		string_pushz(&buf, &cap, "[]\n}");
 	}
 	// Try to recover from errors where part of the data was written:
 	size_t total_writ = 0;
@@ -153,14 +92,14 @@ int save_states_write(struct save_states *saves, FILE *to)
 	return 0;
 }
 
-void save_states_destroy(struct save_states *saves)
+void save_state_destroy(struct save_state *save)
 {
-	const char *UNUSED_VAR(key);
-	void **val;
-	TABLE_FOR_EACH(&saves->saves, key, val) {
-		free_save_state(*val);
+	const char *key;
+	void **UNUSED_VAR(val);
+	TABLE_FOR_EACH(&save->complete, key, val) {
+		free((char *)key);
 	}
-	table_free(&saves->saves);
+	table_free(&save->complete);
 }
 
 #if CTF_TESTS_ENABLED
@@ -171,25 +110,29 @@ void save_states_destroy(struct save_states *saves)
 #	include <assert.h>
 #	include <string.h>
 
-static void setup_saves(struct save_states *saves)
-{
-	char from_text[] =
+static const char new_save_text[] = "{\"complete\":[\"a\",\"b\",\"c\"]}";
+
+static const char old_save_text[] =
 	"{\"saves\":{"
-		"\"PLAYER_1\":{\"complete\":[]},"
-		"\"PLAYER_2\":{\"complete\":[\"a\",\"b\",1]}"
+		"\"PLAYER_1\":{\"complete\":[\"a\"]},"
+		"\"PLAYER_2\":{\"complete\":[\"a\",\"b\"]},"
+		"\"PLAYER_3\":{\"complete\":[\"c\"]}"
 	"}}";
-	FILE *from = test_input(from_text, sizeof(from_text));
+
+static void setup_save(struct save_state *save, const char *from_text)
+{
+	FILE *from = test_input(from_text, strlen(from_text));
 	struct logger logger;
 	logger_init(&logger);
-	assert(!save_states_init(saves, from, &logger));
+	assert(!save_state_init(save, from, &logger));
 }
 
-char *saves_to_string(struct save_states *saves, size_t *n_writ)
+char *save_to_string(struct save_state *save, size_t *n_writ)
 {
 	char *writ;
 	int out_fd;
 	FILE *to = test_output(&out_fd);
-	save_states_write(saves, to);
+	save_state_write(save, to);
 	fclose(to);
 	test_read_output(out_fd, &writ, n_writ);
 	writ = xrealloc(writ, *n_writ + 1);
@@ -198,10 +141,10 @@ char *saves_to_string(struct save_states *saves, size_t *n_writ)
 }
 
 CTF_TEST(write_save_valid,
-	struct save_states saves;
-	setup_saves(&saves);
+	struct save_state save;
+	setup_save(&save, new_save_text);
 	size_t n_writ;
-	char *writ = saves_to_string(&saves, &n_writ);
+	char *writ = save_to_string(&save, &n_writ);
 	struct logger logger;
 	logger_init(&logger);
 	struct json_node root;
@@ -209,56 +152,61 @@ CTF_TEST(write_save_valid,
 	assert(parse_json_tree("(memory)", source, &logger, &root) == 0);
 	logger_free(&logger);
 	free_json_tree(&root);
-	assert(strstr(writ, "PLAYER_1"));
-	assert(strstr(writ, "PLAYER_2"));
-	save_states_destroy(&saves);
-)
-
-CTF_TEST(save_states_adds,
-	struct save_states saves;
-	setup_saves(&saves);
-	assert(!save_states_add(&saves, "PLAYER_1"));
-	assert(save_states_add(&saves, "PLAYER_3"));
-	size_t n_writ;
-	char *writ = saves_to_string(&saves, &n_writ);
-	assert(strstr(writ, "PLAYER_1"));
-	assert(strstr(writ, "PLAYER_2"));
-	assert(strstr(writ, "PLAYER_3"));
-	save_states_destroy(&saves);
-)
-
-CTF_TEST(save_states_gets,
-	struct save_states saves;
-	setup_saves(&saves);
-	assert(!save_states_get(&saves, "PLAYER_3"));
-	assert(!strcmp("PLAYER_1",
-		save_state_name(save_states_get(&saves, "PLAYER_1"))));
-	save_states_destroy(&saves);
-)
-
-CTF_TEST(save_states_removes,
-	struct save_states saves;
-	setup_saves(&saves);
-	assert(!save_states_remove(&saves, "PLAYER_2"));
-	assert(save_states_remove(&saves, "PLAYER_3"));
-	size_t n_writ;
-	char *writ = saves_to_string(&saves, &n_writ);
-	assert(strstr(writ, "PLAYER_1"));
-	assert(!strstr(writ, "PLAYER_2"));
-	save_states_destroy(&saves);
+	save_state_destroy(&save);
 )
 
 CTF_TEST(save_state_completed,
-	struct save_states saves;
-	setup_saves(&saves);
-	struct save_state *p3 = save_states_add(&saves, "PLAYER_3");
-	assert(!save_state_is_complete(p3, "LEVEL"));
-	save_state_mark_complete(p3, "LEVEL");
-	assert(save_state_is_complete(p3, "LEVEL"));
+	struct save_state save;
+	setup_save(&save, new_save_text);
+	assert(!save_state_is_complete(&save, "LEVEL"));
+	save_state_mark_complete(&save, "LEVEL");
+	assert(save_state_is_complete(&save, "LEVEL"));
+	assert(save_state_is_complete(&save, "a"));
+	save_state_mark_complete(&save, "a");
+	assert(save_state_is_complete(&save, "a"));
 	size_t n_writ;
-	char *writ = saves_to_string(&saves, &n_writ);
+	char *writ = save_to_string(&save, &n_writ);
 	assert(strstr(writ, "LEVEL"));
-	save_states_destroy(&saves);
+	free(writ);
+	save_state_destroy(&save);
+)
+
+CTF_TEST(old_save_style,
+	struct save_state save_new, save_old;
+	setup_save(&save_new, new_save_text);
+	setup_save(&save_old, old_save_text);
+	size_t n_writ;
+	char *str_new = save_to_string(&save_new, &n_writ);
+	char *str_old = save_to_string(&save_old, &n_writ);
+	assert(!strcmp(str_new, str_old));
+	free(str_old);
+	free(str_new);
+	save_state_destroy(&save_old);
+	save_state_destroy(&save_new);
+)
+
+CTF_TEST(empty_save_states,
+	struct save_state save_none, save_obj, save_new, save_old;
+	setup_save(&save_none, "");
+	setup_save(&save_obj, "{}");
+	setup_save(&save_new, "{\"complete\":[]}");
+	setup_save(&save_old, "{\"saves\":{}}");
+	size_t n_writ;
+	char *str_none = save_to_string(&save_none, &n_writ);
+	char *str_obj = save_to_string(&save_obj, &n_writ);
+	char *str_old = save_to_string(&save_old, &n_writ);
+	char *str_new = save_to_string(&save_new, &n_writ);
+	assert(!strcmp(str_new, str_none));
+	assert(!strcmp(str_new, str_obj));
+	assert(!strcmp(str_new, str_old));
+	free(str_new);
+	free(str_old);
+	free(str_obj);
+	free(str_none);
+	save_state_destroy(&save_new);
+	save_state_destroy(&save_old);
+	save_state_destroy(&save_obj);
+	save_state_destroy(&save_none);
 )
 
 #endif /* CTF_TESTS_ENABLED */
