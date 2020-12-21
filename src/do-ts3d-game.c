@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -254,7 +255,7 @@ static void get_input(char *name_buf, size_t buf_size,
 			// Delete a character.
 			if (len > 0)
 				name_buf[len - 1] = '\0';
-		} else if (key == ERR || !isprint(key)){
+		} else if (key < 0 || key > UCHAR_MAX || !isprint(key)) {
 			// Key is not to be appended to the name.
 			continue;
 		} else if (len < buf_size) {
@@ -559,7 +560,7 @@ int do_ts3d_game(const char *play_as, const char *data_dir,
 			screen_state.sized = false;
 			break;
 		default:
-			if (isdigit(key)) {
+			if (key >= '0' && key <= '9') {
 				// Goto nth menu item.
 				int to = key == '0' ? 9 : key - '0' - 1;
 				menu_scroll(menu, -999);

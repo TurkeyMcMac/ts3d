@@ -11,6 +11,7 @@
 #include "ui-util.h"
 #include "util.h"
 #include <ctype.h>
+#include <limits.h>
 #include <math.h>
 
 // Create all the entities specified by the entity start specifications
@@ -32,20 +33,22 @@ static void init_entities(struct ents *ents, struct map *map)
 static void move_player(struct player *player,
 	int *translation, int *turn_duration, int key)
 {
-	key = tolower(key);
-	switch (key) {
-	case 'w': // Forward
-	case 's': // Backward
-	case 'a': // Left
-	case 'd': // Right
-		*translation = *translation != key ? key : '\0';
-		break;
-	case 'q': // Turn CCW
-		*turn_duration = +TURN_DURATION;
-		break;
-	case 'e': // Turn CW
-		*turn_duration = -TURN_DURATION;
-		break;
+	if (key >= 0 && key <= UCHAR_MAX) {
+		key = tolower(key);
+		switch (key) {
+		case 'w': // Forward
+		case 's': // Backward
+		case 'a': // Left
+		case 'd': // Right
+			*translation = *translation != key ? key : '\0';
+			break;
+		case 'q': // Turn CCW
+			*turn_duration = +TURN_DURATION;
+			break;
+		case 'e': // Turn CW
+			*turn_duration = -TURN_DURATION;
+			break;
+		}
 	}
 	switch (*translation) {
 	case 'w': // Forward
@@ -219,7 +222,7 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Press Y to confirm or N to cancel.";
 		tick(timer);
 		int key = getch();
-		int lowkey = tolower(key);
+		int lowkey = key >= 0 && key <= UCHAR_MAX ? tolower(key) : key;
 		bool resized = key == KEY_RESIZE || !cam;
 		if (resized) {
 			update_term_size();
@@ -349,9 +352,10 @@ int play_level(const char *root_dir, struct save_state *save,
 		move_ents(&ents, map, &player);
 		player_collide(&player, &ents);
 		hit_ents(&ents);
-		// Let the player shoot. This is blocked by player_try_shoot if
-		// the player is dead:
-		if (isupper(key) || key == ' ')
+		// Let the player shoot. key != lowkey means the key is an
+		// uppercase char. The shooting is blocked by player_try_shoot
+		// if the player is dead:
+		if (key != lowkey || key == ' ')
 			player_try_shoot(&player, &ents);
 		shoot_bullets(&ents);
 		player_tick(&player);
