@@ -34,7 +34,8 @@ struct screen_state {
 	struct title_state {
 		bool initialized;
 		d3d_camera *cam;
-		double facing;
+		// Parameter for camera direction and position:
+		double t;
 		d3d_board *board;
 		struct screen_area area;
 		struct color_map *color_map;
@@ -68,7 +69,7 @@ static int load_title_state(struct title_state *state, struct loader *ldr)
 	// Screen area not yet initialized:
 	state->area = (struct screen_area) { 0, 0, 1, 1 };
 	state->cam = camera_with_dims(state->area.width, state->area.height);
-	state->facing = 0.0;
+	state->t = 0.0;
 	state->board = map->board;
 	state->color_map = loader_color_map(ldr);
 	state->initialized = true;
@@ -99,18 +100,23 @@ static void do_screen_tick(struct screen_state *state)
 	}
 	// Update the screen:
 	if (state->title.initialized) {
-		// Produces a cool turning effect with the camera's position:
-		double theta = state->title.facing + 1.0;
-		double x = cos(PI * cos(theta))
-			+ d3d_board_width(state->title.board) / 2.0;
-		double y = sin(PI * sin(theta))
-			+ d3d_board_height(state->title.board) / 2.0;
-		d3d_vec_s pos = { x, y };
-		state->title.facing -= TITLE_SCREEN_CAM_ROTATION;
-		d3d_draw(state->title.cam, pos, state->title.facing,
+		// theta is always increasing, but at a fluctuating rate so that
+		// it pauses when the camera is facing the letters:
+		double theta = -state->title.t
+			- sin(state->title.t * 4.0 - PI) / 4.0;
+		// r is at its highest when the camera is facing a letter:
+		double r = (cos(theta * 4.0) + 0.5) / 1.5 * TITLE_SCREEN_RADIUS;
+		double x = r * cos(theta);
+		double y = r * sin(theta);
+		d3d_vec_s pos = {
+			x + d3d_board_width(state->title.board) / 2.0,
+			y + d3d_board_height(state->title.board) / 2.0
+		};
+		d3d_draw(state->title.cam, pos, theta,
 			state->title.board, 0, NULL);
 		display_frame(state->title.cam, &state->title.area,
 			state->title.color_map);
+		state->title.t += TITLE_SCREEN_SPEED;
 	}
 	if (state->menu.initialized) menu_draw(&state->menu.menu);
 	refresh();

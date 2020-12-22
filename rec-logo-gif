@@ -29,7 +29,9 @@ GIF_HEIGHT=${GIF_HEIGHT:-19}
 # Set up the directories:
 cd "$(dirname "$0")"
 ts3d_dir=$PWD
-working_dir=$(mktemp -d)
+working_dir=$PWD/.rec-logo-gif
+rm -rf "$working_dir"
+mkdir "$working_dir"
 trap 'rm -r "$working_dir"' EXIT
 cd "$working_dir"
 
