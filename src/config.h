@@ -13,9 +13,11 @@
 // The title screensaver is on the map of this name.
 #define TITLE_SCREEN_MAP_NAME "title"
 
-// In the screensaver, the camera rotates this amount (in radians) per tick. The
-// angle it's facing is also the parameter of its position.
-#define TITLE_SCREEN_CAM_ROTATION 0.003
+// In the screensaver, this number scales with the speed of one cycle.
+#define TITLE_SCREEN_SPEED 0.0035
+
+// In the screensaver, the camera goes out at most this far (measured in tiles.)
+#define TITLE_SCREEN_RADIUS 0.75
 
 // The number of ticks a turn lasts, triggered by a single key press. This is to
 // smooth out key detection speeds for different terminals, as some wait longer
