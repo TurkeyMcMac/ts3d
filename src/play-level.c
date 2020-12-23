@@ -208,7 +208,7 @@ int play_level(const char *root_dir, struct save_state *save,
 	bool paused = false;
 	bool quitting = false;
 	bool do_redraw = true;
-	struct screen_area area = { 0, 0, COLS, LINES };
+	struct screen_area area = { 0, 0, 1, 1 };
 	clear();
 	for (;;) {
 		static const char dead_msg[] =
@@ -227,20 +227,20 @@ int play_level(const char *root_dir, struct save_state *save,
 		if (resized) {
 			update_term_size();
 			area.width = COLS;
-			area.height = LINES;
-			d3d_free_camera(cam);
 			// LINES - 1 so that one is reserved for the health and
 			// reload meters:
-			cam = camera_with_dims(COLS, LINES > 0 ? LINES - 1 : 0);
+			area.height = LINES > 0 ? LINES - 1 : 0;
+			d3d_free_camera(cam);
+			cam = camera_with_dims(area.width, area.height);
 			// Takes up the left half of the bottom:
 			health_meter.x = 0;
-			health_meter.y = LINES - 1;
-			health_meter.width = COLS / 2;
+			health_meter.y = area.height;
+			health_meter.width = area.width / 2;
 			health_meter.win = stdscr;
 			// Takes up the right half of the bottom:
 			reload_meter.x = health_meter.width;
-			reload_meter.y = LINES - 1;
-			reload_meter.width = COLS - health_meter.width;
+			reload_meter.y = area.height;
+			reload_meter.width = area.width - health_meter.width;
 			reload_meter.win = stdscr;
 			if (dead_popup) {
 				delwin(dead_popup);
