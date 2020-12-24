@@ -109,25 +109,24 @@ union json_node_data *json_map_get(struct json_node *map, const char *key,
 	return &nd->d;
 }
 
-static int free_json_pair(const char *key, void **val)
+static void free_json_pair(const char *key, struct json_node *val)
 {
 	free((char *)key);
-	free_json_tree(*val);
-	free(*val);
-	return 0;
+	free_json_tree(val);
+	free(val);
 }
 
 static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 {
 	size_t cap;
 	struct json_item item;
+	nd->taken = false;
 	if (json_read_item(rdr, &item) < 0) {
 		print_json_error(rdr, &item);
 		nd->kind = JN_ERROR;
 		return;
 	}
 	*keyp = item.key.bytes;
-	nd->taken = false;
 	switch (item.type) {
 	case JSON_EMPTY:
 		nd->kind = JN_EMPTY;
@@ -143,25 +142,22 @@ static void parse_node(json_reader *rdr, struct json_node *nd, char **keyp)
 			struct json_node *entry = xmalloc(sizeof(*entry));
 			parse_node(rdr, entry, &key);
 			if (entry->kind == JN_END_) {
-				free(entry);
+				free_json_pair(key, entry);
 				break;
 			} else if (entry->kind == JN_ERROR) {
-				free(key);
-				free(entry);
+				free_json_pair(key, entry);
 				const char *k;
 				void **v;
 				TABLE_FOR_EACH(&nd->d.map, k, v) {
-					free_json_pair(k, v);
+					free_json_pair(k, *v);
 				}
 				table_free(&nd->d.map);
 				nd->kind = JN_ERROR;
 				return;
 			}
-			if (key && table_add(&nd->d.map, key, entry)) {
-				// With duplicate keys, the first is kept
-				free_json_tree(entry);
-				free(entry);
-			}
+			if (!key || table_add(&nd->d.map, key, entry))
+				// With duplicate keys, the first is kept:
+				free_json_pair(key, entry);
 		}
 		table_freeze(&nd->d.map);
 		break;
@@ -236,7 +232,7 @@ void free_json_tree(struct json_node *nd)
 		void **v;
 	case JN_MAP:
 		TABLE_FOR_EACH(&nd->d.map, k, v) {
-			free_json_pair(k, v);
+			free_json_pair(k, *v);
 		}
 		table_free(&nd->d.map);
 		break;

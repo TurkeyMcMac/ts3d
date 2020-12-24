@@ -180,7 +180,10 @@ int do_ts3d_game(const char *data_dir, const char *state_file,
 	// This here is lowered from "1000":
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
 	initscr();
-	start_color();
+	if (start_color() == ERR) {
+		logger_printf(log, LOGGER_ERROR, "start_color() failed\n");
+		goto error_color;
+	}
 	set_application_title("Thing Shooter 3D");
 	timeout(0); // No delay for key presses.
 	// For some reason, NetBSD Curses requires this to keep the program from
@@ -305,6 +308,7 @@ int do_ts3d_game(const char *data_dir, const char *state_file,
 end:
 error_menu:
 	destroy_screen_state(&screen_state);
+error_color:
 	endwin();
 	save_state_destroy(&save);
 error_save_state:
