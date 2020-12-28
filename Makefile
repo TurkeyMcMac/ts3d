@@ -8,19 +8,19 @@ version = `cat $(version-file)`
 tests = tests
 windows-zip = ts3d.zip
 data-dir = data
-man-page = ts3d.6
+man-page = ts3d.6.gz
 man-dir = /usr/share/man/man6
 TS3D_ROOT ?= $(HOME)/.ts3d
 TS3D_DATA ?= $(TS3D_ROOT)/data
 exe-install = $(exe-dir)/$(exe)
-man-install = $(man-dir)/$(man-page).gz
+man-install = $(man-dir)/$(man-page)
 data-install = $(TS3D_DATA)
 sources = src/*.c
 # Contains the version of the program:
 version-header = src/version.h
 # src/*.h will not include src/version.h if it has not been made yet:
 headers = src/*.h $(version-header)
-man-page-input = $(man-page).in
+man-page-input = ts3d.6.in
 
 cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
 	 ${CFLAGS}
