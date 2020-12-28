@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <math.h>
+#include <time.h>
 
 // Create all the entities specified by the entity start specifications
 // (struct map_ent_start) in the given map.
