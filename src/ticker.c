@@ -1,31 +1,32 @@
 #include "ticker.h"
 
-#if __APPLE__
+#ifndef _WIN32
+
+#	include <stddef.h>
+#	include <time.h>
 
 void ticker_init(struct ticker *tkr, int interval)
 {
-	mach_timebase_info(&tkr->timebase);
-	tkr->interval = interval * 1000000 * tkr->timebase.denom
-		/ tkr->timebase.numer;
-	tkr->last_tick = mach_continuous_time();
+	gettimeofday(&tkr->last_tick, NULL);
+	tkr->interval = (long)interval * 1000L;
 }
 
 void tick(struct ticker *tkr)
 {
-	uint64_t now = mach_continuous_time();
-	uint64_t deadline = tkr->last_tick + tkr->interval;
-	if (now < deadline) {
-		uint64_t delay = deadline - now;
-		struct timespec ts = {0, delay * tkr->timebase.numer
-			/ tkr->timebase.denom};
-		nanosleep(&ts, NULL);
-		tkr->last_tick = deadline;
-	} else {
-		tkr->last_tick = now;
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	long elapsed = (long)now.tv_usec - (long)tkr->last_tick.tv_usec;
+	if (elapsed < 0) elapsed += 1000000;
+	long delay = tkr->interval - elapsed;
+	if (delay > 0) {
+		struct timespec delay_ts =
+			{ .tv_sec = 0, .tv_nsec = delay * 1000 };
+		nanosleep(&delay_ts, NULL);
 	}
+	gettimeofday(&tkr->last_tick, NULL);
 }
 
-#elif defined(_WIN32)
+#else
 
 #	include <windows.h>
 
@@ -47,26 +48,7 @@ void tick(struct ticker *tkr)
 	}
 }
 
-#else
-
-void ticker_init(struct ticker *tkr, int interval)
-{
-	clock_gettime(CLOCK_MONOTONIC, &tkr->last_tick);
-	tkr->interval = interval * 1000000;
-}
-
-void tick(struct ticker *tkr)
-{
-	tkr->last_tick.tv_nsec += tkr->interval;
-	if (tkr->last_tick.tv_nsec >= 1000000000) {
-		tkr->last_tick.tv_nsec -= 1000000000;
-		++tkr->last_tick.tv_sec;
-	}
-	clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tkr->last_tick, NULL);
-	clock_gettime(CLOCK_MONOTONIC, &tkr->last_tick);
-}
-
-#endif /* !__APPLE__ && !defined(_WIN32) */
+#endif /* defined(_WIN32) */
 
 #if CTF_TESTS_ENABLED
 
