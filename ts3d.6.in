@@ -1,4 +1,4 @@
-.TH ts3d 6 "21 Dec. 2020" "version @@VERSION@@"
+.TH ts3d 6 "30 Dec. 2020" "version @@VERSION@@"
 
 
 .SH NAME
@@ -45,10 +45,12 @@ Print version information and exit.
 .SH ENVIRONMENT
 
 .IP HOME
-If $TS3D_ROOT is not set, the game root directory is $HOME/.ts3d.
+If $TS3D_ROOT is not set and \fBts3d\fR has not been installed as part of a
+package which provides its own default location, the game root directory is
+$HOME/.ts3d.
 
 .IP TS3D_ROOT
-This overrides the default $HOME/.ts3d root.
+This overrides the default root directory.
 
 .IP TS3D_DATA
 This overrides the default $TS3D_ROOT/data game data root directory.

@@ -31,15 +31,17 @@ static void print_help(const char *progname)
 "  -s state_file Read persistent state from state_file.\n"
 "  -v            Print version information.\n"
 "\n"
-"Game data and state is looked for in $TS3D_ROOT, or $HOME/.ts3d by default.\n"
+"Game data and state is looked for in $TS3D_ROOT, or $HOME/.ts3d by default*.\n"
 "If the root directory doesn't exist, it will be created. The paths for data\n"
-"and state specifically can be overriden by $TS3D_DATA/-d and $TS3D_STATE/-s,\n"
+"and state specifically can be overriden by -d/$TS3D_DATA and -s/$TS3D_STATE,\n"
 "respectively. The files will be created if they do not exist. The options\n"
 "can override the environment variables if given.\n"
 "ts3d by default logs to the file 'log' in the game's root directory, or to\n"
 "the $TS3D_LOG variable if it is set. Again, options override this.\n"
-"If you are using this on Windows, the default storage location is\n"
-"%AppData%\\ts3d, not $HOME/.ts3d. The other variables are mostly the same.");
+"\n"
+"* There are exceptions. If you are using this on Windows, the default\n"
+"storage location is instead %AppData%\\ts3d. In packaged versions of this\n"
+"software, the default may also be different.");
 }
 
 static void print_version(const char *progname)
