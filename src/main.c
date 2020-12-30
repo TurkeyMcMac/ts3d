@@ -41,7 +41,7 @@ static void print_help(const char *progname)
 "\n"
 "* There are exceptions. If you are using this on Windows, the default\n"
 "storage location is instead %AppData%\\ts3d. In packaged versions of this\n"
-"software, the default may also be different.");
+"software, the default state and data locations may also be different.");
 }
 
 static void print_version(const char *progname)
