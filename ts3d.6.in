@@ -19,12 +19,12 @@ the game. That information is available in the in-game menu.
 in the filesystem. The locations can be set by options. If the options are not
 present, the locations may be set by environment variables. If the environment
 variables are not present, \fBts3d\fR has defaults:
-.P
-\ \[bu] Game state defaults to "state.json" in the game's root directory.
-.P
-\ \[bu] Game data defaults to "data/" in the game's root directory.
-.P
-\ \[bu] By default, everything is logged to "log" in the game's root directory.
+.IP \(bu 2
+Game state defaults to "state.json" in the game's root directory.
+.IP \(bu
+Game data defaults to "data/" in the game's root directory.
+.IP \(bu
+By default, everything is logged to "log" in the game's root directory.
 .P
 These base defaults may be altered for versions of \fBts3d\fR installed as part
 of some software package from a package manager.
