@@ -16,8 +16,8 @@ sources = src/*.c
 headers = src/*.h
 man-page-input = ts3d.6.in
 
-cflags = -std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200112L -DJSON_WITH_STDIO \
-	 -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
+cflags = -std=c99 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200112L\
+ -DJSON_WITH_STDIO -DTS3D_VERSION="\"$(version)\"" ${CFLAGS}
 linkage = -lm -lcurses
 test-flags = -shared -fPIC -O0 -g3 -DCTF_TESTS_ENABLED
 
