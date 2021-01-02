@@ -16,9 +16,9 @@ struct player {
 	// The starting information of the player.
 	struct map_ent_start *start;
 	// The direction faced, in radians, like d3d_camera_facing.
-	double facing;
+	d3d_scalar facing;
 	// The turn speed in radians per tick.
-	double turn_speed;
+	d3d_scalar turn_speed;
 	// The reload status, incremented each tick.
 	long reload;
 	// The status which must be reached to shoot.
@@ -38,7 +38,7 @@ double player_reload_fraction(const struct player *player);
 void player_tick(struct player *player);
 
 // Walk in the angle relative to the direction currently faced.
-void player_walk(struct player *player, double angle);
+void player_walk(struct player *player, d3d_scalar angle);
 
 // Turn counter-clockwise.
 void player_turn_ccw(struct player *player);

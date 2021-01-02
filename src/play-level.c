@@ -12,7 +12,7 @@
 #include "util.h"
 #include <ctype.h>
 #include <limits.h>
-#include <math.h>
+#include <tgmath.h>
 #include <time.h>
 
 // Create all the entities specified by the entity start specifications

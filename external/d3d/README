@@ -24,7 +24,8 @@ D3D_HEADER_INCLUDE to be something other than '"d3d.h"' when compiling d3d.c.
 DEPENDENCIES
 ------------
 The header can be used from C89 unless D3D_USE_INTERNAL_STRUCTS is defined. When
-compiling the code in d3d.c, however, the C99 standard is required.
+compiling the code in d3d.c, however, the C99 standard is required. TinyCC may
+not be able to compile d3d.c owing to issues with <tgmath.h>.
 
 This library depends only on the standard library and the standard math library
 (compile/link it with -lm.) The demo depends on libcurses for actually drawing

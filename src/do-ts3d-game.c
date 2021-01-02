@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include <tgmath.h>
 
 // Character cell width of menu. Must be enough to fit width 40 text.
 #define MENU_WIDTH 41
@@ -35,7 +35,7 @@ struct screen_state {
 		bool initialized;
 		d3d_camera *cam;
 		// Parameter for camera direction and position:
-		double t;
+		d3d_scalar t;
 		d3d_board *board;
 		struct screen_area area;
 		struct color_map *color_map;
@@ -102,12 +102,13 @@ static void do_screen_tick(struct screen_state *state)
 	if (state->title.initialized) {
 		// theta is always increasing, but at a fluctuating rate so that
 		// it pauses when the camera is facing the letters:
-		double theta = -state->title.t
+		d3d_scalar theta = -state->title.t
 			- sin(state->title.t * 4.0 - PI) / 4.0;
 		// r is at its highest when the camera is facing a letter:
-		double r = (cos(theta * 4.0) + 0.5) / 1.5 * TITLE_SCREEN_RADIUS;
-		double x = r * cos(theta);
-		double y = r * sin(theta);
+		d3d_scalar r = (cos(theta * 4.0) + 0.5) / 1.5
+			* TITLE_SCREEN_RADIUS;
+		d3d_scalar x = r * cos(theta);
+		d3d_scalar y = r * sin(theta);
 		d3d_vec_s pos = {
 			x + d3d_board_width(state->title.board) / 2.0,
 			y + d3d_board_height(state->title.board) / 2.0

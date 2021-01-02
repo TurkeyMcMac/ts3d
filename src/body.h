@@ -9,7 +9,7 @@ struct body {
 	// The entity position.
 	d3d_vec_s pos;
 	// The girth of the entity.
-	double radius;
+	d3d_scalar radius;
 	// The remaining health of the entity.
 	double health;
 	// The damage done by the entity.
