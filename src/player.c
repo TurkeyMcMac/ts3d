@@ -4,7 +4,7 @@
 #include "map.h"
 #include "util.h"
 #include <limits.h>
-#include <math.h>
+#include <tgmath.h>
 #include <stdlib.h>
 
 void player_init(struct player *player, struct map *map)
@@ -47,7 +47,7 @@ void player_tick(struct player *player)
 	if (!player_can_shoot(player)) ++player->reload;
 }
 
-void player_walk(struct player *player, double angle)
+void player_walk(struct player *player, d3d_scalar angle)
 {
 	angle += player->facing;
 	player->body.pos.x += player->start->type->speed * cos(angle);

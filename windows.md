@@ -29,8 +29,9 @@ The script will create a statically-linked executable `ts3d.exe` which you can
 run on Windows. Build `$PDCURSES_DIR/wincon/pdcurses.a` before running the
 script, and make sure it is built for Windows, not the native platform.
 
-The statically linked `ts3d.exe` compiled with `CFLAGS='-O3 -flto'` is about
-740k in size.
+`ts3d.exe` statically linked to PDCurses and compiled with
+`CFLAGS='-O3 -flto -Wl,--strip-all,--gc-sections'` on my computer is a bit over
+150KB in size.
 
 ## Installation
 

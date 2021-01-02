@@ -9,6 +9,9 @@
  *    compile both your code and this library with the same D3D_PIXEL_TYPE. The
  *    types from stdint.h are not automatically available. Pixels are
  *    unsigned char by default.
+ *  - D3D_SCALAR_TYPE: d3d_scalar can be any real type supported by tgmath.h,
+ *    but you MUST compile both your code and this library with the same
+ *    D3D_SCALAR_TYPE. Scalars are the type double by default.
  *  - D3D_CUSTOM_ALLOCATOR: Don't use malloc, realloc, and free to implement
  *    d3d_malloc, d3d_realloc, and d3d_free within d3d.c. Instead, the compiled
  *    source code must be linked with custom implementations of those three
@@ -22,10 +25,6 @@
  *    d3d.c will use '#include D3D_HEADER_INCLUDE'. This is ONLY useful when
  *    compiling d3d.c, not the client code. */
 
-#ifndef D3D_PIXEL_TYPE
-#	define D3D_PIXEL_TYPE unsigned char
-#endif
-
 /* Custom allocator routines. These have the same contract of behaviour as the
  * corresponding functions in the standard library. They are meant for internal
  * use by the library. If the preprocessor symbol D3D_CUSTOM_ALLOCATOR is
@@ -38,11 +37,22 @@ void d3d_free(void *);
 
 /* A single numeric pixel, for storing whatever data you provide in a
  * texture. */
+#ifdef D3D_PIXEL_TYPE
 typedef D3D_PIXEL_TYPE d3d_pixel;
+#else
+typedef unsigned char d3d_pixel;
+#endif
+
+/* A scalar. */
+#ifdef D3D_SCALAR_TYPE
+typedef D3D_SCALAR_TYPE d3d_scalar;
+#else
+typedef double d3d_scalar;
+#endif
 
 /* A vector in two dimensions. */
 typedef struct {
-	double x, y;
+	d3d_scalar x, y;
 } d3d_vec_s;
 
 /* A grid of pixels with certain width and height. */
@@ -95,8 +105,8 @@ typedef enum {
  * pixel value set in the camera when a cast ray hits nothing (it gets off the
  * edge of the board.) NULL is returned if allocation fails. */
 d3d_camera *d3d_new_camera(
-	double fovx,
-	double fovy,
+	d3d_scalar fovx,
+	d3d_scalar fovy,
 	size_t width,
 	size_t height,
 	d3d_pixel empty_pixel);
@@ -176,7 +186,7 @@ void d3d_free_board(d3d_board *board);
 void d3d_draw(
 	d3d_camera *cam,
 	d3d_vec_s cam_pos,
-	double cam_facing,
+	d3d_scalar cam_facing,
 	const d3d_board *board,
 	size_t n_sprites,
 	const d3d_sprite_s sprites[]);
@@ -197,7 +207,7 @@ struct d3d_texture_s {
 // This is for drawing multiple sprites.
 struct d3d_sprite_order {
 	// The distance from the camera
-	double dist;
+	d3d_scalar dist;
 	// The corresponding index into the given d3d_sprite_s list
 	size_t index;
 };
@@ -221,11 +231,11 @@ struct d3d_camera_s {
 	// For each row of the screen, the tangent of the angle of that row
 	// relative to the center of the screen, in radians
 	// For example, the 0th item is tan(fov.y / 2)
-	double *tans;
+	d3d_scalar *tans;
 	// For each column of the screen, the distance from the camera to the
 	// first wall in that direction. This is calculated when drawing columns
 	// and is used when drawing sprites.
-	double *dists;
+	d3d_scalar *dists;
 	// The pixels of the screen in column-major order.
 	d3d_pixel pixels[];
 };

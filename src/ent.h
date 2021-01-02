@@ -19,9 +19,9 @@ struct ent_type {
 	// The allocated type name.
 	char *name;
 	// The width of the entity in blocks.
-	double width;
+	d3d_scalar width;
 	// The height of the entity in blocks.
-	double height;
+	d3d_scalar height;
 	// The number of frames.
 	size_t n_frames;
 	// The allocated list of n_frames frames.
@@ -39,7 +39,7 @@ struct ent_type {
 	// Chance that the entity will shoot in any given tick.
 	chance shoot_chance;
 	// Movement speed (in blocks/tick).
-	double speed;
+	d3d_scalar speed;
 	// Whether the entity is blocked by walls.
 	bool wall_block;
 	// Whether the entity dies when it hits a wall.

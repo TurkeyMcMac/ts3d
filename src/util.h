@@ -46,7 +46,7 @@ void move_direction(d3d_direction dir, size_t *x, size_t *y);
 
 // Normalizes the vector to the given magnitude, which may be positive or
 // negative. If the vector is zero, it is unaffected.
-void vec_norm_mul(d3d_vec_s *vec, double mag);
+void vec_norm_mul(d3d_vec_s *vec, d3d_scalar mag);
 
 // Get the bit in bits at the index idx, starting from the least significant.
 // Zero or one is returned.

@@ -49,7 +49,7 @@ struct map {
 // Move an object's position so as not to conflict with the map's walls. The
 // object's malleable position is stored in pos. The object is a square with
 // side length (2 * radius).
-void map_check_walls(struct map *map, d3d_vec_s *pos, double radius);
+void map_check_walls(struct map *map, d3d_vec_s *pos, d3d_scalar radius);
 
 // Check the prerequisite name of the map with the given name. The map will not
 // be loaded. On error or when there is no prerequisite, NULL is returned. When

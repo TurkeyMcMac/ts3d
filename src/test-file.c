@@ -38,3 +38,6 @@ void test_read_output(int read_fd, char **buf, size_t *size)
 }
 
 #endif /* CTF_TESTS_ENABLED */
+
+// Make sure compilation unit is non-empty to comply with ISO C.
+char test_unused_var;

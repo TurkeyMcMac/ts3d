@@ -10,7 +10,7 @@
 #include "util.h"
 #include "xalloc.h"
 #include <errno.h>
-#include <math.h>
+#include <tgmath.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +83,7 @@ static void parse_block(d3d_block_s *block, uint8_t *wall, struct json_node *nd,
 	}
 }
 
-void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
+void map_check_walls(struct map *map, d3d_vec_s *pos, d3d_scalar radius)
 {
 	/* Yes, I know this code repeats itself a lot. */
 	// Tile coordinates:
@@ -99,7 +99,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	if (south < y) {
 		// Correct the south side and maybe east/west.
 		bool south_corrected = bitat(here, D3D_DNEGY);
-		double south_dist = pos->y - floor(pos->y);
+		d3d_scalar south_dist = pos->y - floor(pos->y);
 		if (south_corrected) pos->y = y + radius;
 		if (west < x) {
 			// Correct the west.
@@ -111,7 +111,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 				bool hit_outer_corner = bitat(nw, D3D_DPOSY)
 					|| bitat(nw, D3D_DPOSX);
 				if (hit_outer_corner) {
-					double west_dist = pos->x
+					d3d_scalar west_dist = pos->x
 						- floor(pos->x);
 					// Do correction needing less movement.
 					if (south_dist > west_dist) {
@@ -132,7 +132,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 					|| bitat(ne, D3D_DNEGX);
 				if (hit_outer_corner) {
 					// Do correction needing less movement.
-					double east_dist = ceil(pos->x)
+					d3d_scalar east_dist = ceil(pos->x)
 						- pos->x;
 					if (south_dist > east_dist) {
 						pos->y = y + radius;
@@ -145,7 +145,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 	} else if (north > y) {
 		// Correct the north side and maybe east/west.
 		bool north_corrected = bitat(here, D3D_DPOSY);
-		double north_dist = ceil(pos->y) - pos->y;
+		d3d_scalar north_dist = ceil(pos->y) - pos->y;
 		if (north_corrected) pos->y = y + 1.0 - radius;
 		if (west < x) {
 			// Correct the west.
@@ -157,7 +157,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 				bool hit_outer_corner = bitat(sw, D3D_DNEGY)
 					|| bitat(sw, D3D_DPOSX);
 				if (hit_outer_corner) {
-					double west_dist = pos->x
+					d3d_scalar west_dist = pos->x
 						- floor(pos->x);
 					// Do correction needing less movement.
 					if (north_dist > west_dist) {
@@ -177,7 +177,7 @@ void map_check_walls(struct map *map, d3d_vec_s *pos, double radius)
 				bool hit_outer_corner = bitat(se, D3D_DNEGY)
 					|| bitat(se, D3D_DNEGX);
 				if (hit_outer_corner) {
-					double east_dist = ceil(pos->x)
+					d3d_scalar east_dist = ceil(pos->x)
 						- pos->x;
 					if (north_dist > east_dist) {
 						pos->y = y + 1.0 - radius;

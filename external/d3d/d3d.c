@@ -4,7 +4,7 @@
 #else
 #	include "d3d.h"
 #endif
-#include <math.h>
+#include <tgmath.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,10 +38,7 @@
 		(grid)->height ? \
 	&(grid)->member[((size_t)(y) + (grid)->height * (size_t)(x))] : NULL)
 
-#ifndef M_PI
-	// M_PI is not always defined it seems
-#	define M_PI 3.14159265358979323846
-#endif
+#define PI ((d3d_scalar)3.14159265358979323846)
 
 #ifndef D3D_CUSTOM_ALLOCATOR
 void *d3d_malloc(size_t size)
@@ -85,25 +82,25 @@ static size_t texture_size(size_t width, size_t height)
 
 // Computes fmod(n, 1.0) if n >= 0, or 1.0 + fmod(n, 1.0) if n < 0
 // Returns in the range [0, 1)
-static double mod1(double n)
+static d3d_scalar mod1(d3d_scalar n)
 {
 	return n - floor(n);
 }
 
 // computes approximately 1.0 - fmod(n, 1.0) if n >= 0 or -fmod(n, 1.0) if n < 0
 // Returns in the range [0, 1)
-static double revmod1(double n)
+static d3d_scalar revmod1(d3d_scalar n)
 {
 	return ceil(n) - n;
 }
 
 // Compute the difference between the two angles (each themselves between 0 and
 // 2π.) The result is between -π and π.
-static double angle_diff(double a1, double a2)
+static d3d_scalar angle_diff(d3d_scalar a1, d3d_scalar a2)
 {
-	double diff = a1 - a2;
-	if (diff > M_PI) return -2 * M_PI + diff;
-	if (diff < -M_PI) return -diff - 2 * M_PI;
+	d3d_scalar diff = a1 - a2;
+	if (diff > PI) return -2 * PI + diff;
+	if (diff < -PI) return -diff - 2 * PI;
 	return diff;
 }
 
@@ -113,10 +110,10 @@ static double angle_diff(double a1, double a2)
 // coordinates of a moving point hitting a wall. If it hits a wall going in the
 // positive direction, it would be put in the tile one over except for the
 // decrement.
-static size_t tocoord(double c, bool positive)
+static size_t tocoord(d3d_scalar c, bool positive)
 {
-	double f = floor(c);
-	if (positive && f == c && c != 0.0) return (size_t)c - 1;
+	d3d_scalar f = floor(c);
+	if (positive && f == c && c != (d3d_scalar)0.0) return (size_t)c - 1;
 	return f;
 }
 
@@ -147,8 +144,8 @@ static d3d_direction invert_dir(d3d_direction dir)
 }
 
 d3d_camera *d3d_new_camera(
-	double fovx,
-	double fovy,
+	d3d_scalar fovx,
+	d3d_scalar fovy,
 	size_t width,
 	size_t height,
 	d3d_pixel empty_pixel)
@@ -162,16 +159,20 @@ d3d_camera *d3d_new_camera(
 	if (width != 0 && pixels_size / sizeof(d3d_pixel) / width != height)
 		return NULL;
 	CHECKED_ADD(size, pixels_size);
-	ALIGN_SIZE(size, d3d_texture);
+	// This type probably has the alignment of a one-pixel texture:
+	typedef struct { size_t width, height; d3d_pixel pixels[1]; } one_pix;
+	ALIGN_SIZE(size, one_pix);
 	txtr_offset = size;
 	CHECKED_ADD(size, texture_size(1, 1));
-	ALIGN_SIZE(size, double);
+	ALIGN_SIZE(size, d3d_scalar);
 	tans_offset = size;
-	if (height * sizeof(double) / sizeof(double) != height) return NULL;
-	CHECKED_ADD(size, height * sizeof(double));
+	if (height * sizeof(d3d_scalar) / sizeof(d3d_scalar) != height)
+		return NULL;
+	CHECKED_ADD(size, height * sizeof(d3d_scalar));
 	dists_offset = size;
-	if (width * sizeof(double) / sizeof(double) != width) return NULL;
-	CHECKED_ADD(size, width * sizeof(double));
+	if (width * sizeof(d3d_scalar) / sizeof(d3d_scalar) != width)
+		return NULL;
+	CHECKED_ADD(size, width * sizeof(d3d_scalar));
 	cam = d3d_malloc(size);
 	if (!cam) return NULL;
 	// The members 'tans' and 'dists' are actually pointers to parts of the
@@ -183,8 +184,8 @@ d3d_camera *d3d_new_camera(
 	// Just do basic protection against non-positive FOVs as they might
 	// cause issues. I could do something better than silently clamping, but
 	// what do you expect a non-positive FOV to do anyway?
-	cam->fov.x = fovx > 0.0 ? fovx : 0.001;
-	cam->fov.y = fovy > 0.0 ? fovy : 0.001;
+	cam->fov.x = fovx > (d3d_scalar)0.0 ? fovx : 0.001;
+	cam->fov.y = fovy > (d3d_scalar)0.0 ? fovy : 0.001;
 	cam->width = width;
 	cam->height = height;
 	empty_txtr->width = 1;
@@ -202,7 +203,8 @@ d3d_camera *d3d_new_camera(
 	cam->last_n_sprites = 0;
 	empty_camera_pixels(cam);
 	for (size_t y = 0; y < height; ++y) {
-		double angle = cam->fov.y * (0.5 - (double)y / height);
+		d3d_scalar angle =
+			cam->fov.y * ((d3d_scalar)0.5 - (d3d_scalar)y / height);
 		cam->tans[y] = tan(angle);
 	}
 	return cam;
@@ -269,25 +271,25 @@ static const d3d_block_s *hit_wall(
 		const d3d_block_s * const *blk = NULL;
 		d3d_vec_s tonext = {0, 0};
 		d3d_direction y_dir = D3D_DNEGY, x_dir = D3D_DNEGX;
-		if (dpos->x < 0.0) {
+		if (dpos->x < (d3d_scalar)0.0) {
 			// The ray is going in the -x direction.
 			tonext.x = -mod1(pos->x);
-		} else if (dpos->x > 0.0) {
+		} else if (dpos->x > (d3d_scalar)0.0) {
 			// The ray is going in the +x direction.
 			x_dir = D3D_DPOSX;
 			tonext.x = revmod1(pos->x);
 		}
-		if (dpos->y < 0.0) {
+		if (dpos->y < (d3d_scalar)0.0) {
 			// The ray is going in the -y direction.
 			tonext.y = -mod1(pos->y);
-		} else if (dpos->y > 0.0) {
+		} else if (dpos->y > (d3d_scalar)0.0) {
 			// They ray is going in the +y direction.
 			y_dir = D3D_DPOSY;
 			tonext.y = revmod1(pos->y);
 		}
-		if (dpos->x == 0.0) {
+		if (dpos->x == (d3d_scalar)0.0) {
 			goto hit_y;
-		} else if (dpos->y == 0.0) {
+		} else if (dpos->y == (d3d_scalar)0.0) {
 			goto hit_x;
 		}
 		if (tonext.x / dpos->x < tonext.y / dpos->y) {
@@ -303,8 +305,8 @@ static const d3d_block_s *hit_wall(
 			pos->y += tonext.y;
 			pos->x += tonext.y / dpos->y * dpos->x;
 		}
-		x = tocoord(pos->x, dpos->x > 0.0);
-		y = tocoord(pos->y, dpos->y > 0.0);
+		x = tocoord(pos->x, dpos->x > (d3d_scalar)0.0);
+		y = tocoord(pos->y, dpos->y > (d3d_scalar)0.0);
 		inverted = invert_dir(*dir);
 		blk = GET(board, blocks, x, y);
 		if (!blk) return NULL; // The ray left the board
@@ -326,9 +328,11 @@ static const d3d_block_s *hit_wall(
 				// The face the ray hit is empty
 				// Nudge the ray past the wall:
 				if (*dir == x_dir) {
-					pos->x += copysign(0.0001, dpos->x);
+					pos->x += copysign((d3d_scalar)0.0001,
+						dpos->x);
 				} else {
-					pos->y += copysign(0.0001, dpos->y);
+					pos->y += copysign((d3d_scalar)0.0001,
+						dpos->y);
 				}
 			}
 		}
@@ -339,7 +343,7 @@ static const d3d_block_s *hit_wall(
 static void draw_column(
 	d3d_camera *cam,
 	d3d_vec_s cam_pos,
-	double cam_facing,
+	d3d_scalar cam_facing,
 	const d3d_board *board,
 	size_t x)
 {
@@ -347,9 +351,12 @@ static void draw_column(
 	const d3d_block_s *block;
 	const d3d_texture *drawing;
 	d3d_vec_s pos = cam_pos, disp;
-	double dist;
-	double angle = cam_facing + cam->fov.x * (0.5 - (double)x / cam->width);
-	d3d_vec_s dpos = {cos(angle) * 0.001, sin(angle) * 0.001};
+	d3d_scalar dist;
+	d3d_scalar angle = cam_facing
+		+ cam->fov.x * ((d3d_scalar)0.5 - (d3d_scalar)x / cam->width);
+	d3d_vec_s dpos = {
+		cos(angle) * (d3d_scalar)0.001, sin(angle) * (d3d_scalar)0.001
+	};
 	block = hit_wall(board, &pos, &dpos, &face, &drawing);
 	if (!block) {
 		block = &cam->blank_block;
@@ -361,7 +368,7 @@ static void draw_column(
 	cam->dists[x] = dist;
 	// Choose how far across the wall to get pixels from based on the wall
 	// orientation, and put the distance in dimension:
-	double dimension;
+	d3d_scalar dimension;
 	switch (face) {
 	case D3D_DPOSX:
 		dimension = revmod1(pos.y);
@@ -382,16 +389,17 @@ static void draw_column(
 		size_t tx, ty;
 		// The distance the ray travelled, assuming it hit a vertical
 		// wall:
-		double dist_y = cam->tans[t] * dist + 0.5;
-		if (dist_y > 0.0 && dist_y < 1.0) {
+		d3d_scalar dist_y = cam->tans[t] * dist + (d3d_scalar)0.5;
+		if (dist_y > (d3d_scalar)0.0 && dist_y < (d3d_scalar)1.0) {
 			// A vertical wall was indeed hit
 			txtr = drawing;
 			tx = dimension * txtr->width;
-			ty = txtr->height * (1.0 - dist_y);
+			ty = txtr->height * ((d3d_scalar)1.0 - dist_y);
 		} else {
 			// A floor or ceiling was hit instead. The horizontal
 			// displacement is adjusted accordingly:
-			double newdist = 0.5 / fabs(cam->tans[t]);
+			d3d_scalar newdist =
+				(d3d_scalar)0.5 / fabs(cam->tans[t]);
 			d3d_vec_s newpos = {
 				cam_pos.x + disp.x / dist * newdist,
 				cam_pos.y + disp.y / dist * newdist
@@ -403,24 +411,28 @@ static void draw_column(
 			// Ceiling hit if dist_y >= 1, floor hit if
 			// dist_y <= 0, and nothing else is possible:
 			d3d_direction face =
-				dist_y >= 1.0 ? D3D_DUP : D3D_DDOWN;
+				dist_y >= (d3d_scalar)1.0 ? D3D_DUP : D3D_DDOWN;
 			txtr = (*top_bot)->faces[face];
 			if (!txtr) goto no_texture;
 			tx = mod1(newpos.x) * txtr->width;
 			ty = mod1(newpos.y) * txtr->height;
 		}
-		*GET(cam, pixels, x, t) = *GET(txtr, pixels, tx, ty);
-		continue;
-
+		const d3d_pixel *tpp = GET(txtr, pixels, tx, ty);
+		d3d_pixel tp;
+		if (tpp) {
+			tp = *tpp;
+		} else {
 	no_texture:
-		*GET(cam, pixels, x, t) = camera_empty_pixel(cam);
+			tp = camera_empty_pixel(cam);
+		}
+		*GET(cam, pixels, x, t) = tp;
 	}
 }
 
 // Compare the sprite orders (see below). This is meant for qsort.
 static int compar_sprite_order(const void *a, const void *b)
 {
-	double dist_a = *(double *)a, dist_b = *(double *)b;
+	d3d_scalar dist_a = *(d3d_scalar *)a, dist_b = *(d3d_scalar *)b;
 	if (dist_a > dist_b) return 1;
 	if (dist_a < dist_b) return -1;
 	return 0;
@@ -429,15 +441,16 @@ static int compar_sprite_order(const void *a, const void *b)
 static void draw_sprite_dist(
 	d3d_camera *cam,
 	d3d_vec_s cam_pos,
-	double cam_facing,
+	d3d_scalar cam_facing,
 	const d3d_sprite_s *sp,
-	double dist)
+	d3d_scalar dist)
 {
-	if (sp->scale.x <= 0.0 || sp->scale.y <= 0.0) return;
+	if (sp->scale.x <= (d3d_scalar)0.0 || sp->scale.y <= (d3d_scalar)0.0)
+		return;
 	d3d_vec_s disp = { sp->pos.x - cam_pos.x, sp->pos.y - cam_pos.y };
-	double angle, width, height, diff, maxdiff;
+	d3d_scalar angle, width, height, diff, maxdiff;
 	long start_x, start_y;
-	if (dist == 0.0) return;
+	if (dist == (d3d_scalar)0.0) return;
 	// The angle of the sprite relative to the +x axis:
 	angle = atan2(disp.y, disp.x);
 	// The view width of the sprite in radians:
@@ -460,13 +473,15 @@ static void draw_sprite_dist(
 		size_t cx, sx;
 		cx = x + start_x;
 		if (cx >= cam->width || dist >= cam->dists[cx]) continue;
-		sx = (double)x / width * sp->txtr->width;
+		sx = (d3d_scalar)x / width * sp->txtr->width;
+		if (sx >= sp->txtr->width) continue;
 		for (size_t y = 0; y < height; ++y) {
 			// cy and sy correspond to cx and sx above:
 			size_t cy, sy;
 			cy = y + start_y;
 			if (cy >= cam->height) continue;
-			sy = (double)y / height * sp->txtr->height;
+			sy = (d3d_scalar)y / height * sp->txtr->height;
+			if (sy >= sp->txtr->height) continue;
 			d3d_pixel p = *GET(sp->txtr, pixels, sx, sy);
 			if (p != sp->transparent) *GET(cam, pixels, cx, cy) = p;
 		}
@@ -476,7 +491,7 @@ static void draw_sprite_dist(
 static void draw_sprites(
 	d3d_camera *cam,
 	d3d_vec_s cam_pos,
-	double cam_facing,
+	d3d_scalar cam_facing,
 	size_t n_sprites,
 	const d3d_sprite_s sprites[])
 {
@@ -537,18 +552,16 @@ static void draw_sprites(
 void d3d_draw(
 	d3d_camera *cam,
 	d3d_vec_s cam_pos,
-	double cam_facing,
+	d3d_scalar cam_facing,
 	const d3d_board *board,
 	size_t n_sprites,
 	const d3d_sprite_s sprites[])
 {
-	if (cam_pos.x > 0.0 && cam_pos.y > 0.0
+	if (cam_pos.x > (d3d_scalar)0.0 && cam_pos.y > (d3d_scalar)0.0
 	 && cam_pos.x < board->width && cam_pos.y < board->height) {
 		// Canonicalize camera direction:
-		cam_facing = fmod(cam_facing, 2 * M_PI);
-		if (cam_facing < 0.0) {
-			cam_facing += 2 * M_PI;
-		}
+		cam_facing = fmod(cam_facing, 2 * PI);
+		if (cam_facing < (d3d_scalar)0.0) cam_facing += 2 * PI;
 		for (size_t x = 0; x < cam->width; ++x) {
 			draw_column(cam, cam_pos, cam_facing, board, x);
 		}
