@@ -85,12 +85,12 @@ keep the entire screen from being drawn upon.
 \fBts3d\fR at the moment does not work with unicode because Curses does not
 support doing so.
 
-The main performance bottleneck is Curses. To run the game on a large screen, a
-fast terminal emulator may be needed. The hardware text mode will probably work.
-GPU-accelerated terminals are the best. However, the game is playable on the
-classic 80x24 screen, which almost all terminal programs can support. If you
-want a large screen, test out different sizes to see how large you can get
-without slowing the game.
+The main performance bottleneck seems to be writing to the terminal. To run the
+game on a large screen, a fast terminal emulator may be needed; possibilities
+include Linux text mode, GPU-accelerated terminal emulators, and many others.
+The game is still playable with the classic 80x24 dimensions, which almost all
+terminal programs can support. If you want a large screen, you might test out
+different sizes to see how large you can get without slowing the game.
 
 
 .SH AUTHOR
