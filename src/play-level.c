@@ -222,7 +222,12 @@ int play_level(const char *root_dir, struct save_state *save,
 			"Are you sure you want to quit?\n"
 			"Press Y to confirm or N to cancel.";
 		tick(timer);
-		int key = getch();
+		// next_key is preserved after the input flush and put back into
+		// the input buffer; only keeping one key in the buffer ensures
+		// responsiveness, though keys could theoretically be dropped:
+		int key = getch(), next_key = getch();
+		flushinp();
+		if (next_key != ERR) ungetch(next_key);
 		int lowkey = key >= 0 && key <= UCHAR_MAX ? tolower(key) : key;
 		bool resized = key == KEY_RESIZE || !cam;
 		if (resized) {
