@@ -181,15 +181,13 @@ int do_ts3d_game(const char *data_dir, const char *state_file,
 	// This here is lowered from "1000":
 	try_setenv("ESCDELAY", STRINGIFY(FRAME_DELAY), 0);
 	initscr();
+	cbreak();
 	if (start_color() == ERR) {
 		logger_printf(log, LOGGER_ERROR, "start_color() failed\n");
 		goto error_color;
 	}
 	set_application_title("Thing Shooter 3D");
 	timeout(0); // No delay for key presses.
-	// For some reason, NetBSD Curses requires this to keep the program from
-	// waiting for user input in the menu:
-	getch();
 	// The screen state including the menu and title screensaver:
 	struct screen_state screen_state = SCREEN_STATE_PARTIAL_INITIALIZER;
 	if (load_menu_state(&screen_state.menu, data_dir, log)) {
