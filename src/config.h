@@ -14,10 +14,10 @@
 #define TITLE_SCREEN_MAP_NAME "title"
 
 // In the screensaver, this number scales with the speed of one cycle.
-#define TITLE_SCREEN_SPEED 0.0035
+#define TITLE_SCREEN_SPEED 0.005
 
 // In the screensaver, the camera goes out at most this far (measured in tiles.)
-#define TITLE_SCREEN_RADIUS 0.75
+#define TITLE_SCREEN_RADIUS 0.5
 
 // The number of ticks a turn lasts, triggered by a single key press. This is to
 // smooth out key detection speeds for different terminals, as some wait longer
@@ -35,12 +35,12 @@
 // The width:height ratio of each pixel. Curses seems not to have a way to
 // determine this dynamically. The information is used when deciding camera
 // dimensions.
-#define PIXEL_ASPECT 0.625
+#define PIXEL_ASPECT 0.5
 
 // The field of view side-to-side, in radians, of a camera. The field is smaller
 // if the screen is taller than it is wide, which is unlikely. See
 // camera_with_dims in ui-util.c for details.
-#define CAM_FOV_X 2.0
+#define CAM_FOV_X 1.2
 
 // The character carrying the foreground color for pixels in the 3D scene.
 #define SCENE_FG_CHAR ':'
