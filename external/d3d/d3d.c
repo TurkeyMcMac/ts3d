@@ -364,7 +364,7 @@ static void draw_column(
 	}
 	disp.x = pos.x - cam_pos.x;
 	disp.y = pos.y - cam_pos.y;
-	dist = sqrt(disp.x * disp.x + disp.y * disp.y);
+	dist = hypot(disp.x, disp.y);
 	cam->dists[x] = dist;
 	// Choose how far across the wall to get pixels from based on the wall
 	// orientation, and put the distance in dimension:
