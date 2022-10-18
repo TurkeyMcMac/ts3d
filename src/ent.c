@@ -186,13 +186,12 @@ static void ent_init(struct ent *ent, struct ent_type *type, enum team team,
 
 static bool ent_is_dead(const struct ent *ent)
 {
-	return (ent->type->lifetime >= 0 && ent->lifetime < 0)
+	return (ent->type->lifetime >= 0 && ent->lifetime <= 0)
 	    || ent->body.health <= 0;
 }
 
 static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 {
-	--ent->lifetime;
 	if (!ent_is_dead(ent)) {
 		if (--ent->frame_duration <= 0) {
 			if (++ent->frame >= ent->type->n_frames) ent->frame = 0;
@@ -206,8 +205,9 @@ static void ent_tick(struct ent *ent, d3d_sprite_s *sprite)
 			&sprite->pos);
 		ent->worth = worth;
 	} else {
-		ent->lifetime = -1;
+		ent->lifetime = 0;
 	}
+	--ent->lifetime;
 }
 
 void ents_init(struct ents *ents, size_t cap)
